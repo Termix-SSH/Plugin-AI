@@ -3,15 +3,15 @@ import {
   createCurrentFleetRepository,
   createCurrentHostRepository,
   createCurrentSnippetRepository,
-} from "../../../../src/backend/database/repositories/factory.js";
-import { validateDefinition } from "../../../automations/backend/routes.js";
-import { resolveHostById } from "../../../../src/backend/hosts/host-resolver.js";
-import { execCommand } from "../../../../src/backend/hosts/metrics-shared/common-utils.js";
+} from "../../../../../src/backend/database/repositories/factory.js";
+import { validateDefinition } from "../../../../automations/src/backend/routes.js";
+import { resolveHostById } from "../../../../../src/backend/hosts/host-resolver.js";
+import { execCommand } from "../../../../../src/backend/hosts/metrics-shared/common-utils.js";
 import {
   createFleetSshFactory,
   getFleetPoolKey,
-} from "../../../../src/backend/hosts/ssh-client-factory.js";
-import { withConnection } from "../../../../src/backend/hosts/ssh-connection-pool.js";
+} from "../../../../../src/backend/hosts/ssh-client-factory.js";
+import { withConnection } from "../../../../../src/backend/hosts/ssh-connection-pool.js";
 import { getTool } from "./catalog.js";
 
 /** Approved commands get a bounded window rather than hanging the request. */

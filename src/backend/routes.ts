@@ -1,25 +1,25 @@
-import { getErrorMessage } from "../../../src/backend/utils/error-message.js";
+import { getErrorMessage } from "../../../../src/backend/utils/error-message.js";
 import express from "express";
 import {
   registerAiRouter,
   unregisterAiRouter,
-} from "../../../src/backend/database/routes/ai-dispatch.js";
-import type { AuthenticatedRequest } from "../../../src/types/index.js";
-import { PermissionManager } from "../../../src/backend/utils/permission-manager.js";
-import { AuthManager } from "../../../src/backend/utils/auth-manager.js";
-import { databaseLogger } from "../../../src/backend/utils/logger.js";
+} from "../../../../src/backend/database/routes/ai-dispatch.js";
+import type { AuthenticatedRequest } from "../../../../src/types/index.js";
+import { PermissionManager } from "../../../../src/backend/utils/permission-manager.js";
+import { AuthManager } from "../../../../src/backend/utils/auth-manager.js";
+import { databaseLogger } from "../../../../src/backend/utils/logger.js";
 import {
   getAuditUsername,
   getRequestMeta,
   logAudit,
-} from "../../../src/backend/utils/audit-logger.js";
+} from "../../../../src/backend/utils/audit-logger.js";
 import {
   createCurrentAiRepository,
   createCurrentHostRepository,
   createCurrentSettingsRepository,
   createCurrentUserRepository,
-} from "../../../src/backend/database/repositories/factory.js";
-import type { UserRecord } from "../../../src/backend/database/repositories/user-repository.js";
+} from "../../../../src/backend/database/repositories/factory.js";
+import type { UserRecord } from "../../../../src/backend/database/repositories/user-repository.js";
 import { buildSystemPrompt } from "./context.js";
 import { AI_PRIVATE_ALLOWLIST_KEY, parseAllowlist } from "./egress.js";
 import { runAgent } from "./engine.js";

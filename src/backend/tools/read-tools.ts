@@ -8,7 +8,7 @@ import {
   createCurrentNetworkTopologyRepository,
   createCurrentSnippetRepository,
   createCurrentWorkspaceRepository,
-} from "../../../../src/backend/database/repositories/factory.js";
+} from "../../../../../src/backend/database/repositories/factory.js";
 import { num, objectSchema, type AiTool } from "./types.js";
 
 /**
