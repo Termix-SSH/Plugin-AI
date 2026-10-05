@@ -1,4 +1,4 @@
-import type { PluginSettings } from "@termix/plugin-sdk/backend";
+import type { PluginSettings } from "@termix-ssh/plugin-sdk/backend";
 import { DEFAULT_PRIVATE_ALLOWLIST, parseAllowlist } from "./egress.js";
 
 /**

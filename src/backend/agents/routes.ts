@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import type { Client, ClientChannel } from "ssh2";
 import type { Request, Response, Router } from "express";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
   createAiGate,
   readPrivateAllowlist,

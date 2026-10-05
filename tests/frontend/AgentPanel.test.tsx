@@ -1,4 +1,4 @@
-import type { TabProps } from "@termix/plugin-sdk/frontend";
+import type { TabProps } from "@termix-ssh/plugin-sdk/frontend";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   cleanup,

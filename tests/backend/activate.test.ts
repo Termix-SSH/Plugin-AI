@@ -1,11 +1,11 @@
 import express from "express";
 import { afterEach, describe, expect, it } from "vitest";
-import { PluginCapabilityError } from "@termix/plugin-sdk/backend";
+import { PluginCapabilityError } from "@termix-ssh/plugin-sdk/backend";
 import {
   createMockCtx,
   createTestDb,
   type TestDb,
-} from "@termix/plugin-sdk/testing";
+} from "@termix-ssh/plugin-sdk/testing";
 import { activate } from "../../src/backend/index.js";
 import { manifest, pluginDir, startServer, type TestServer } from "./helpers";
 

@@ -1,5 +1,5 @@
 import type { Request, Response, Router } from "express";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { buildSystemPrompt } from "./context.js";
 import { runAgent } from "./engine.js";
 import { getErrorMessage } from "./errors.js";

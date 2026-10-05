@@ -1,6 +1,6 @@
 import type { Client } from "ssh2";
-import type { PluginHostUpdateInput } from "@termix/plugin-sdk/backend";
-import { execCommand } from "@termix/plugin-sdk/host-commands";
+import type { PluginHostUpdateInput } from "@termix-ssh/plugin-sdk/backend";
+import { execCommand } from "@termix-ssh/plugin-sdk/host-commands";
 import { getTool } from "./catalog.js";
 import type { ToolDeps } from "./types.js";
 import { requireService, SERVICE } from "../services.js";

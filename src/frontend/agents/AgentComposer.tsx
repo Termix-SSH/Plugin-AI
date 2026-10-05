@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "@termix/plugin-sdk/frontend";
-import { Button, Textarea } from "@termix/plugin-sdk/ui";
+import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
+import { Button, Textarea } from "@termix-ssh/plugin-sdk/ui";
 import type { AgentSession } from "../../backend/agents/types";
 import { aiApp } from "../app-ref";
 import { Attachments } from "./Attachments";

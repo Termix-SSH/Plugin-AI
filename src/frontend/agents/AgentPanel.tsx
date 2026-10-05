@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation, type TabProps } from "@termix/plugin-sdk/frontend";
-import { Button, Input } from "@termix/plugin-sdk/ui";
+import { useTranslation, type TabProps } from "@termix-ssh/plugin-sdk/frontend";
+import { Button, Input } from "@termix-ssh/plugin-sdk/ui";
 import { Bot, Plus, Square, Play } from "lucide-react";
 import { useAgentStream } from "./useAgentStream";
 import { SessionTools } from "./SessionTools";

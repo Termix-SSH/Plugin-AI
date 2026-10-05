@@ -1,4 +1,4 @@
-import type { PluginContext, SyncRow } from "@termix/plugin-sdk/backend";
+import type { PluginContext, SyncRow } from "@termix-ssh/plugin-sdk/backend";
 import {
   apiKeyPrefix,
   providerSecretKey,

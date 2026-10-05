@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { agentEvents, agentQueue, agentSessions } from "../tables.js";
 import type { AgentEvent, AgentSession } from "./types.js";
 

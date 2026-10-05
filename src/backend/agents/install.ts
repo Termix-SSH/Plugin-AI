@@ -1,6 +1,6 @@
 import type { Router } from "express";
 import type { Client, ClientChannel } from "ssh2";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { forwardingScript } from "./forwarding.js";
 import { AGENTS, shellQuote, type AgentKind } from "./types.js";
 

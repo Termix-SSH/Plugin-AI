@@ -1,4 +1,4 @@
-import type { PluginFetch } from "@termix/plugin-sdk/backend";
+import type { PluginFetch } from "@termix-ssh/plugin-sdk/backend";
 import { evaluateEgress, PRIVATE_DESTINATION_MESSAGE } from "../egress.js";
 import { AiProviderError, type ProviderFetch } from "./types.js";
 

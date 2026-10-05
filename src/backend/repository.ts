@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
   conversations as conversationsDef,
   messages as messagesDef,

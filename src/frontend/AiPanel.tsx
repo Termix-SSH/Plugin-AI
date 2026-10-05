@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "@termix/plugin-sdk/frontend";
+import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { Loader2, Send, Settings2, Sparkles, Square } from "lucide-react";
 import {
   Button,
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@termix/plugin-sdk/ui";
+} from "@termix-ssh/plugin-sdk/ui";
 import {
   getAiProviders,
   getAiStatus,

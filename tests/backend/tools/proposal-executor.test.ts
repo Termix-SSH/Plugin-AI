@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const execCommand = vi.fn();
-vi.mock("@termix/plugin-sdk/host-commands", async (importOriginal) => ({
+vi.mock("@termix-ssh/plugin-sdk/host-commands", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   execCommand: (...args: unknown[]) => execCommand(...args),
 }));

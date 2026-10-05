@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTranslation } from "@termix/plugin-sdk/frontend";
+import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { ChevronDown, ChevronRight, Loader2, Wrench } from "lucide-react";
 import type { ToolActivity } from "./use-ai-stream";
 import { toolLabel } from "./labels";

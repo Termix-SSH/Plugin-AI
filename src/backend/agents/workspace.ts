@@ -1,5 +1,5 @@
 import type { Client, ClientChannel } from "ssh2";
-import type { PluginContext } from "@termix/plugin-sdk/backend";
+import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { shellQuote, type AgentSession } from "./types.js";
 
 /** Fixed operations; all paths and content arrive as JSON on stdin, never shell source. */

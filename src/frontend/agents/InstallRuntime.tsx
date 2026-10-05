@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "@termix/plugin-sdk/frontend";
-import { Button } from "@termix/plugin-sdk/ui";
+import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
+import { Button } from "@termix-ssh/plugin-sdk/ui";
 import { Download, Network } from "lucide-react";
 import { aiApp } from "../app-ref";
 import type { AgentKind } from "../../backend/agents/types";

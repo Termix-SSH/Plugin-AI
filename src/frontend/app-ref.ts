@@ -1,4 +1,4 @@
-import type { TermixApp } from "@termix/plugin-sdk/frontend";
+import type { TermixApp } from "@termix-ssh/plugin-sdk/frontend";
 
 let current: TermixApp | null = null;
 

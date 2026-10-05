@@ -8,7 +8,7 @@ import {
   text,
   timestamp,
   varchar,
-} from "@termix/plugin-sdk/db";
+} from "@termix-ssh/plugin-sdk/db";
 
 /*
  * Adopted from core's ai_* tables, so column and index names are the legacy

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSettings, useTranslation } from "@termix/plugin-sdk/frontend";
+import { useSettings, useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { AiProviderSettings } from "../AiProviderSettings";
 import {
   AI_STATUS_CHANGED_EVENT,

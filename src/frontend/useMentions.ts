@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { invokeAction, useHosts } from "@termix/plugin-sdk/frontend";
+import { invokeAction, useHosts } from "@termix-ssh/plugin-sdk/frontend";
 
 /**
  * Backs the @-mention picker in the composer.

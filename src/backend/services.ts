@@ -1,4 +1,4 @@
-import type { PluginServices } from "@termix/plugin-sdk/backend";
+import type { PluginServices } from "@termix-ssh/plugin-sdk/backend";
 
 /**
  * Other plugins the assistant reads and changes through, each optional. A
