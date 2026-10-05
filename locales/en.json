@@ -99,7 +99,8 @@
     "terminalContextPrefill": "Here is my terminal output:\n\n{{output}}\n\n",
     "secrets": {
       "shareApiKey": "Let other features use your AI provider API key for their own requests. The key is never copied, and you can revoke this at any time."
-    }
+    },
+    "removeProviderConfirm": "Remove the provider {{name}}?"
   },
   "nav": {
     "ai": "AI"

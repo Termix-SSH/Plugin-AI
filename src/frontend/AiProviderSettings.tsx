@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useConfirm,
 } from "@termix/plugin-sdk/ui";
 import {
   createAiProvider,
@@ -237,6 +238,7 @@ export function AiProviderSettings({
   onAdded,
 }: AiProviderSettingsProps) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -326,7 +328,12 @@ export function AiProviderSettings({
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: number, name: string) {
+    const ok = await confirm({
+      title: t("ai.removeProviderConfirm", { name }),
+      confirmLabel: t("common.remove"),
+    });
+    if (!ok) return;
     try {
       await deleteAiProvider(id);
       onChanged();
@@ -385,7 +392,7 @@ export function AiProviderSettings({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => handleDelete(provider.id)}
+                onClick={() => void handleDelete(provider.id, provider.label)}
                 aria-label={t("ai.removeProvider")}
               >
                 <Trash2 size={14} />
