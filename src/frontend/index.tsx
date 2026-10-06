@@ -161,13 +161,12 @@ export function activate(app: TermixApp): void {
       }),
     );
     surface.push(
-      app.registerSlotContribution("onboarding.steps", {
-        actionId: "ai.onboarding",
+      app.registerOnboardingStep({
+        id: "assistant",
         titleKey: "onboarding.aiTitle",
-        kind: "component",
-        component: AiAssistantStep as unknown as ComponentType<
-          Record<string, unknown>
-        >,
+        icon: Sparkles,
+        component: AiAssistantStep,
+        section: "setup",
       }),
     );
   };

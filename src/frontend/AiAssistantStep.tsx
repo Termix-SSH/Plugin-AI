@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
-import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
-import { setAiOptIn } from "./ai-api";
+import {
+  useTranslation,
+  type OnboardingStepProps,
+} from "@termix-ssh/plugin-sdk/frontend";
+import { getAiStatus, setAiOptIn } from "./ai-api";
 
 /**
  * Asks once, plainly.
@@ -11,7 +14,7 @@ import { setAiOptIn } from "./ai-api";
  * options are described in the same flat register and neither is marked
  * recommended: this is a choice, not a pitch.
  */
-export function AiAssistantStep() {
+export function AiAssistantStep({ mode }: Partial<OnboardingStepProps>) {
   const { t } = useTranslation();
   const [enabled, setEnabled] = useState(false);
 
@@ -21,10 +24,21 @@ export function AiAssistantStep() {
     setAiOptIn(next).catch(() => undefined);
   }
 
-  // Skipping the step entirely still has to mean off, not unset.
+  // On a first run, skipping the step entirely still has to mean off, not
+  // unset. Running setup again starts from what the user already chose.
   useEffect(() => {
-    apply(false);
-  }, []);
+    if (mode === "full" || mode === undefined) {
+      apply(false);
+      return;
+    }
+    let cancelled = false;
+    getAiStatus()
+      .then((status) => !cancelled && setEnabled(status.enabled))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
 
   const options = [
     {
