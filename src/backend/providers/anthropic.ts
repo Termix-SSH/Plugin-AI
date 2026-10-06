@@ -11,7 +11,7 @@ import { AiProviderError } from "./types.js";
  * Model ids offered in the picker. Users can type any other id; this is a
  * convenience list, not a restriction.
  */
-export const ANTHROPIC_MODELS = [
+const ANTHROPIC_MODELS = [
   "claude-opus-5",
   "claude-sonnet-5",
   "claude-haiku-4-5",

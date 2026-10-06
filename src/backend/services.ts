@@ -30,7 +30,7 @@ export function serviceAvailable(
   }
 }
 
-export interface SnippetSummary {
+interface SnippetSummary {
   id: number;
   name: string;
   content: string;
@@ -39,7 +39,7 @@ export interface SnippetSummary {
   folder: string | null;
 }
 
-export interface SnippetsAccess {
+interface SnippetsAccess {
   list: () => Promise<SnippetSummary[]>;
   get: (id: number) => Promise<{
     id: number;
@@ -65,7 +65,7 @@ export interface SnippetsAccess {
   remove: (id: number) => Promise<boolean>;
 }
 
-export interface FleetsAccess {
+interface FleetsAccess {
   list: () => Promise<
     Array<{ id: number; name: string; color: string | null }>
   >;
@@ -76,7 +76,7 @@ export interface FleetsAccess {
   addMember: (fleetId: number, hostId: number) => Promise<void>;
 }
 
-export interface AutomationsAccess {
+interface AutomationsAccess {
   list: () => Promise<
     Array<{
       id: number;
@@ -103,15 +103,15 @@ export interface AutomationsAccess {
   }) => Promise<{ id: number; name: string }>;
 }
 
-export interface SavedWorkspaces {
+interface SavedWorkspaces {
   list: () => Promise<Array<{ id: number; name: string; isDefault: boolean }>>;
 }
 
-export interface NetworkTopologyGraph {
+interface NetworkTopologyGraph {
   get: () => Promise<unknown | null>;
 }
 
-export interface TerminalHistory {
+interface TerminalHistory {
   list: (
     hostId: number,
     limit?: number,
@@ -119,7 +119,7 @@ export interface TerminalHistory {
 }
 
 /** homepage.items v1, which the homepage plugin provides from B19. */
-export interface HomepageItems {
+interface HomepageItems {
   list: () => Promise<
     Array<{ id: number; typeId: string; title: string | null }>
   >;

@@ -159,7 +159,7 @@ export const openAiAdapter: ProviderAdapter = {
   },
 };
 
-export function finalizeCall(call: PartialCall): ToolCall {
+function finalizeCall(call: PartialCall): ToolCall {
   let args: Record<string, unknown> = {};
   if (call.args.trim()) {
     try {

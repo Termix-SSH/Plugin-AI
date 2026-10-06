@@ -4,7 +4,7 @@ import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { forwardingScript } from "./forwarding.js";
 import { AGENTS, shellQuote, type AgentKind } from "./types.js";
 
-export const PACKAGES: Record<AgentKind, string> = {
+const PACKAGES: Record<AgentKind, string> = {
   pi: "@earendil-works/pi-coding-agent",
   opencode: "opencode-ai",
   claude: "@anthropic-ai/claude-code",

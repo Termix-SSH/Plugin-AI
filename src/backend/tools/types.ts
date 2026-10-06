@@ -1,6 +1,6 @@
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 
-export type ToolCategory = "read" | "propose";
+type ToolCategory = "read" | "propose";
 
 /** What tools and the proposal executor reach core and other plugins through. */
 export type ToolDeps = Pick<
@@ -85,4 +85,4 @@ export function objectSchema(
 
 export const str = (description: string) => ({ type: "string", description });
 export const num = (description: string) => ({ type: "number", description });
-export const bool = (description: string) => ({ type: "boolean", description });
+const bool = (description: string) => ({ type: "boolean", description });

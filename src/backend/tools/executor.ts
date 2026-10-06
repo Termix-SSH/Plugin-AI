@@ -277,4 +277,4 @@ export async function runCommandOnHost(
  * Kinds the route handles itself rather than through applyProposal.
  * Empty: everything the assistant can propose can now be applied.
  */
-export const ROUTE_APPLIED_KINDS = new Set<string>();
+const ROUTE_APPLIED_KINDS = new Set<string>();

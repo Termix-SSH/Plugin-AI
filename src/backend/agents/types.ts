@@ -49,7 +49,7 @@ export function compatible(agent: AgentKind, providerType: string): boolean {
   );
 }
 /** MySQL stores plugin text as TEXT, which holds 65535 bytes. */
-export const MAX_TEXT_BYTES = 65535;
+const MAX_TEXT_BYTES = 65535;
 export function fitsText(value: string): boolean {
   return Buffer.byteLength(value, "utf8") <= MAX_TEXT_BYTES;
 }

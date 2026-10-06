@@ -7,7 +7,7 @@
 export type AiProviderType =
   "ollama" | "anthropic" | "openai" | "gemini" | "openai_compatible";
 
-export const AI_PROVIDER_TYPES: AiProviderType[] = [
+const AI_PROVIDER_TYPES: AiProviderType[] = [
   "ollama",
   "anthropic",
   "openai",
@@ -43,7 +43,7 @@ export interface ToolCall {
   providerSignature?: string;
 }
 
-export interface ToolDefinition {
+interface ToolDefinition {
   name: string;
   description: string;
   parameters: Record<string, unknown>;

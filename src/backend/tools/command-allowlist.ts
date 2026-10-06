@@ -8,7 +8,7 @@
  * redirect or substitute a second command rejects the whole string outright.
  */
 
-export const READ_ONLY_COMMANDS = new Set([
+const READ_ONLY_COMMANDS = new Set([
   "df",
   "du",
   "free",

@@ -6,7 +6,7 @@ import type {
   ProviderConfig,
 } from "./types.js";
 
-export const OLLAMA_DEFAULT_BASE = "http://localhost:11434";
+const OLLAMA_DEFAULT_BASE = "http://localhost:11434";
 
 function baseFor(config: ProviderConfig): string {
   return config.baseUrl?.trim() || OLLAMA_DEFAULT_BASE;

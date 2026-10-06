@@ -10,7 +10,7 @@ import { invokeAction, useHosts } from "@termix-ssh/plugin-sdk/frontend";
  * transcript rather than being silently attached to the prompt.
  */
 
-export type MentionKind = "host" | "snippet" | "automation";
+type MentionKind = "host" | "snippet" | "automation";
 
 export interface MentionItem {
   kind: MentionKind;

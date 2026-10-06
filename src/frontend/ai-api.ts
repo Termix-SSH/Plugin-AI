@@ -3,7 +3,7 @@ import { aiApp } from "./app-ref";
 /** Fired when the AI status may have changed, so every surface re-reads it. */
 export const AI_STATUS_CHANGED_EVENT = "termix-ai:status-changed";
 
-export function notifyAiStatusChanged(): void {
+function notifyAiStatusChanged(): void {
   window.dispatchEvent(new Event(AI_STATUS_CHANGED_EVENT));
 }
 
@@ -46,7 +46,7 @@ export interface AiProvider {
   createdAt: string;
 }
 
-export interface AiConversation {
+interface AiConversation {
   id: number;
   title: string | null;
   providerId: number | null;
@@ -55,7 +55,7 @@ export interface AiConversation {
   updatedAt: string;
 }
 
-export interface AiMessage {
+interface AiMessage {
   id: number;
   conversationId: number;
   role: "user" | "assistant" | "tool";
@@ -165,7 +165,7 @@ export async function getAiProviderModels(id: number): Promise<string[]> {
   }
 }
 
-export async function getAiConversations(): Promise<AiConversation[]> {
+async function getAiConversations(): Promise<AiConversation[]> {
   try {
     return (await api().get("/conversations")).data.conversations;
   } catch (error) {
@@ -173,7 +173,7 @@ export async function getAiConversations(): Promise<AiConversation[]> {
   }
 }
 
-export async function getAiConversation(id: number): Promise<{
+async function getAiConversation(id: number): Promise<{
   conversation: AiConversation;
   messages: AiMessage[];
   proposals: AiProposal[];
@@ -185,7 +185,7 @@ export async function getAiConversation(id: number): Promise<{
   }
 }
 
-export async function deleteAiConversation(id: number): Promise<void> {
+async function deleteAiConversation(id: number): Promise<void> {
   try {
     await api().delete(`/conversations/${id}`);
   } catch (error) {
