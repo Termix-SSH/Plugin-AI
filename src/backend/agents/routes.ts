@@ -49,6 +49,29 @@ const PROVIDER_PATHS = new Set([
   "/messages/count_tokens",
   "/models",
 ]);
+
+const GEMINI_OPENAI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/openai";
+
+/**
+ * Where agent requests go. Agents speak the OpenAI (or Anthropic) API, so a
+ * Gemini provider uses Google's OpenAI-compatible endpoint, not its own URL.
+ */
+export function agentBaseUrl(
+  providerType: string,
+  baseUrl: string | null,
+): string {
+  if (providerType === "gemini") {
+    return baseUrl && /\/openai\/?$/.test(baseUrl)
+      ? baseUrl
+      : GEMINI_OPENAI_URL;
+  }
+  if (baseUrl) return baseUrl;
+  return providerType === "anthropic"
+    ? "https://api.anthropic.com/v1"
+    : "https://api.openai.com/v1";
+}
+
 export function providerPath(raw: string): string | null {
   const url = new URL(raw, "http://localhost");
   const path = url.pathname.replace(/^\/v1(?=\/)/, "");
@@ -292,11 +315,7 @@ export function registerAgentRoutes(
               return;
             }
           }
-          const base =
-            current.baseUrl ||
-            (current.providerType === "anthropic"
-              ? "https://api.anthropic.com/v1"
-              : "https://api.openai.com/v1");
+          const base = agentBaseUrl(current.providerType, current.baseUrl);
           const headers: Record<string, string> = {
             "content-type": "application/json",
           };

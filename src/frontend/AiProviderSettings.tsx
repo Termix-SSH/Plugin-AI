@@ -2,7 +2,7 @@ import { getErrorMessage } from "./errors";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, Pencil, RefreshCw, Trash2, Sparkles } from "lucide-react";
 import {
   Button,
   Input,
@@ -13,6 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
   useConfirm,
+  AddButton,
+  Facts,
+  ListBadge,
+  ListRow,
+  ListRowAction,
 } from "@termix-ssh/plugin-sdk/ui";
 import {
   createAiProvider,
@@ -215,7 +220,13 @@ function AiProviderEditForm({
       </div>
 
       <div className="flex gap-2">
-        <Button size="sm" disabled={saving} onClick={() => void handleSave()}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={saving}
+          onClick={() => void handleSave()}
+          className="border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
+        >
           {saving && <Loader2 size={14} className="animate-spin" />}
           {t("ai.save")}
         </Button>
@@ -356,64 +367,62 @@ export function AiProviderSettings({
             onCancel={() => setEditingId(null)}
           />
         ) : (
-          <div
+          <ListRow
             key={provider.id}
-            className="flex items-center justify-between gap-2 rounded-none border border-border bg-muted px-3 py-2"
-          >
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium">
-                {provider.label}
-              </div>
-              <div className="flex gap-3 overflow-hidden whitespace-nowrap text-xs text-muted-foreground">
-                <span className="shrink-0">{provider.providerType}</span>
-                {provider.defaultModel && (
-                  <span className="truncate">{provider.defaultModel}</span>
-                )}
-                {provider.baseUrl && (
-                  <span className="truncate">{provider.baseUrl}</span>
-                )}
-                {provider.apiKeyPrefix && (
-                  <span className="shrink-0">{provider.apiKeyPrefix}…</span>
-                )}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setAdding(false);
-                  setEditingId(provider.id);
-                }}
-                aria-label={t("ai.editProvider")}
-              >
-                <Pencil size={14} />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => void handleDelete(provider.id, provider.label)}
-                aria-label={t("ai.removeProvider")}
-              >
-                <Trash2 size={14} />
-              </Button>
-            </div>
-          </div>
+            className="border border-border"
+            icon={<Sparkles />}
+            title={provider.label}
+            badges={
+              <ListBadge className="ml-auto">{provider.providerType}</ListBadge>
+            }
+            meta={
+              <Facts>
+                {provider.defaultModel ? (
+                  <span>{provider.defaultModel}</span>
+                ) : null}
+                {provider.baseUrl ? <span>{provider.baseUrl}</span> : null}
+                {provider.apiKeyPrefix ? (
+                  <span>{provider.apiKeyPrefix}…</span>
+                ) : null}
+              </Facts>
+            }
+            onClick={() => {
+              setAdding(false);
+              setEditingId(provider.id);
+            }}
+            actions={
+              <>
+                <ListRowAction
+                  label={t("ai.editProvider")}
+                  onClick={() => {
+                    setAdding(false);
+                    setEditingId(provider.id);
+                  }}
+                >
+                  <Pencil />
+                </ListRowAction>
+                <ListRowAction
+                  label={t("ai.removeProvider")}
+                  tone="destructive"
+                  onClick={() => void handleDelete(provider.id, provider.label)}
+                >
+                  <Trash2 />
+                </ListRowAction>
+              </>
+            }
+          />
         ),
       )}
 
       {!adding && (
-        <Button
-          size="sm"
-          variant="outline"
+        <AddButton
+          label={t("ai.addProvider")}
+          className="self-start"
           onClick={() => {
             setEditingId(null);
             setAdding(true);
           }}
-        >
-          <Plus size={14} />
-          {t("ai.addProvider")}
-        </Button>
+        />
       )}
 
       {adding && (

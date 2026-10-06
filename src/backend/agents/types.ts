@@ -44,9 +44,14 @@ export function compatible(agent: AgentKind, providerType: string): boolean {
   if (agent === "claude") return providerType === "anthropic";
   if (agent === "codex")
     return ["openai", "openai_compatible"].includes(providerType);
-  return ["openai", "openai_compatible", "anthropic", "ollama"].includes(
-    providerType,
-  );
+  // Gemini works through Google's OpenAI-compatible endpoint.
+  return [
+    "openai",
+    "openai_compatible",
+    "anthropic",
+    "ollama",
+    "gemini",
+  ].includes(providerType);
 }
 /** MySQL stores plugin text as TEXT, which holds 65535 bytes. */
 const MAX_TEXT_BYTES = 65535;

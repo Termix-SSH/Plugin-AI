@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
-import { Button, Input } from "@termix-ssh/plugin-sdk/ui";
+import { Button, Input, Select2 } from "@termix-ssh/plugin-sdk/ui";
 import { aiApp } from "../app-ref";
 import type { AgentAttachment, AgentSession } from "../../backend/agents/types";
 import type { SessionActions } from "./AgentComposer";
@@ -102,7 +102,7 @@ export function Attachments({
         {t("agents.pasteImage")}
       </div>
       {!!s.attachments?.length && (
-        <select
+        <Select2
           className="max-w-full rounded border bg-background p-1 text-sm"
           aria-label={t("agents.attachments")}
           value=""
@@ -118,7 +118,7 @@ export function Attachments({
               {a.name} ({a.size} B)
             </option>
           ))}
-        </select>
+        </Select2>
       )}
       <div className="flex flex-wrap gap-2">
         {selected.map((id) => (

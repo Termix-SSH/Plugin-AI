@@ -9,7 +9,10 @@ import {
   shellQuote,
   validStart,
 } from "../../../src/backend/agents/types.js";
-import { providerPath } from "../../../src/backend/agents/routes.js";
+import {
+  agentBaseUrl,
+  providerPath,
+} from "../../../src/backend/agents/routes.js";
 import { REMOTE_RUNNER } from "../../../src/backend/agents/remote-runner.js";
 
 // These run sh, git and agent binaries the way a remote Linux host does.
@@ -39,6 +42,25 @@ describe("remote agent boundaries", () => {
     expect(compatible("claude", "openai_compatible")).toBe(false);
     expect(compatible("pi", "openai_compatible")).toBe(true);
     expect(compatible("codex", "gemini")).toBe(false);
+    expect(compatible("pi", "gemini")).toBe(true);
+    expect(compatible("opencode", "gemini")).toBe(true);
+  });
+  it("sends Gemini agents to Google's OpenAI-compatible endpoint", () => {
+    const google = "https://generativelanguage.googleapis.com/v1beta/openai";
+    expect(agentBaseUrl("gemini", null)).toBe(google);
+    expect(
+      agentBaseUrl(
+        "gemini",
+        "https://generativelanguage.googleapis.com/v1beta",
+      ),
+    ).toBe(google);
+    expect(agentBaseUrl("gemini", "https://proxy.test/openai")).toBe(
+      "https://proxy.test/openai",
+    );
+    expect(agentBaseUrl("openai", null)).toBe("https://api.openai.com/v1");
+    expect(agentBaseUrl("anthropic", null)).toBe(
+      "https://api.anthropic.com/v1",
+    );
   });
   it("limits the reverse proxy to inference endpoints", () => {
     expect(providerPath("/v1/chat/completions")).toBe("/chat/completions");

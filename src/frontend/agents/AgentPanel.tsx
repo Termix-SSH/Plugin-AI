@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation, type TabProps } from "@termix-ssh/plugin-sdk/frontend";
-import { Button, Input } from "@termix-ssh/plugin-sdk/ui";
-import { Bot, Plus, Square, Play } from "lucide-react";
+import { Button, Input, Checkbox, Select2 } from "@termix-ssh/plugin-sdk/ui";
+import { Bot, Loader2, Plus, Square, Play } from "lucide-react";
 import { useAgentStream } from "./useAgentStream";
 import { SessionTools } from "./SessionTools";
 import { AgentComposer } from "./AgentComposer";
@@ -118,6 +118,15 @@ export function AgentPanel({ host, sshHost }: TabProps) {
     if (e.kind === "text" && last?.kind === "text") last.text += e.text;
     else transcript.push({ ...e });
   }
+  // A permission that is still unanswered means the agent waits on the user.
+  const awaitingAnswer = transcript.some(
+    (e) =>
+      e.kind === "permission" && !!e.requestId && !answered.has(e.requestId),
+  );
+  const working =
+    !!active &&
+    (active.status === "running" || active.status === "starting") &&
+    !awaitingAnswer;
   return (
     <div
       className="flex h-full min-h-0 flex-col bg-background text-foreground"
@@ -175,10 +184,9 @@ export function AgentPanel({ host, sshHost }: TabProps) {
             onChange={(e) => setSearch(e.target.value)}
           />
           <label className="my-2 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
+              onCheckedChange={(checked) => setShowArchived(checked === true)}
             />
             {t("agents.showArchived")}
           </label>
@@ -237,7 +245,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
             </p>
             <label className="block space-y-1">
               <span>{t("agents.runtime")}</span>
-              <select
+              <Select2
                 className="w-full rounded border bg-background p-2"
                 value={agent}
                 onChange={(e) => {
@@ -251,11 +259,11 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                     {names[a]}
                   </option>
                 ))}
-              </select>
+              </Select2>
             </label>
             <label className="block space-y-1">
               <span>{t("agents.provider")}</span>
-              <select
+              <Select2
                 required
                 className="w-full rounded border bg-background p-2"
                 value={providerId}
@@ -275,7 +283,20 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                       {p.label}
                     </option>
                   ))}
-              </select>
+              </Select2>
+              {providers.length > 0 &&
+                !providers.some((p) => compatible(agent, p.providerType)) && (
+                  <span className="block text-xs text-muted-foreground">
+                    {t("agents.noCompatibleProvider", {
+                      agent: names[agent],
+                    })}
+                  </span>
+                )}
+              {providers.length === 0 && (
+                <span className="block text-xs text-muted-foreground">
+                  {t("agents.noProviders")}
+                </span>
+              )}
             </label>
             <label className="block space-y-1">
               <span>{t("agents.model")}</span>
@@ -316,7 +337,12 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               busy={busy}
               setBusy={setBusy}
             />
-            <Button disabled={busy || !providerId || !model} type="submit">
+            <Button
+              variant="outline"
+              disabled={busy || !providerId || !model}
+              type="submit"
+              className="border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
+            >
               <Play size={14} />
               {t("agents.start")}
             </Button>
@@ -398,7 +424,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                           {e.text}
                         </pre>
                         {e.choices?.length ? (
-                          <select
+                          <Select2
                             className="w-full border bg-background p-2"
                             value={answers[e.requestId!] ?? ""}
                             onChange={(v) =>
@@ -412,7 +438,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                             {e.choices.map((c) => (
                               <option key={c}>{c}</option>
                             ))}
-                          </select>
+                          </Select2>
                         ) : (
                           <Input
                             placeholder={t("agents.answer")}
@@ -429,7 +455,12 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                           <Button
                             key={String(allow)}
                             size="sm"
-                            variant={allow ? "default" : "outline"}
+                            variant="outline"
+                            className={
+                              allow
+                                ? "border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand"
+                                : undefined
+                            }
                             disabled={answered.has(e.requestId!)}
                             onClick={() =>
                               void action(async () => {
@@ -467,6 +498,19 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                     )}
                   </div>
                 ))}
+              {working && (
+                <div
+                  role="status"
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <Loader2 className="size-3.5 animate-spin text-accent-brand" />
+                  {t(
+                    active?.status === "starting"
+                      ? "agents.startingIndicator"
+                      : "agents.working",
+                  )}
+                </div>
+              )}
               <div ref={bottom} />
             </div>
             <AgentComposer

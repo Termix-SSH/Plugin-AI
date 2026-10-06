@@ -206,7 +206,12 @@ export function AgentComposer({
               if (!e.repeat) e.currentTarget.form?.requestSubmit();
             }}
           />
-          <Button type="submit" disabled={!canSend}>
+          <Button
+            variant="outline"
+            type="submit"
+            disabled={!canSend}
+            className="border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
+          >
             {t(
               s.status === "running" || s.queue?.length
                 ? "agents.enqueue"

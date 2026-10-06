@@ -118,6 +118,10 @@
     "docsLink": "View docs"
   },
   "agents": {
+    "working": "Working...",
+    "startingIndicator": "Starting the agent...",
+    "noCompatibleProvider": "None of your AI providers work with {{agent}}. Claude Code needs Anthropic and Codex needs OpenAI.",
+    "noProviders": "Add an AI provider in Settings first.",
     "title": "AI Agent",
     "permissionTitle": "Run remote AI agents",
     "permissionDescription": "Start coding agents on SSH hosts using configured AI providers. Agents can execute commands and change files as the SSH user.",

@@ -133,7 +133,12 @@ export function SessionTools({
           </div>
         )}
         {worktree && (
-          <Button size="sm" onClick={() => onWorktree(worktree)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onWorktree(worktree)}
+            className="border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
+          >
             {t("agents.useWorktree")}
           </Button>
         )}

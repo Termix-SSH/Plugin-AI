@@ -327,6 +327,16 @@ export function AiPanel({ activeTab }: { activeTab?: string | null }) {
           );
         })}
 
+        {state.streaming && (
+          <div
+            role="status"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Loader2 className="size-3.5 animate-spin text-accent-brand" />
+            {t("agents.working")}
+          </div>
+        )}
+
         {state.error && (
           <div className="rounded-none border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {state.error}

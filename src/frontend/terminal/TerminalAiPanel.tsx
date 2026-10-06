@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
-import { Bot, GripVertical, Send, Square, X } from "lucide-react";
+import { Bot, GripVertical, Loader2, Send, Square, X } from "lucide-react";
 import { Button } from "@termix-ssh/plugin-sdk/ui";
 import { getAiProviders, type AiProposal, type AiProvider } from "../ai-api";
 import { AiMessage } from "../AiMessage";
@@ -287,6 +287,16 @@ export function TerminalAiPanel({
             {t("ai.noProvidersConfigured")}
           </div>
         )}
+        {state.streaming && (
+          <div
+            role="status"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Loader2 className="size-3.5 animate-spin text-accent-brand" />
+            {t("agents.working")}
+          </div>
+        )}
+
         {state.error && (
           <div className="border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
             {state.error}
@@ -340,9 +350,10 @@ export function TerminalAiPanel({
           disabled={state.streaming || providers.length === 0}
         />
         <Button
+          variant="outline"
           type="button"
           size="sm"
-          className="h-8 gap-1.5"
+          className="h-8 gap-1.5 border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
           disabled={state.streaming || !input.trim() || !providerId}
           onClick={handleSend}
         >
