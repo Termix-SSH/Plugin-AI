@@ -16,12 +16,6 @@ AI Assistant is a chat that can read your Termix setup and propose changes for y
 
 <br />
 
-## Install
-
-AI Assistant ships with [Termix](https://github.com/Termix-SSH/Termix). Admins can turn it on or off, update it or install it again from the Plugins tab. Want to see it first? Try the [demo](https://demo.termix.site/), any username and password works.
-
-<br />
-
 ## Features
 
 - Ask about your hosts, snippets, fleets, alerts, automations and more
