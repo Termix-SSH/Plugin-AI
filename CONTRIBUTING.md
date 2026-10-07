@@ -35,3 +35,9 @@ npm run format     # format the code with Prettier
 - `ai.services.use`: let other features call the assistant for you. Admins and users have it by default.
 - `ai.secrets.share`: let other features use the stored API key without seeing it. Admins and users have it by default.
 - `ai.agents`: run coding agents on SSH hosts. Only admins have it by default.
+
+## Services
+
+Uses from other plugins, each one optional:
+
+- `workspaces.saved`, `network-topology.graph`, `snippets.access`, `fleets.access`, `terminal.history`, `automations.access` and `homepage.items` to read your data

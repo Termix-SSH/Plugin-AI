@@ -27,14 +27,6 @@ AI Assistant is a chat that can read your Termix setup and propose changes for y
 
 <br />
 
-## Services
-
-Uses from other plugins, each one optional:
-
-- `workspaces.saved`, `network-topology.graph`, `snippets.access`, `fleets.access`, `terminal.history`, `automations.access` and `homepage.items` to read your data
-
-<br />
-
 ## Sponsors
 
 Interested in a paid placement to support development? Email [mail@termix.site](mailto:mail@termix.site).
