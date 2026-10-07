@@ -107,7 +107,7 @@
   },
   "onboarding": {
     "aiTitle": "AI assistant",
-    "aiIntro": "Termix can include an optional AI assistant. You can change this later in your settings.",
+    "aiIntro": "Termix can include an AI assistant. You can change this later in your settings.",
     "aiSkipTitle": "Leave it off",
     "aiSkipDesc": "Termix works as it does now. The assistant stays hidden.",
     "aiEnableTitle": "Turn it on",

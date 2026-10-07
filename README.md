@@ -4,7 +4,7 @@
 
 <h1>AI Assistant</h1>
 
-<p>An optional AI assistant that reads your setup and proposes changes for you to approve</p>
+<p>An AI assistant that reads your setup and proposes changes for you to approve</p>
 
 </div>
 

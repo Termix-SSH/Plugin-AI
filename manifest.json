@@ -2,7 +2,7 @@
   "id": "ai",
   "name": "AI Assistant",
   "version": "1.0.0",
-  "description": "An optional AI assistant that reads your setup and proposes changes for you to approve.",
+  "description": "An AI assistant that reads your setup and proposes changes for you to approve.",
   "author": {
     "name": "Termix"
   },
