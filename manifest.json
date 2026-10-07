@@ -10,6 +10,14 @@
   "repository": "https://github.com/Termix-SSH/Plugin-AI",
   "category": "Productivity",
   "icon": "Sparkles",
+  "features": [
+    "Ask about your hosts, snippets, fleets, alerts, automations and more",
+    "Proposes changes instead of making them, and nothing runs until you approve it",
+    "Can run safe read-only commands like df and uptime if you allow it",
+    "Ask about a host right from its terminal",
+    "Works with Ollama, Anthropic, OpenAI, Google Gemini and any OpenAI compatible endpoint",
+    "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider"
+  ],
   "engine": {
     "termix": ">=26.10.0",
     "api": "^1.1"
