@@ -8,7 +8,12 @@ import {
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { Bot, GripVertical, Loader2, Send, Square, X } from "lucide-react";
 import { Button } from "@termix-ssh/plugin-sdk/ui";
-import { getAiProviders, type AiProposal, type AiProvider } from "../ai-api";
+import {
+  AI_PROVIDERS_CHANGED_EVENT,
+  getAiProviders,
+  type AiProposal,
+  type AiProvider,
+} from "../ai-api";
 import { AiMessage } from "../AiMessage";
 import { AiToolCall } from "../AiToolCall";
 import {
@@ -151,20 +156,28 @@ export function TerminalAiPanel({
 
   useEffect(() => {
     let cancelled = false;
-    getAiProviders()
-      .then((list) => {
-        if (cancelled) return;
-        setProviders(list);
-        setProviderId((current) => current ?? list[0]?.id ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setProviders([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const load = () =>
+      getAiProviders()
+        .then((list) => {
+          if (cancelled) return;
+          setProviders(list);
+          setProviderId((current) =>
+            current && list.some((entry) => entry.id === current)
+              ? current
+              : (list[0]?.id ?? null),
+          );
+        })
+        .catch(() => {
+          if (!cancelled) setProviders([]);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    void load();
+    window.addEventListener(AI_PROVIDERS_CHANGED_EVENT, load);
     return () => {
       cancelled = true;
+      window.removeEventListener(AI_PROVIDERS_CHANGED_EVENT, load);
     };
   }, []);
 

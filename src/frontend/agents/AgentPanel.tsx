@@ -8,7 +8,12 @@ import { AgentComposer } from "./AgentComposer";
 import { InstallRuntime } from "./InstallRuntime";
 import { aiApp } from "../app-ref";
 import { AiMessage } from "../AiMessage";
-import { getAiProviders, type AiProvider } from "../ai-api";
+import {
+  AI_PROVIDERS_CHANGED_EVENT,
+  AI_STATUS_CHANGED_EVENT,
+  getAiProviders,
+  type AiProvider,
+} from "../ai-api";
 import {
   AGENTS,
   compatible,
@@ -52,17 +57,37 @@ export function AgentPanel({ host, sshHost }: TabProps) {
   const composing = useRef(false);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const loadProviders = useCallback(async () => {
+    const list = (await getAiProviders()).filter((x) => x.enabled);
+    setProviders(list);
+    // Drop a choice whose provider was removed or turned off.
+    setProviderId((id) => (list.some((p) => p.id === id) ? id : 0));
+  }, []);
+  // Loaded separately, so one failing never hides the other.
   const refresh = useCallback(async () => {
-    const [p, s] = await Promise.all([
-      getAiProviders(),
-      aiApp().api.get<{ sessions: AgentSession[] }>("/agents"),
+    const results = await Promise.allSettled([
+      loadProviders(),
+      aiApp()
+        .api.get<{ sessions: AgentSession[] }>("/agents")
+        .then((s) =>
+          setSessions(s.data.sessions.filter((x) => x.hostId === hostId)),
+        ),
     ]);
-    setProviders(p.filter((x) => x.enabled));
-    setSessions(s.data.sessions.filter((x) => x.hostId === hostId));
-  }, [hostId]);
+    const failed = results.find((r) => r.status === "rejected");
+    if (failed) throw (failed as PromiseRejectedResult).reason;
+  }, [hostId, loadProviders]);
   useEffect(() => {
     void refresh().catch((e) => setError(message(e)));
   }, [refresh]);
+  // The tab stays mounted, so pick up providers added in settings meanwhile.
+  useEffect(() => {
+    const reload = () => void loadProviders().catch(() => {});
+    const events = [AI_PROVIDERS_CHANGED_EVENT, AI_STATUS_CHANGED_EVENT];
+    for (const event of events) window.addEventListener(event, reload);
+    return () => {
+      for (const event of events) window.removeEventListener(event, reload);
+    };
+  }, [loadProviders]);
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
   }, [events]);
@@ -202,7 +227,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
             .map((s) => (
               <button
                 key={s.id}
-                className={`mb-1 block w-full rounded p-2 text-left text-sm hover:bg-muted ${active?.id === s.id ? "bg-muted" : ""}`}
+                className={`block w-full border-b border-border/40 px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50 ${active?.id === s.id ? "bg-accent-brand/10" : ""}`}
                 onClick={() => void select(s.id)}
               >
                 <div>{s.title || `${names[s.agent]} · ${s.model}`}</div>
@@ -244,9 +269,11 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               {t("agents.description")}
             </p>
             <label className="block space-y-1">
-              <span>{t("agents.runtime")}</span>
+              <span className="block text-xs font-medium">
+                {t("agents.runtime")}
+              </span>
               <Select2
-                className="w-full rounded border bg-background p-2"
+                className="h-8 text-xs"
                 value={agent}
                 onChange={(e) => {
                   setAgent(e.target.value as AgentKind);
@@ -262,10 +289,12 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               </Select2>
             </label>
             <label className="block space-y-1">
-              <span>{t("agents.provider")}</span>
+              <span className="block text-xs font-medium">
+                {t("agents.provider")}
+              </span>
               <Select2
                 required
-                className="w-full rounded border bg-background p-2"
+                className="h-8 text-xs"
                 value={providerId}
                 onChange={(e) => {
                   const id = Number(e.target.value);
@@ -299,7 +328,9 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               )}
             </label>
             <label className="block space-y-1">
-              <span>{t("agents.model")}</span>
+              <span className="block text-xs font-medium">
+                {t("agents.model")}
+              </span>
               <Input
                 required
                 value={model}
@@ -307,7 +338,9 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               />
             </label>
             <label className="block space-y-1">
-              <span>{t("agents.directory")}</span>
+              <span className="block text-xs font-medium">
+                {t("agents.directory")}
+              </span>
               <Input
                 required
                 value={cwd}
@@ -315,7 +348,9 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               />
             </label>
             <label className="block space-y-1">
-              <span>{t("agents.executable")}</span>
+              <span className="block text-xs font-medium">
+                {t("agents.executable")}
+              </span>
               <Input
                 placeholder={agent}
                 value={executable}
@@ -418,14 +453,14 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                         content={e.text}
                       />
                     ) : e.kind === "permission" ? (
-                      <div className="space-y-2 rounded border p-3">
+                      <div className="space-y-2 border border-border p-3">
                         <strong>{t("agents.approval")}</strong>
                         <pre className="max-h-48 overflow-auto whitespace-pre-wrap text-xs">
                           {e.text}
                         </pre>
                         {e.choices?.length ? (
                           <Select2
-                            className="w-full border bg-background p-2"
+                            className="h-8 text-xs"
                             value={answers[e.requestId!] ?? ""}
                             onChange={(v) =>
                               setAnswers((a) => ({
@@ -481,7 +516,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                         ))}
                       </div>
                     ) : e.kind === "tool" ? (
-                      <details className="rounded border p-2 text-xs">
+                      <details className="border border-border p-2 text-xs">
                         <summary className="cursor-pointer">
                           {t("agents.tool")}
                         </summary>

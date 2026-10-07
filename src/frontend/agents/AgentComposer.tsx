@@ -92,7 +92,7 @@ export function AgentComposer({
             </Button>
           </div>
           {s.queue.map((p) => (
-            <div key={p.id} className="rounded border p-2 text-sm">
+            <div key={p.id} className="border border-border p-2 text-sm">
               {editing === p.id ? (
                 <Textarea
                   aria-label={t("agents.editQueued")}

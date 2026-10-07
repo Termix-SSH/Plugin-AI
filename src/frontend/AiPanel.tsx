@@ -11,6 +11,7 @@ import {
   Textarea,
 } from "@termix-ssh/plugin-sdk/ui";
 import {
+  AI_PROVIDERS_CHANGED_EVENT,
   getAiProviders,
   getAiStatus,
   setAiOptIn,
@@ -111,6 +112,12 @@ export function AiPanel({ activeTab }: { activeTab?: string | null }) {
       return [];
     }
   }, []);
+
+  useEffect(() => {
+    const reload = () => void loadProviders();
+    window.addEventListener(AI_PROVIDERS_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(AI_PROVIDERS_CHANGED_EVENT, reload);
+  }, [loadProviders]);
 
   useEffect(() => {
     let cancelled = false;

@@ -143,7 +143,7 @@ export function SessionTools({
           </Button>
         )}
         {result && (
-          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded border p-2 text-xs">
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap border border-border p-2 text-xs">
             {result}
           </pre>
         )}

@@ -103,7 +103,7 @@ export function Attachments({
       </div>
       {!!s.attachments?.length && (
         <Select2
-          className="max-w-full rounded border bg-background p-1 text-sm"
+          className="h-8 max-w-full text-xs"
           aria-label={t("agents.attachments")}
           value=""
           disabled={busy || selected.length >= 4}

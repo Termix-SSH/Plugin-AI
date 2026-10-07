@@ -7,6 +7,13 @@ function notifyAiStatusChanged(): void {
   window.dispatchEvent(new Event(AI_STATUS_CHANGED_EVENT));
 }
 
+/** Fired after a provider is added, edited or removed. */
+export const AI_PROVIDERS_CHANGED_EVENT = "termix-ai:providers-changed";
+
+function notifyProvidersChanged(): void {
+  window.dispatchEvent(new Event(AI_PROVIDERS_CHANGED_EVENT));
+}
+
 /** The server's own message when it sent one, so the user sees why. */
 function apiError(error: unknown, action: string): Error {
   const data = (error as { response?: { data?: { error?: unknown } } })
@@ -105,7 +112,9 @@ export async function createAiProvider(input: {
   defaultModel?: string | null;
 }): Promise<AiProvider> {
   try {
-    return (await api().post("/providers", input)).data.provider;
+    const provider = (await api().post("/providers", input)).data.provider;
+    notifyProvidersChanged();
+    return provider;
   } catch (error) {
     throw apiError(error, "create AI provider");
   }
@@ -122,7 +131,10 @@ export async function updateAiProvider(
   }>,
 ): Promise<AiProvider> {
   try {
-    return (await api().patch(`/providers/${id}`, input)).data.provider;
+    const provider = (await api().patch(`/providers/${id}`, input)).data
+      .provider;
+    notifyProvidersChanged();
+    return provider;
   } catch (error) {
     throw apiError(error, "update AI provider");
   }
@@ -131,6 +143,7 @@ export async function updateAiProvider(
 export async function deleteAiProvider(id: number): Promise<void> {
   try {
     await api().delete(`/providers/${id}`);
+    notifyProvidersChanged();
   } catch (error) {
     throw apiError(error, "delete AI provider");
   }

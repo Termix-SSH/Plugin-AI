@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSettings, useTranslation } from "@termix-ssh/plugin-sdk/frontend";
+import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { AiProviderSettings } from "../AiProviderSettings";
+import { aiApp } from "../app-ref";
 import {
+  AI_PROVIDERS_CHANGED_EVENT,
   AI_STATUS_CHANGED_EVENT,
   getAiProviders,
   getAiStatus,
@@ -19,14 +21,12 @@ export function ProvidersSetting() {
     enabled: boolean;
   } | null>(null);
   const [providers, setProviders] = useState<AiProvider[]>([]);
-  // Re-read when the "enabled" switch above this field is saved.
-  const optedIn = useSettings("user").values.enabled;
 
   const load = useCallback(async () => {
     try {
       const next = await getAiStatus();
+      setProviders(next.enabled ? await getAiProviders() : []);
       setStatus(next);
-      if (next.enabled) setProviders(await getAiProviders());
     } catch {
       setStatus({ globallyEnabled: false, enabled: false });
     }
@@ -34,26 +34,36 @@ export function ProvidersSetting() {
 
   useEffect(() => {
     void load();
-  }, [load, optedIn]);
-
-  useEffect(() => {
-    window.addEventListener(AI_STATUS_CHANGED_EVENT, load);
-    return () => window.removeEventListener(AI_STATUS_CHANGED_EVENT, load);
+    // Saving the "enabled" switch above this field is what opts in.
+    const stop = aiApp().onSettingsChanged(() => void load());
+    const events = [AI_STATUS_CHANGED_EVENT, AI_PROVIDERS_CHANGED_EVENT];
+    for (const event of events) window.addEventListener(event, load);
+    return () => {
+      stop();
+      for (const event of events) window.removeEventListener(event, load);
+    };
   }, [load]);
 
   if (status === null) return null;
 
-  if (!status.enabled) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        {status.globallyEnabled
-          ? t("settings.providersNeedOptIn")
-          : t("settings.assistantUnavailable")}
-      </p>
-    );
-  }
-
   return (
-    <AiProviderSettings providers={providers} onChanged={() => void load()} />
+    <div className="flex min-w-0 flex-col gap-1.5 border-b border-border py-3 last:border-0">
+      <span className="text-sm font-medium leading-snug">
+        {t("settings.providers.label")}
+      </span>
+      <span className="text-xs leading-snug text-muted-foreground">
+        {status.enabled
+          ? t("settings.providers.description")
+          : status.globallyEnabled
+            ? t("settings.providersNeedOptIn")
+            : t("settings.assistantUnavailable")}
+      </span>
+      {status.enabled && (
+        <AiProviderSettings
+          providers={providers}
+          onChanged={() => void load()}
+        />
+      )}
+    </div>
   );
 }

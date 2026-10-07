@@ -19,6 +19,8 @@ vi.mock("../../src/frontend/app-ref", () => ({
   aiApp: () => ({ api: mocks, fetch: mocks.fetch }),
 }));
 vi.mock("../../src/frontend/ai-api", () => ({
+  AI_PROVIDERS_CHANGED_EVENT: "termix-ai:providers-changed",
+  AI_STATUS_CHANGED_EVENT: "termix-ai:status-changed",
   getAiProviders: async () => [],
 }));
 vi.mock("react-i18next", async (original) => ({

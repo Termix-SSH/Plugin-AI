@@ -24,6 +24,10 @@
   "settings": {
     "assistantUnavailable": "The AI assistant is turned off on this server.",
     "providersNeedOptIn": "Turn on the AI assistant above to add providers.",
+    "providers": {
+      "label": "Providers",
+      "description": "The AI services the assistant and agents can use."
+    },
     "admin": {
       "globallyEnabled": {
         "label": "AI assistant",

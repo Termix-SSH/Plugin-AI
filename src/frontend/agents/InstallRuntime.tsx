@@ -76,7 +76,7 @@ export function InstallRuntime({
     }
   }
   return (
-    <div className="space-y-2 rounded border p-3">
+    <div className="space-y-2 border border-border p-3">
       <p className="text-xs text-muted-foreground">
         {t("agents.installSource")}
       </p>
