@@ -1,33 +1,49 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation, type TabProps } from "@termix-ssh/plugin-sdk/frontend";
-import { Button, Input, Checkbox, Select2 } from "@termix-ssh/plugin-sdk/ui";
-import { Bot, Loader2, Plus, Square, Play } from "lucide-react";
+import {
+  AddButton,
+  Button,
+  ListBadge,
+  ListRow,
+  PanelList,
+  PanelSearch,
+  PanelShell,
+  Segmented,
+  useIsMobile,
+} from "@termix-ssh/plugin-sdk/ui";
+import {
+  AlertCircle,
+  Bot,
+  GitBranch,
+  Loader2,
+  Play,
+  Square,
+  X,
+} from "lucide-react";
 import { useAgentStream } from "./useAgentStream";
-import { SessionTools } from "./SessionTools";
+import { ReviewPane, SessionTitle } from "./SessionTools";
 import { AgentComposer } from "./AgentComposer";
-import { InstallRuntime } from "./InstallRuntime";
+import { AgentTranscript } from "./AgentTranscript";
+import { NewSessionForm, type NewSessionDraft } from "./NewSessionForm";
+import { agentNames, statusTone } from "./agent-labels";
 import { aiApp } from "../app-ref";
-import { AiMessage } from "../AiMessage";
+import { docsUrl } from "../docs";
 import {
   AI_PROVIDERS_CHANGED_EVENT,
   AI_STATUS_CHANGED_EVENT,
   getAiProviders,
   type AiProvider,
 } from "../ai-api";
-import {
-  AGENTS,
-  compatible,
-  type AgentEvent,
-  type AgentKind,
-  type AgentSession,
-} from "../../backend/agents/types";
+import type { AgentEvent, AgentSession } from "../../backend/agents/types";
 
-const names: Record<AgentKind, string> = {
-  pi: "Pi",
-  opencode: "OpenCode",
-  claude: "Claude Code",
-  codex: "Codex",
+const blankDraft: NewSessionDraft = {
+  agent: "pi",
+  providerId: 0,
+  model: "",
+  cwd: "/tmp",
+  executable: "",
 };
+
 function message(error: unknown): string {
   const e = error as {
     response?: { data?: { error?: string } };
@@ -35,33 +51,31 @@ function message(error: unknown): string {
   };
   return e.response?.data?.error || e.message || "Agent request failed";
 }
+
 export function AgentPanel({ host, sshHost }: TabProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const target = host ?? sshHost;
   const hostId = Number(target?.id);
   const [providers, setProviders] = useState<AiProvider[]>([]),
     [sessions, setSessions] = useState<AgentSession[]>([]);
-  const [agent, setAgent] = useState<AgentKind>("pi"),
-    [providerId, setProviderId] = useState(0),
-    [model, setModel] = useState("");
-  const [cwd, setCwd] = useState("/tmp"),
-    [executable, setExecutable] = useState("");
+  const [draft, setDraft] = useState<NewSessionDraft>(blankDraft);
   const [active, setActive] = useState<AgentSession | null>(null),
     [events, setEvents] = useState<AgentEvent[]>([]);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({}),
-    [answered, setAnswered] = useState<Set<string>>(new Set());
   const [generation, setGeneration] = useState(0);
-  const bottom = useRef<HTMLDivElement>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const composing = useRef(false);
   const [search, setSearch] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useState<"active" | "archived">("active");
   const loadProviders = useCallback(async () => {
     const list = (await getAiProviders()).filter((x) => x.enabled);
     setProviders(list);
     // Drop a choice whose provider was removed or turned off.
-    setProviderId((id) => (list.some((p) => p.id === id) ? id : 0));
+    setDraft((d) =>
+      list.some((p) => p.id === d.providerId) ? d : { ...d, providerId: 0 },
+    );
   }, []);
   // Loaded separately, so one failing never hides the other.
   const refresh = useCallback(async () => {
@@ -88,9 +102,6 @@ export function AgentPanel({ host, sshHost }: TabProps) {
       for (const event of events) window.removeEventListener(event, reload);
     };
   }, [loadProviders]);
-  useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
-  }, [events]);
   const activeId = active?.id;
   const connection = useAgentStream(
     activeId,
@@ -131,27 +142,29 @@ export function AgentPanel({ host, sshHost }: TabProps) {
       const r = await aiApp().api.get<AgentSession>(`/agents/${id}`);
       setActive(r.data);
       setEvents(r.data.events);
-      setAnswered(new Set());
     });
   }
   async function input(body: unknown) {
     if (active) await aiApp().api.post(`/agents/${active.id}/input`, body);
   }
-  const transcript: AgentEvent[] = [];
-  for (const e of events) {
-    const last = transcript.at(-1);
-    if (e.kind === "text" && last?.kind === "text") last.text += e.text;
-    else transcript.push({ ...e });
+  function startNew(next: NewSessionDraft = blankDraft) {
+    setDraft(next);
+    setActive(null);
+    setEvents([]);
+    setReviewOpen(false);
+    void refresh().catch((e) => setError(message(e)));
   }
-  // A permission that is still unanswered means the agent waits on the user.
-  const awaitingAnswer = transcript.some(
-    (e) =>
-      e.kind === "permission" && !!e.requestId && !answered.has(e.requestId),
+
+  const visible = sessions.filter(
+    (s) =>
+      !!s.archived === (view === "archived") &&
+      [s.title, s.model, s.cwd]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
-  const working =
-    !!active &&
-    (active.status === "running" || active.status === "starting") &&
-    !awaitingAnswer;
+  const archivedCount = sessions.filter((s) => s.archived).length;
+
   return (
     <div
       className="flex h-full min-h-0 flex-col bg-background text-foreground"
@@ -172,395 +185,261 @@ export function AgentPanel({ host, sshHost }: TabProps) {
         void action(() => input({ type: "cancel" }));
       }}
     >
-      <header className="flex items-center gap-2 border-b p-3">
-        <Bot size={18} />
-        <strong>{t("agents.title")}</strong>
-        <span className="text-muted-foreground">
-          {String(target?.name ?? target?.ip ?? "")}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="ml-auto"
-          onClick={() => {
-            setActive(null);
-            setEvents([]);
-            void refresh();
-          }}
-        >
-          <Plus size={14} />
-          {t("agents.new")}
-        </Button>
-      </header>
-      {error && (
+      <PanelShell
+        icon={<Bot className="size-4" />}
+        title={t("agents.title")}
+        status={String(target?.name || target?.ip || "")}
+        docs={docsUrl()}
+        scroll={false}
+      >
         <div
-          role="alert"
-          className="m-3 whitespace-pre-wrap border border-destructive p-3 text-sm text-destructive"
+          className={`flex min-h-0 flex-1 ${isMobile ? "flex-col" : "flex-row"}`}
         >
-          {error}
-        </div>
-      )}
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <aside className="max-h-40 overflow-auto border-b p-2 md:max-h-none md:w-56 md:border-r">
-          <Input
-            aria-label={t("agents.search")}
-            placeholder={t("agents.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <label className="my-2 flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={showArchived}
-              onCheckedChange={(checked) => setShowArchived(checked === true)}
-            />
-            {t("agents.showArchived")}
-          </label>
-          {sessions
-            .filter(
-              (s) =>
-                !!s.archived === showArchived &&
-                [s.title, s.model, s.cwd]
-                  .join(" ")
-                  .toLowerCase()
-                  .includes(search.toLowerCase()),
-            )
-            .map((s) => (
-              <button
-                key={s.id}
-                className={`block w-full border-b border-border/40 px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50 ${active?.id === s.id ? "bg-accent-brand/10" : ""}`}
-                onClick={() => void select(s.id)}
-              >
-                <div>{s.title || `${names[s.agent]} · ${s.model}`}</div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {s.cwd}
-                </div>
-              </button>
-            ))}
-          {!sessions.length && (
-            <p className="p-2 text-sm text-muted-foreground">
-              {t("agents.noSessions")}
-            </p>
-          )}
-        </aside>
-        {!active ? (
-          <form
-            className="mx-auto w-full max-w-xl space-y-4 overflow-auto p-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void action(async () => {
-                const r = await aiApp().api.post<{ id: string }>("/agents", {
-                  hostId,
-                  agent,
-                  providerId,
-                  model,
-                  cwd,
-                  executable: executable || undefined,
-                });
-                const s = await aiApp().api.get<AgentSession>(
-                  `/agents/${r.data.id}`,
-                );
-                setActive(s.data);
-                setEvents(s.data.events);
-                await refresh();
-              });
-            }}
+          <aside
+            className={`flex shrink-0 flex-col border-border ${isMobile ? "max-h-56 border-b" : "w-64 border-r"}`}
           >
-            <p className="text-sm text-muted-foreground">
-              {t("agents.description")}
-            </p>
-            <label className="block space-y-1">
-              <span className="block text-xs font-medium">
-                {t("agents.runtime")}
-              </span>
-              <Select2
-                className="h-8 text-xs"
-                value={agent}
-                onChange={(e) => {
-                  setAgent(e.target.value as AgentKind);
-                  setProviderId(0);
-                  setModel("");
-                }}
-              >
-                {AGENTS.map((a) => (
-                  <option key={a} value={a}>
-                    {names[a]}
-                  </option>
-                ))}
-              </Select2>
-            </label>
-            <label className="block space-y-1">
-              <span className="block text-xs font-medium">
-                {t("agents.provider")}
-              </span>
-              <Select2
-                required
-                className="h-8 text-xs"
-                value={providerId}
-                onChange={(e) => {
-                  const id = Number(e.target.value);
-                  setProviderId(id);
-                  setModel(
-                    providers.find((p) => p.id === id)?.defaultModel ?? "",
-                  );
-                }}
-              >
-                <option value={0}>{t("agents.chooseProvider")}</option>
-                {providers
-                  .filter((p) => compatible(agent, p.providerType))
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-              </Select2>
-              {providers.length > 0 &&
-                !providers.some((p) => compatible(agent, p.providerType)) && (
-                  <span className="block text-xs text-muted-foreground">
-                    {t("agents.noCompatibleProvider", {
-                      agent: names[agent],
-                    })}
-                  </span>
-                )}
-              {providers.length === 0 && (
-                <span className="block text-xs text-muted-foreground">
-                  {t("agents.noProviders")}
-                </span>
-              )}
-            </label>
-            <label className="block space-y-1">
-              <span className="block text-xs font-medium">
-                {t("agents.model")}
-              </span>
-              <Input
-                required
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
+            <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+              <PanelSearch
+                fill
+                value={search}
+                onChange={setSearch}
+                placeholder={t("agents.search")}
               />
-            </label>
-            <label className="block space-y-1">
-              <span className="block text-xs font-medium">
-                {t("agents.directory")}
-              </span>
-              <Input
-                required
-                value={cwd}
-                onChange={(e) => setCwd(e.target.value)}
+              <AddButton
+                compact
+                label={t("agents.new")}
+                onClick={() => startNew()}
               />
-            </label>
-            <label className="block space-y-1">
-              <span className="block text-xs font-medium">
-                {t("agents.executable")}
-              </span>
-              <Input
-                placeholder={agent}
-                value={executable}
-                onChange={(e) => setExecutable(e.target.value)}
+            </div>
+            <div className="shrink-0 border-b border-border px-3 py-2">
+              <Segmented
+                className="w-full [&>button]:flex-1"
+                value={view}
+                onChange={(next) => setView(next as "active" | "archived")}
+                options={[
+                  {
+                    value: "active",
+                    label: t("agents.activeSessions"),
+                    count: sessions.length - archivedCount,
+                  },
+                  {
+                    value: "archived",
+                    label: t("agents.archivedSessions"),
+                    count: archivedCount,
+                  },
+                ]}
               />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              {t("agents.requirements")}
-            </p>
-            {agent === "codex" && (
-              <p className="text-sm">{t("agents.responsesRequired")}</p>
-            )}
-            {agent === "pi" && (
-              <p className="text-sm">{t("agents.piPermissions")}</p>
-            )}
-            <InstallRuntime
-              hostId={hostId}
-              agent={agent}
-              busy={busy}
-              setBusy={setBusy}
-            />
-            <Button
-              variant="outline"
-              disabled={busy || !providerId || !model}
-              type="submit"
-              className="border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand dark:border-accent-brand/40 dark:bg-transparent dark:hover:bg-accent-brand/10"
+            </div>
+            <PanelList
+              empty={
+                <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+                  {t("agents.noSessions")}
+                </p>
+              }
             >
-              <Play size={14} />
-              {t("agents.start")}
-            </Button>
-          </form>
-        ) : (
-          <section className="flex min-h-0 flex-1 flex-col">
-            {connection !== "connected" && (
-              <p role="status" className="p-2 text-sm">
-                {t(`agents.${connection}`)}
-              </p>
+              {visible.map((s, i) => (
+                <ListRow
+                  key={s.id}
+                  stripe={i}
+                  tone={statusTone[s.status] ?? "muted"}
+                  selected={active?.id === s.id}
+                  title={s.title || `${agentNames[s.agent]} · ${s.model}`}
+                  meta={<span className="font-mono">{s.cwd}</span>}
+                  badges={
+                    s.status === "running" || s.status === "starting" ? (
+                      <Loader2 className="size-3 shrink-0 animate-spin text-accent-brand" />
+                    ) : undefined
+                  }
+                  onClick={() => void select(s.id)}
+                />
+              ))}
+            </PanelList>
+          </aside>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {error && (
+              <div className="flex shrink-0 items-start gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                <AlertCircle className="mt-px size-3.5 shrink-0" />
+                <div
+                  role="alert"
+                  className="min-w-0 flex-1 whitespace-pre-wrap"
+                >
+                  {error}
+                </div>
+                <button
+                  type="button"
+                  aria-label={t("agents.dismiss")}
+                  title={t("agents.dismiss")}
+                  className="shrink-0 opacity-70 hover:opacity-100"
+                  onClick={() => setError("")}
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             )}
-            <SessionTools
-              onWorktree={(path) => {
-                setCwd(path);
-                setAgent(active.agent);
-                setProviderId(active.providerId);
-                setModel(active.model);
-                setExecutable(active.executable);
-                setActive(null);
-                setEvents([]);
-              }}
-              key={`tools-${active.id}`}
-              session={active}
-              busy={busy}
-              action={action}
-              onUpdated={async (s) => {
-                setActive(s);
-                await refresh();
-              }}
-            />
-            <div className="flex flex-wrap items-center gap-2 border-b p-2 text-sm">
-              <span>
-                {names[active.agent]} · {active.model} · {active.cwd} ·{" "}
-                {t(`agents.status.${active.status}`)}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy || active.archived}
-                onClick={() =>
+            {!active ? (
+              <NewSessionForm
+                hostId={hostId}
+                providers={providers}
+                draft={draft}
+                onDraft={setDraft}
+                busy={busy}
+                setBusy={setBusy}
+                onStart={() =>
                   void action(async () => {
-                    await aiApp().api.post(`/agents/${active.id}/resume`);
-                    setActive({ ...active, status: "starting" });
-                    setGeneration((x) => x + 1);
-                  })
-                }
-              >
-                {t("agents.resume")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  void action(async () => {
-                    await aiApp().api.post(`/agents/${active.id}/stop`);
-                    setActive({ ...active, status: "stopped" });
+                    const r = await aiApp().api.post<{ id: string }>(
+                      "/agents",
+                      {
+                        hostId,
+                        agent: draft.agent,
+                        providerId: draft.providerId,
+                        model: draft.model,
+                        cwd: draft.cwd,
+                        executable: draft.executable || undefined,
+                      },
+                    );
+                    const s = await aiApp().api.get<AgentSession>(
+                      `/agents/${r.data.id}`,
+                    );
+                    setActive(s.data);
+                    setEvents(s.data.events);
                     await refresh();
                   })
                 }
-              >
-                <Square size={12} />
-                {t("agents.stop")}
-              </Button>
-            </div>
-            <div className="min-h-0 flex-1 space-y-3 overflow-auto p-4">
-              {transcript
-                .filter((e) => e.kind !== "state")
-                .map((e) => (
-                  <div key={e.seq}>
-                    {e.kind === "text" || e.kind === "user" ? (
-                      <AiMessage
-                        role={e.kind === "user" ? "user" : "assistant"}
-                        content={e.text}
-                      />
-                    ) : e.kind === "permission" ? (
-                      <div className="space-y-2 border border-border p-3">
-                        <strong>{t("agents.approval")}</strong>
-                        <pre className="max-h-48 overflow-auto whitespace-pre-wrap text-xs">
-                          {e.text}
-                        </pre>
-                        {e.choices?.length ? (
-                          <Select2
-                            className="h-8 text-xs"
-                            value={answers[e.requestId!] ?? ""}
-                            onChange={(v) =>
-                              setAnswers((a) => ({
-                                ...a,
-                                [e.requestId!]: v.target.value,
-                              }))
-                            }
-                          >
-                            <option value="">{t("agents.answer")}</option>
-                            {e.choices.map((c) => (
-                              <option key={c}>{c}</option>
-                            ))}
-                          </Select2>
-                        ) : (
-                          <Input
-                            placeholder={t("agents.answer")}
-                            value={answers[e.requestId!] ?? ""}
-                            onChange={(v) =>
-                              setAnswers((a) => ({
-                                ...a,
-                                [e.requestId!]: v.target.value,
-                              }))
-                            }
-                          />
-                        )}
-                        {[true, false].map((allow) => (
-                          <Button
-                            key={String(allow)}
-                            size="sm"
-                            variant="outline"
-                            className={
-                              allow
-                                ? "border-accent-brand/40 text-accent-brand hover:bg-accent-brand/10 hover:text-accent-brand"
-                                : undefined
-                            }
-                            disabled={answered.has(e.requestId!)}
-                            onClick={() =>
-                              void action(async () => {
-                                await input({
-                                  type: "answer",
-                                  requestId: e.requestId,
-                                  allow,
-                                  value: answers[e.requestId!],
-                                });
-                                setAnswered(
-                                  (a) => new Set([...a, e.requestId!]),
-                                );
-                              })
-                            }
-                          >
-                            {t(allow ? "agents.allow" : "agents.deny")}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : e.kind === "tool" ? (
-                      <details className="border border-border p-2 text-xs">
-                        <summary className="cursor-pointer">
-                          {t("agents.tool")}
-                        </summary>
-                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap">
-                          {e.text}
-                        </pre>
-                      </details>
+              />
+            ) : (
+              <>
+                <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+                  <SessionTitle
+                    key={`title-${active.id}`}
+                    session={active}
+                    busy={busy}
+                    action={action}
+                    onUpdated={async (s) => {
+                      setActive(s);
+                      await refresh();
+                    }}
+                  />
+                  <ListBadge tone={statusTone[active.status] ?? "muted"}>
+                    {t(`agents.status.${active.status}`)}
+                  </ListBadge>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-pressed={reviewOpen}
+                      className={
+                        reviewOpen
+                          ? "bg-accent-brand/10 text-accent-brand hover:bg-accent-brand/15 hover:text-accent-brand"
+                          : "text-muted-foreground"
+                      }
+                      onClick={() => setReviewOpen((x) => !x)}
+                    >
+                      <GitBranch />
+                      {t("agents.changes")}
+                    </Button>
+                    {active.status === "stopped" ||
+                    active.status === "error" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || active.archived}
+                        onClick={() =>
+                          void action(async () => {
+                            await aiApp().api.post(
+                              `/agents/${active.id}/resume`,
+                            );
+                            setActive({ ...active, status: "starting" });
+                            setGeneration((x) => x + 1);
+                          })
+                        }
+                      >
+                        <Play />
+                        {t("agents.resume")}
+                      </Button>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {e.kind === "status"
-                          ? t(`agents.status.${e.text}`)
-                          : e.text}
-                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                          void action(async () => {
+                            await aiApp().api.post(`/agents/${active.id}/stop`);
+                            setActive({ ...active, status: "stopped" });
+                            await refresh();
+                          })
+                        }
+                      >
+                        <Square />
+                        {t("agents.stop")}
+                      </Button>
                     )}
                   </div>
-                ))}
-              {working && (
-                <div
-                  role="status"
-                  className="flex items-center gap-2 text-xs text-muted-foreground"
-                >
-                  <Loader2 className="size-3.5 animate-spin text-accent-brand" />
-                  {t(
-                    active?.status === "starting"
-                      ? "agents.startingIndicator"
-                      : "agents.working",
+                </div>
+                <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
+                  <span>{agentNames[active.agent]}</span>
+                  <span aria-hidden className="h-3 w-px bg-border" />
+                  <span className="truncate">{active.model}</span>
+                  <span aria-hidden className="h-3 w-px bg-border" />
+                  <span className="min-w-0 truncate font-mono">
+                    {active.cwd}
+                  </span>
+                  {connection !== "connected" && (
+                    <span
+                      role="status"
+                      className="ml-auto flex shrink-0 items-center gap-1.5 text-warning"
+                    >
+                      <Loader2 className="size-3 animate-spin" />
+                      {t(`agents.${connection}`)}
+                    </span>
                   )}
                 </div>
-              )}
-              <div ref={bottom} />
-            </div>
-            <AgentComposer
-              key={`composer-${active.id}`}
-              session={active}
-              busy={busy}
-              action={action}
-              onComposition={(value) => {
-                composing.current = value;
-              }}
-              onUpdated={setActive}
-            />
-          </section>
-        )}
-      </div>
+                <div className="flex min-h-0 flex-1">
+                  <div
+                    className={`min-h-0 min-w-0 flex-1 flex-col ${reviewOpen && isMobile ? "hidden" : "flex"}`}
+                  >
+                    <AgentTranscript
+                      key={`transcript-${active.id}`}
+                      session={active}
+                      events={events}
+                      busy={busy}
+                      action={action}
+                      input={input}
+                    />
+                    <AgentComposer
+                      key={`composer-${active.id}`}
+                      session={active}
+                      busy={busy}
+                      action={action}
+                      onComposition={(value) => {
+                        composing.current = value;
+                      }}
+                      onUpdated={setActive}
+                    />
+                  </div>
+                  {reviewOpen && (
+                    <ReviewPane
+                      key={`review-${active.id}`}
+                      session={active}
+                      busy={busy}
+                      action={action}
+                      onClose={() => setReviewOpen(false)}
+                      onWorktree={(path) =>
+                        startNew({
+                          agent: active.agent,
+                          providerId: active.providerId,
+                          model: active.model,
+                          cwd: path,
+                          executable: active.executable,
+                        })
+                      }
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </PanelShell>
     </div>
   );
 }

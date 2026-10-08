@@ -33,6 +33,11 @@ import { AgentPanel } from "../../src/frontend/agents/AgentPanel";
 beforeEach(() => {
   vi.resetAllMocks();
   Element.prototype.scrollIntoView = vi.fn();
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
   mocks.post.mockResolvedValue({ data: {} });
   mocks.patch.mockResolvedValue({ data: {} });
   mocks.fetch.mockImplementation(async () => new Response("", { status: 200 }));
@@ -144,4 +149,43 @@ it("keeps the draft and permits retry when sending fails", async () => {
   fireEvent.keyDown(textarea, { key: "Enter" });
   await waitFor(() => expect((textarea as HTMLTextAreaElement).value).toBe(""));
   expect(mocks.post).toHaveBeenCalledTimes(2);
+});
+
+it("lists archived sessions only under the archived filter", async () => {
+  const sessions = [
+    {
+      id: "a",
+      hostId: 2,
+      agent: "pi",
+      model: "live",
+      cwd: "/tmp",
+      status: "ready",
+      events: [],
+    },
+    {
+      id: "b",
+      hostId: 2,
+      agent: "pi",
+      model: "old",
+      cwd: "/tmp",
+      status: "stopped",
+      events: [],
+      archived: true,
+    },
+  ];
+  mocks.get.mockImplementation(async () => ({ data: { sessions } }));
+  render(
+    <AgentPanel
+      {...({
+        host: { id: "2", name: "test", ip: "127.0.0.1", port: 22 },
+      } as TabProps)}
+    />,
+  );
+  expect(await screen.findByText("Pi · live")).toBeTruthy();
+  expect(screen.queryByText("Pi · old")).toBeNull();
+  fireEvent.click(
+    screen.getByRole("radio", { name: /agents.archivedSessions/ }),
+  );
+  expect(await screen.findByText("Pi · old")).toBeTruthy();
+  expect(screen.queryByText("Pi · live")).toBeNull();
 });

@@ -75,41 +75,55 @@ export function InstallRuntime({
       setBusy(false);
     }
   }
+  const rows = [
+    {
+      operation: "install" as const,
+      icon: <Download className="size-3.5" />,
+      label: t("agents.installRuntime"),
+      hint: t("agents.installSource"),
+    },
+    {
+      operation: "forwarding" as const,
+      icon: <Network className="size-3.5" />,
+      label: t("agents.enableForwarding"),
+      hint: t("agents.forwardingScope"),
+    },
+  ];
   return (
-    <div className="space-y-2 border border-border p-3">
-      <p className="text-xs text-muted-foreground">
-        {t("agents.installSource")}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={busy}
-        onClick={() => void install("install")}
-      >
-        <Download size={14} />
-        {t("agents.installRuntime")}
-      </Button>
-      <p className="text-xs text-muted-foreground">
-        {t("agents.forwardingScope")}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={busy}
-        onClick={() => void install("forwarding")}
-      >
-        <Network size={14} />
-        {t("agents.enableForwarding")}
-      </Button>
+    <div className="border border-border">
+      {rows.map((row, i) => (
+        <div
+          key={row.operation}
+          className={`flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-2.5 ${i > 0 ? "border-t border-border" : ""}`}
+        >
+          <p className="min-w-60 flex-1 text-[11px] leading-snug text-muted-foreground">
+            {row.hint}
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+            disabled={busy}
+            onClick={() => void install(row.operation)}
+          >
+            {row.icon}
+            {row.label}
+          </Button>
+        </div>
+      ))}
       {result && (
-        <p role="status" className="text-sm">
+        <p
+          role="status"
+          className="border-t border-border bg-muted/20 px-3 py-2 text-xs"
+        >
           {result}
         </p>
       )}
       {log && (
         <pre
           aria-label={t("agents.installLog")}
-          className="max-h-48 overflow-auto whitespace-pre-wrap text-xs"
+          className="max-h-48 overflow-auto whitespace-pre-wrap border-t border-border bg-muted/20 px-3 py-2 font-mono text-[11px] thin-scrollbar"
         >
           {log}
         </pre>
