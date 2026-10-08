@@ -35,6 +35,7 @@ import {
   type MentionItem,
 } from "./useMentions";
 import { mentionLabel } from "./labels";
+import { docsUrl } from "./docs";
 
 export function AiPanel({ activeTab }: { activeTab?: string | null }) {
   const { t } = useTranslation();
@@ -254,7 +255,7 @@ export function AiPanel({ activeTab }: { activeTab?: string | null }) {
           <Sparkles size={16} className="shrink-0" />
           <span className="truncate text-sm font-medium">{t("ai.title")}</span>
           <a
-            href="https://docs.termix.site/features/ai/overview"
+            href={docsUrl()}
             target="_blank"
             rel="noreferrer"
             className="ml-auto shrink-0 text-[10px] text-accent-brand hover:underline"

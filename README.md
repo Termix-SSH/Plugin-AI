@@ -14,6 +14,8 @@
 
 AI Assistant is a chat that can read your Termix setup and propose changes for you to approve. It can also run coding agents on your SSH hosts.
 
+Read the [docs](https://docs.termix.site/plugins/ai) to set it up and use it.
+
 <br />
 
 ## Features
