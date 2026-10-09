@@ -81,7 +81,6 @@
     "toolResult": "Result",
     "statusApplied": "Applied",
     "statusRejected": "Rejected",
-    "proposalApplied": "Change applied",
     "proposalApplyFailed": "Could not apply the change",
     "proposalRejectFailed": "Could not reject the change",
     "enableTitle": "Enable the AI assistant",
