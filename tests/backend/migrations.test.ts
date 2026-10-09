@@ -1,5 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "@termix-ssh/plugin-sdk/testing";
+import { findUnownedTableWrites } from "@termix-ssh/plugin-sdk/ddl";
 import { LEGACY_DDL, pluginDir } from "./helpers";
 
 let db: TestDb | null = null;
@@ -120,5 +123,24 @@ describe("ai adoption migration", () => {
         }
       ).n,
     ).toBe(0);
+  });
+});
+
+describe("mysql migrations", () => {
+  it("widen messages and proposals past the 64KB TEXT cap", () => {
+    const sql = fs.readFileSync(
+      path.join(pluginDir, "migrations", "mysql", "0004_mysql_long_text.sql"),
+      "utf8",
+    );
+    expect(sql).toContain(
+      "ALTER TABLE `p_ai_messages` MODIFY COLUMN `content` longtext NOT NULL DEFAULT ('');",
+    );
+    expect(sql).toContain(
+      "ALTER TABLE `p_ai_messages` MODIFY COLUMN `tool_calls` longtext;",
+    );
+    expect(sql).toContain(
+      "ALTER TABLE `p_ai_proposals` MODIFY COLUMN `payload` longtext NOT NULL DEFAULT ('{}');",
+    );
+    expect(findUnownedTableWrites("ai", sql)).toEqual([]);
   });
 });
