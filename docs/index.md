@@ -39,7 +39,7 @@ It can propose to add, change or delete hosts and snippets, add fleets and autom
 
 ## Read-only commands
 
-Turn on **Allow read-only diagnostic commands** and the assistant can run safe commands without asking each time, to answer things like "how full is the disk on web-1". Only a fixed list runs this way: `df`, `du`, `free`, `uptime`, `uname`, `ps`, `top`, `ip`, `ss`, `lsblk`, `cat`, `ls`, `systemctl status`, `journalctl`, `docker ps` and `docker logs`, and a few more. Anything else is proposed first.
+Turn on **Allow read-only diagnostic commands** and the assistant can run safe commands without asking each time, to answer things like "how full is the disk on web-1". Only a fixed list runs this way: `df`, `du`, `free`, `uptime`, `uname`, `ps`, `top`, `ip`, `ss`, `lsblk`, `cat` (only system files under `/proc` and `/sys`), `ls`, `systemctl status`, `journalctl`, `docker ps` and `docker logs`, and a few more. Anything else is proposed first.
 
 ## In the terminal
 

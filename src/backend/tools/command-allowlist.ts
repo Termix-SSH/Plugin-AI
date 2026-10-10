@@ -47,22 +47,43 @@ const SUBCOMMAND_ALLOWLIST: Record<string, Set<string>> = {
     "list-unit-files",
     "is-active",
     "is-enabled",
-    "show",
   ]),
-  docker: new Set([
-    "ps",
-    "stats",
-    "images",
-    "logs",
-    "inspect",
-    "version",
-    "info",
-  ]),
+  // inspect is left out: it prints container environment variables.
+  docker: new Set(["ps", "stats", "images", "logs", "version", "info"]),
   ip: new Set(["a", "addr", "link", "route", "neigh"]),
 };
 
 /** Paths `cat` may read. Anything else could disclose credentials. */
 const CAT_ALLOWED_PREFIXES = ["/proc/", "/sys/", "/etc/os-release"];
+
+/** Wildcards the shell would expand into paths nobody checked. */
+const GLOB_CHARACTERS = /[*?[\]{}~]/;
+
+/**
+ * Whether cat may read a path. It must be a plain absolute path under an
+ * allowed prefix, with no ".." and no per-process /proc entry, since those
+ * hold environment variables and command lines.
+ */
+function catPathAllowed(target: string): boolean {
+  if (GLOB_CHARACTERS.test(target)) return false;
+  if (!target.startsWith("/") || target.includes("//")) return false;
+  if (
+    target.split("/").some((segment) => segment === ".." || segment === ".")
+  ) {
+    return false;
+  }
+  const procEntry = target.startsWith("/proc/") ? target.split("/")[2] : "";
+  if (
+    /^\d+$/.test(procEntry) ||
+    procEntry === "self" ||
+    procEntry === "thread-self"
+  ) {
+    return false;
+  }
+  return CAT_ALLOWED_PREFIXES.some((prefix) =>
+    prefix.endsWith("/") ? target.startsWith(prefix) : target === prefix,
+  );
+}
 
 export interface CommandCheck {
   allowed: boolean;
@@ -120,10 +141,7 @@ export function isReadOnlyCommand(raw: string): CommandCheck {
       return { allowed: false, reason: "cat needs a file path" };
     }
     for (const target of targets) {
-      const permitted = CAT_ALLOWED_PREFIXES.some((prefix) =>
-        prefix.endsWith("/") ? target.startsWith(prefix) : target === prefix,
-      );
-      if (!permitted) {
+      if (!catPathAllowed(target)) {
         return {
           allowed: false,
           reason: `cat is limited to ${CAT_ALLOWED_PREFIXES.join(", ")}`,

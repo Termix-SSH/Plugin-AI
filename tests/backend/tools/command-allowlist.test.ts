@@ -72,6 +72,30 @@ describe("isReadOnlyCommand", () => {
     expect(isReadOnlyCommand("cat").allowed).toBe(false);
   });
 
+  it("keeps cat inside its paths and away from process secrets", () => {
+    for (const command of [
+      "cat /proc/../etc/shadow",
+      "cat /sys/../../home/alice/.ssh/id_rsa",
+      "cat /proc/self/environ",
+      "cat /proc/1/environ",
+      "cat /proc/thread-self/cmdline",
+      "cat /proc/*/environ",
+      "cat /sys//../etc/passwd",
+      "cat proc/meminfo",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+    expect(isReadOnlyCommand("cat /proc/loadavg").allowed).toBe(true);
+    expect(isReadOnlyCommand("cat /sys/class/net/eth0/operstate").allowed).toBe(
+      true,
+    );
+  });
+
+  it("leaves out subcommands that print environment variables", () => {
+    expect(isReadOnlyCommand("docker inspect web").allowed).toBe(false);
+    expect(isReadOnlyCommand("systemctl show nginx").allowed).toBe(false);
+  });
+
   it("rejects an empty command", () => {
     expect(isReadOnlyCommand("").allowed).toBe(false);
     expect(isReadOnlyCommand("   ").allowed).toBe(false);
