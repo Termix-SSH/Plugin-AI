@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+### Fixed
+
+- Change proposals showed a host id instead of the host name
+
 ## 1.0.1
 
 ### Changed

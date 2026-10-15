@@ -1,6 +1,6 @@
 import { getErrorMessage } from "./errors";
 import { useState } from "react";
-import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
+import { useHosts, useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { toast } from "sonner";
 import { Check, Loader2, TriangleAlert, X } from "lucide-react";
 import { Button } from "@termix-ssh/plugin-sdk/ui";
@@ -27,12 +27,25 @@ function isDestructive(kind: string): boolean {
 const PROMOTED_FIELDS = new Set(["command", "explanation", "reason"]);
 
 /** Renders the payload as readable field rows rather than raw JSON. */
-function fieldRows(payload: Record<string, unknown>): Array<[string, string]> {
+export function fieldRows(
+  payload: Record<string, unknown>,
+  hostNames: Map<string, string> = new Map(),
+): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
+  const hostName = (id: unknown) => hostNames.get(String(id)) ?? String(id);
 
   const push = (key: string, value: unknown) => {
     if (value === null || value === undefined || value === "") return;
     if (PROMOTED_FIELDS.has(key)) return;
+    // Show host names, not database ids.
+    if (key === "hostId") {
+      rows.push([key, hostName(value)]);
+      return;
+    }
+    if (key === "hostIds" && Array.isArray(value)) {
+      rows.push([key, value.map(hostName).join(", ")]);
+      return;
+    }
     const text =
       typeof value === "object" ? JSON.stringify(value) : String(value);
     rows.push([key, text]);
@@ -60,6 +73,7 @@ function asText(value: unknown): string | null {
 export function ProposalCard({ proposal, onResolved }: ProposalCardProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<"apply" | "reject" | null>(null);
+  const { hosts } = useHosts();
 
   let payload: Record<string, unknown> = {};
   try {
@@ -68,7 +82,10 @@ export function ProposalCard({ proposal, onResolved }: ProposalCardProps) {
     payload = {};
   }
 
-  const rows = fieldRows(payload);
+  const rows = fieldRows(
+    payload,
+    new Map(hosts.map((h) => [String(h.id), h.name])),
+  );
   const destructive = isDestructive(proposal.kind);
   const resolved = proposal.status !== "pending";
 
