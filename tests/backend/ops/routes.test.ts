@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ALL_PERMISSIONS, startServer, type TestServer } from "../helpers";
 import { fakeSshClient } from "./fake-ssh";
+import { wrapCommand } from "../../../src/backend/ops/exec.js";
 
 const OPS_PERMISSIONS = [...ALL_PERMISSIONS, "ai.ops.use"];
 
@@ -129,7 +130,9 @@ describe("ops routes", () => {
       host: { hostId: 1, name: "web-1", exitCode: 0 },
     });
     expect(frames.at(-1).type).toBe("done");
-    expect(ssh.channels.map((channel) => channel.command)).toEqual(["uptime"]);
+    expect(ssh.channels.map((channel) => channel.command)).toEqual([
+      wrapCommand("uptime"),
+    ]);
 
     // The model got the per-host summary back.
     const toolMessage = model.bodies[1].messages.find(

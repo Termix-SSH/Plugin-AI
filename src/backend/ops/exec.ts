@@ -65,6 +65,40 @@ export function truncateMiddle(text: string, limit: number): string {
   return capture.text();
 }
 
+/** One POSIX-shell word, safe for any login shell that honours '…'. */
+export function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+/**
+ * Runs the command so that closing the channel ends it, output or not.
+ *
+ * OpenSSH ignores signal requests on a non-PTY exec and closing the channel
+ * only closes its pipes, so a silent command (sleep, a hung apt or curl) would
+ * outlive Stop and the timeout. The command runs in its own process group with
+ * stdin from /dev/null, while a watcher reads the channel's stdin (kept on fd
+ * 3, since a background job's own stdin is /dev/null) and kills the group on
+ * EOF. The watcher's output goes to /dev/null so it never holds the channel
+ * open after the command exits. The command is passed as $1 to sh, so the
+ * login shell only sees two quoted words.
+ */
+const WATCHDOG = [
+  "exec 3<&0",
+  'if command -v setsid >/dev/null 2>&1; then setsid sh -c "$1" </dev/null 3<&- & else sh -c "$1" </dev/null 3<&- & fi',
+  "p=$!",
+  "( cat <&3; kill -TERM -$p 2>/dev/null || kill -TERM $p; sleep 2; kill -KILL -$p 2>/dev/null || kill -KILL $p ) >/dev/null 2>&1 &",
+  "w=$!",
+  "exec 3<&-",
+  "wait $p",
+  "rc=$?",
+  "kill $w 2>/dev/null",
+  "exit $rc",
+].join("\n");
+
+export function wrapCommand(command: string): string {
+  return `sh -c ${shellQuote(WATCHDOG)} termix-ops ${shellQuote(command)}`;
+}
+
 export function execOnClient(
   client: Client,
   command: string,
@@ -85,8 +119,8 @@ export function execOnClient(
       else resolve(outcome);
     };
 
-    // Closing the channel ends the remote process for a non-PTY exec on
-    // OpenSSH; the pooled connection itself stays up for the next command.
+    // Closing the channel trips the watchdog in wrapCommand, which ends the
+    // remote command; the pooled connection stays up for the next one.
     const close = () => {
       try {
         channel?.signal("KILL");
@@ -108,7 +142,7 @@ export function execOnClient(
     if (limits.signal.aborted) return stop("aborted");
     limits.signal.addEventListener("abort", onAbort, { once: true });
 
-    client.exec(command, { pty: false }, (error, stream) => {
+    client.exec(wrapCommand(command), { pty: false }, (error, stream) => {
       if (error) return settle(error);
       channel = stream;
       // Stopped while the channel was opening.

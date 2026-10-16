@@ -4,6 +4,7 @@ import {
   createCapture,
   execOnClient,
   mapLimit,
+  wrapCommand,
   truncateMiddle,
 } from "../../../src/backend/ops/exec.js";
 import { fakeSshClient } from "./fake-ssh";
@@ -44,7 +45,7 @@ describe("execOnClient", () => {
       limits(),
     );
     expect(result).toEqual({ exitCode: 3, output: "out\nerr\n" });
-    expect(ssh.channels[0].command).toBe("false");
+    expect(ssh.channels[0].command).toBe(wrapCommand("false"));
   });
 
   it("truncates output to the limit", async () => {
