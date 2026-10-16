@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { PluginProcess } from "@termix-ssh/plugin-sdk/backend";
 import { getErrorMessage } from "../errors.js";
 import { redact, redactString, REDACTED } from "../redaction.js";
-import { createCapture, type ExecOutcome } from "./exec.js";
+import { createCapture, truncateMiddle, type ExecOutcome } from "./exec.js";
 
 /**
  * The Termix CLI as an assistant tool. The published @termix-ssh/cli bundle
@@ -57,10 +57,20 @@ const BLOCKED: Record<string, { all?: true; sub?: string[]; why: string }> = {
     why: "copies files to or from the Termix server's own disk. Use files cat, or run_command on the host.",
   },
   hosts: {
-    sub: ["import"],
-    why: "reads a file on the Termix server's own disk. Use hosts create.",
+    sub: ["import", "export"],
+    why: "reads a file on the Termix server's own disk, or prints decrypted credentials. Use hosts list and hosts get.",
+  },
+  "api-keys": {
+    sub: ["create"],
+    why: "prints a new key's token, which would leave Termix in the conversation. Create API keys in Settings.",
   },
 };
+
+/**
+ * Export routes return decrypted credentials and user data, which would be
+ * sent to the model provider.
+ */
+const EXPORT_PATH = /\/export(\/|\?|$)/i;
 
 /** Set by the tool itself, or reach the Termix server's own disk. */
 function blockedFlag(arg: string): string | null {
@@ -90,6 +100,9 @@ export function checkCliArgs(args: string[]): string | null {
   const [group, sub] = args.filter((arg) => !arg.startsWith("-"));
   const help =
     group === "help" || args.includes("--help") || args.includes("-h");
+  if (group === "api" && !help && args.some((arg) => EXPORT_PATH.test(arg))) {
+    return "termix api cannot call export routes: they return decrypted credentials and user data.";
+  }
   const rule = group && !help ? BLOCKED[group] : undefined;
   if (rule && (rule.all || (sub && rule.sub?.includes(sub)))) {
     return `termix ${rule.all ? group : `${group} ${sub}`} ${rule.why}`;
@@ -138,6 +151,48 @@ export interface CliLimits {
   signal: AbortSignal;
 }
 
+/** Above this much stdout, output is cut while it streams instead of parsed. */
+const MAX_PARSED_STDOUT = 4_000_000;
+
+/** JSON on one line, so a listing fits far more rows in the same limit. */
+export function compactJson(text: string): string {
+  try {
+    return JSON.stringify(JSON.parse(text));
+  } catch {
+    return text;
+  }
+}
+
+/**
+ * Keeps stdout whole up to MAX_PARSED_STDOUT so JSON can be compacted before
+ * it is cut; past that it falls back to a streaming head and tail.
+ */
+function collectStdout(limit: number) {
+  let raw = "";
+  let streamed: ReturnType<typeof createCapture> | null = null;
+  return {
+    push(chunk: string) {
+      if (streamed) return streamed.push(chunk);
+      if (raw.length + chunk.length <= MAX_PARSED_STDOUT) {
+        raw += chunk;
+        return;
+      }
+      streamed = createCapture(limit);
+      streamed.push(raw + chunk);
+      raw = "";
+    },
+    text(): string {
+      return streamed
+        ? streamed.text()
+        : truncateMiddle(compactJson(raw.trim()), limit);
+    },
+  };
+}
+
+function joinOutput(stdout: string, stderr: string): string {
+  return stderr ? `${stdout}${stdout ? "\n" : ""}${stderr}` : stdout;
+}
+
 export interface CliTarget {
   run: PluginProcess["run"];
   cliPath: string;
@@ -181,9 +236,10 @@ export async function runCli(
       },
     );
 
-    const output = createCapture(limits.outputLimit);
-    child.onStdout((chunk) => output.push(chunk));
-    child.onStderr((chunk) => output.push(chunk));
+    const stdout = collectStdout(limits.outputLimit);
+    const stderr = createCapture(limits.outputLimit);
+    child.onStdout((chunk) => stdout.push(chunk));
+    child.onStderr((chunk) => stderr.push(chunk));
 
     let stopped: "timedOut" | "aborted" | null = null;
     const stop = (reason: "timedOut" | "aborted") => {
@@ -198,7 +254,7 @@ export async function runCli(
       const { code } = await child.exited;
       return {
         exitCode: stopped ? null : code,
-        output: output.text(),
+        output: joinOutput(stdout.text(), stderr.text()),
         durationMs: elapsed(),
         ...(stopped ? { [stopped]: true } : {}),
       };

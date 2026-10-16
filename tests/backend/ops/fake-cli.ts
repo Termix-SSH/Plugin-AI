@@ -7,7 +7,8 @@ import type { PluginProcess } from "@termix-ssh/plugin-sdk/backend";
 /**
  * A stand-in for the Termix CLI: prints what it was started with as JSON.
  * "sleep" anywhere in its args keeps it running until it is killed, "fail"
- * makes it exit 3 after writing to stderr.
+ * makes it exit 3 after writing to stderr, "pretty" indents the JSON like the
+ * real CLI does.
  */
 const SCRIPT = `
 const args = process.argv.slice(2);
@@ -32,7 +33,7 @@ if (args.includes("sleep")) {
       XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,
       SECRET: process.env.FAKE_SERVER_SECRET ?? null,
     },
-  }));
+  }, null, args.includes("pretty") ? 2 : 0));
 }
 `;
 

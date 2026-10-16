@@ -30,13 +30,13 @@ The assistant can still manage Termix with no targets.
 
 ## What it can do
 
-- Manage Termix with the Termix CLI, which ships inside the plugin: list, add, change and delete hosts, credentials, snippets, fleets and API keys, read alerts, sessions and the audit log, and call any route with `termix api`. It works as you, with your permissions.
+- Manage Termix with the Termix CLI, which ships inside the plugin: list, add, change and delete hosts, credentials, snippets and fleets, list and revoke API keys, read alerts, sessions and the audit log, and call any route with `termix api`. It works as you, with your permissions.
 - Run a command on its targets, several at a time, and read their OS and resources. See [Cluster Ops](cluster-ops.md).
 - Open a terminal on a host, a tab, a settings page or a sidebar view.
 
 It also knows which tab you are on, and the host when that tab is a terminal or file manager.
 
-The CLI cannot open an interactive terminal, log in or out, keep a tunnel running, or read and write files on the Termix server's own disk. For shell work the assistant uses its targets.
+The CLI cannot open an interactive terminal, log in or out, keep a tunnel running, or read and write files on the Termix server's own disk. It also cannot run `hosts export`, create API keys, or call export routes through `termix api`, because those print decrypted credentials or new tokens, which would be sent to the model provider. For shell work the assistant uses its targets.
 
 Every CLI call is kept with its arguments, exit code and output, and written to the audit log as `ai_cli_command`. Passwords, keys, tokens and similar values in the arguments are masked.
 

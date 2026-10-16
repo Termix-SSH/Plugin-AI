@@ -41,8 +41,9 @@ const TERMIX_DESCRIPTION = [
   "Run the Termix CLI as the current user to read or change anything in Termix. Output is JSON.",
   'Pass the words after `termix` as args, e.g. ["hosts", "list"] or ["alerts", "list", "--unread"].',
   "Command groups: hosts, credentials, snippets, fleets, alerts, plugins, sessions, api-keys, docker, files, users, audit-logs, status, version, whoami, exec, api.",
+  'Find hosts with ["hosts", "list"] (filters: --folder, --tag) and ["hosts", "get", "<id>"]; core routes are not REST-style, e.g. hosts are /host/db/host, not /hosts.',
   'When unsure, call it with ["<group>", "--help"] first. For anything without a command use ["api", "<METHOD>", "<path>", "--data", "<json>"], e.g. ["api", "GET", "/plugin-api/<id>/..."].',
-  "Not available: ssh, login, logout, tunnel start, and anything that reads or writes files on the Termix server's own disk. Use run_command for shell work on hosts.",
+  "Not available: ssh, login, logout, tunnel start, hosts export, api-keys create, export routes, and anything that reads or writes files on the Termix server's own disk. Use run_command for shell work on hosts.",
 ].join(" ");
 
 function cliFailure(result: Awaited<ReturnType<typeof runCli>>) {

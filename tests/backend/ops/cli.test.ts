@@ -35,6 +35,8 @@ describe("checkCliArgs", () => {
     [["files", "get", "1", "/etc/hosts"], "files get"],
     [["files", "put", "./a", "1:/tmp/a"], "files put"],
     [["hosts", "import", "hosts.json"], "hosts import"],
+    [["hosts", "export"], "hosts export"],
+    [["api-keys", "create", "--name", "x"], "api-keys create"],
   ])("refuses %j", (args, named) => {
     expect(checkCliArgs(args)).toContain(`termix ${named} `);
   });
@@ -53,6 +55,15 @@ describe("checkCliArgs", () => {
     expect(checkCliArgs(["hosts", "list", ...flag])).toMatch(/^--/);
   });
 
+  it.each([
+    ["/host/db/hosts/export"],
+    ["/database/export"],
+    ["/admin/export/user-1"],
+    ["/plugin-api/x/export?all=1"],
+  ])("refuses the export route %s through api", (route) => {
+    expect(checkCliArgs(["api", "POST", route])).toContain("export routes");
+  });
+
   it("lets help through for every command, and ordinary commands", () => {
     expect(checkCliArgs(["ssh", "--help"])).toBeNull();
     expect(checkCliArgs(["help", "tunnel"])).toBeNull();
@@ -61,6 +72,8 @@ describe("checkCliArgs", () => {
     expect(checkCliArgs(["tunnel", "list"])).toBeNull();
     expect(checkCliArgs(["files", "cat", "1", "/etc/hosts"])).toBeNull();
     expect(checkCliArgs(["api", "GET", "/version"])).toBeNull();
+    expect(checkCliArgs(["api", "GET", "/exports-list"])).toBeNull();
+    expect(checkCliArgs(["hosts", "export", "--help"])).toBeNull();
     expect(checkCliArgs([])).toContain("empty");
   });
 
@@ -161,6 +174,12 @@ describe("runCli", () => {
     expect(seen.env.HOME).not.toBe(process.env.HOME);
     // The home is gone once the call returns.
     expect(existsSync(seen.env.HOME)).toBe(false);
+  });
+
+  it("hands the model compact JSON, so long listings fit the limit", async () => {
+    const result = await runCli(target(), ["pretty"], limits());
+    expect(result.output).not.toContain("\n");
+    expect(JSON.parse(result.output).env.NO_COLOR).toBe("1");
   });
 
   it("returns the exit code and stderr of a failed call", async () => {
