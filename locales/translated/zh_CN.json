@@ -237,7 +237,8 @@
     "emptyTranscript": "发送一条消息以启动代理。"
   },
   "plugin": {
-    "name": "AI 助手"
+    "name": "AI 助手",
+    "description": "读取你的配置并提出修改建议供你审批的 AI 助手。"
   },
   "ops": {
     "title": "集群运维",
