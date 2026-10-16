@@ -62,6 +62,10 @@ export const conversations = adoptLegacyTable(
       title: text(),
       providerId: integer(),
       model: text(),
+      // chat | ops
+      mode: varchar(16).notNull().default("chat"),
+      // Cluster Ops only: the host ids the conversation may run commands on.
+      targets: text(),
       createdAt: timestamp().notNull().defaultNow(),
       updatedAt: timestamp().notNull().defaultNow(),
     },
@@ -211,6 +215,31 @@ export const agentQueue = defineTable(
   },
 );
 
+/**
+ * Every command Cluster Ops ran on a host, one row per host. Output is cut to
+ * the admin's per-host limit before it gets here.
+ */
+export const opsRuns = defineTable(
+  "ops_runs",
+  {
+    id: id(),
+    conversationId: integer().notNull(),
+    userId: refUser(),
+    hostId: integer().notNull(),
+    command: text().notNull(),
+    // Null when the command never finished: timed out, stopped or failed to start.
+    exitCode: integer(),
+    durationMs: integer().notNull(),
+    output: text().notNull().default(""),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_ops_runs_conversation", columns: ["conversationId"] },
+    ],
+  },
+);
+
 export const tables = [
   providers,
   conversations,
@@ -219,4 +248,5 @@ export const tables = [
   agentSessions,
   agentEvents,
   agentQueue,
+  opsRuns,
 ];

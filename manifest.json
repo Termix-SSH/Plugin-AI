@@ -18,7 +18,8 @@
     "Can run safe read-only commands like df and uptime if you allow it",
     "Ask about a host right from its terminal",
     "Works with Ollama, Anthropic, OpenAI, Google Gemini and any OpenAI compatible endpoint",
-    "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider"
+    "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider",
+    "Cluster Ops: let the assistant run shell commands across the hosts, folders, tags or fleets you select"
   ],
   "engine": {
     "termix": ">=26.10.0",
@@ -104,6 +105,12 @@
         "titleKey": "agents.title",
         "icon": "Bot",
         "openFrom": ["host-context-menu", "palette"]
+      },
+      {
+        "id": "ai-ops",
+        "titleKey": "ops.title",
+        "icon": "ServerCog",
+        "openFrom": ["rail", "palette"]
       }
     ],
     "actions": [
@@ -153,6 +160,12 @@
         "titleKey": "agents.permissionTitle",
         "descriptionKey": "agents.permissionDescription",
         "defaultRoles": ["admin"]
+      },
+      {
+        "name": "ops.use",
+        "titleKey": "permissions.ops.use.title",
+        "descriptionKey": "permissions.ops.use.description",
+        "defaultRoles": ["admin"]
       }
     ],
     "settings": {
@@ -171,6 +184,46 @@
           "descriptionKey": "settings.admin.privateEndpoints.description",
           "requires": "globallyEnabled",
           "default": "localhost\n127.0.0.1\n::1\nhost.docker.internal"
+        },
+        {
+          "key": "opsMaxTurns",
+          "type": "number",
+          "labelKey": "settings.admin.opsMaxTurns.label",
+          "descriptionKey": "settings.admin.opsMaxTurns.description",
+          "requires": "globallyEnabled",
+          "default": 30,
+          "min": 1,
+          "max": 100
+        },
+        {
+          "key": "opsConcurrency",
+          "type": "number",
+          "labelKey": "settings.admin.opsConcurrency.label",
+          "descriptionKey": "settings.admin.opsConcurrency.description",
+          "requires": "globallyEnabled",
+          "default": 8,
+          "min": 1,
+          "max": 64
+        },
+        {
+          "key": "opsCommandTimeout",
+          "type": "number",
+          "labelKey": "settings.admin.opsCommandTimeout.label",
+          "descriptionKey": "settings.admin.opsCommandTimeout.description",
+          "requires": "globallyEnabled",
+          "default": 120,
+          "min": 5,
+          "max": 600
+        },
+        {
+          "key": "opsOutputLimit",
+          "type": "number",
+          "labelKey": "settings.admin.opsOutputLimit.label",
+          "descriptionKey": "settings.admin.opsOutputLimit.description",
+          "requires": "globallyEnabled",
+          "default": 4000,
+          "min": 500,
+          "max": 20000
         }
       ],
       "user": [

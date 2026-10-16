@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot, ServerCog, Sparkles } from "lucide-react";
 import type {
   PanelProps,
   TabProps,
@@ -11,6 +11,7 @@ import type {
 } from "./terminal/terminal-slot-types";
 import { AgentPanel } from "./agents/AgentPanel";
 import { AiPanel } from "./AiPanel";
+import { OpsPanel } from "./ops/OpsPanel";
 import { TerminalAiPanel } from "./terminal/TerminalAiPanel";
 import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
@@ -19,6 +20,7 @@ import { setAiApp } from "./app-ref";
 
 /** The rail id the assistant registers under. */
 const AI_RAIL_ID = "ai";
+const OPS_TAB_ID = "ai-ops";
 const ASSISTANT_ACTION = "ai.openWithContext";
 const SIDE_PANEL_ID = "ai.assistant";
 
@@ -65,9 +67,15 @@ export function activate(app: TermixApp): void {
   let globallyEnabled = false;
   let userEnabled = false;
   let agentsAllowed = false;
+  let opsAllowed = false;
   void app.hasPermission("agents").then((allowed) => {
     if (disposed) return;
     agentsAllowed = allowed;
+    applyStatus();
+  });
+  void app.hasPermission("ops.use").then((allowed) => {
+    if (disposed) return;
+    opsAllowed = allowed;
     applyStatus();
   });
   const surface: (() => void)[] = [];
@@ -118,6 +126,28 @@ export function activate(app: TermixApp): void {
         persistent: true,
       }),
     );
+    if (opsAllowed) {
+      surface.push(
+        app.registerRailItem({
+          id: OPS_TAB_ID,
+          icon: ServerCog,
+          titleKey: "ops.title",
+          kind: "tab",
+          permission: "ops.use",
+          after: AI_RAIL_ID,
+          order: 41,
+        }),
+      );
+      surface.push(
+        app.registerTab(OPS_TAB_ID, OpsPanel, {
+          icon: ServerCog,
+          titleKey: "ops.title",
+          singleton: true,
+          hostless: true,
+        }),
+      );
+    }
+
     surface.push(
       app.registerHostAction({
         id: "ai-agents",

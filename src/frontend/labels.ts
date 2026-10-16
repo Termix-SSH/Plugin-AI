@@ -27,6 +27,9 @@ const TOOL_LABELS: Record<string, string> = {
   propose_create_automation: "Create automation",
   propose_create_fleet: "Create fleet",
   propose_run_command: "Run command",
+  list_targets: "Reading targets",
+  run_command: "Running command",
+  get_host_facts: "Reading host facts",
 };
 
 /** Readable names for the payload keys the propose tools emit. */

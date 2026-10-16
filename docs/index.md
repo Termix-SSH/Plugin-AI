@@ -1,4 +1,4 @@
-AI Assistant is a chat that knows your Termix setup. Ask it about your hosts, snippets, fleets, automations and more. When you ask for a change, it proposes one and waits for you to approve it. It never changes anything on its own.
+AI Assistant is a chat that knows your Termix setup. Ask it about your hosts, snippets, fleets, automations and more. When you ask for a change, it proposes one and waits for you to approve it. It never changes anything on its own, except in [Cluster Ops](cluster-ops.md), where an admin lets it run commands on hosts you select.
 
 It works with a model you bring: Ollama on your own network, Anthropic, OpenAI, Google Gemini, or anything with an OpenAI compatible API. Nothing is sent anywhere until you add a provider and send a message.
 
@@ -45,6 +45,10 @@ Turn on Allow read-only diagnostic commands and the assistant can run safe comma
 
 Turn on Enable AI Assistant in a host's settings to get an assistant panel next to its terminal. It knows which host you are on, and commands it suggests can run in your open session.
 
+## Cluster Ops
+
+Cluster Ops lets the assistant run shell commands across hosts you select, by fleet, folder, tag or one by one, and report back per host. See [Cluster Ops](cluster-ops.md).
+
 ## Coding agents
 
 The assistant can also start a coding agent, like Claude Code, Codex, OpenCode or Pi, on an SSH host and drive it from Termix. See [coding agents](agents.md).
@@ -57,3 +61,4 @@ The assistant can also start a coding agent, like Claude Code, Codex, OpenCode o
 | `ai.manage_providers` | Add, edit and remove providers and their keys.        |
 | `ai.apply_proposals`  | Approve the changes it proposes.                      |
 | `ai.agents`           | Start coding agents on hosts. Admins only by default. |
+| `ai.ops.use`          | Use Cluster Ops. Admins only by default.              |

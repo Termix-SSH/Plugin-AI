@@ -68,4 +68,22 @@ describe(`${manifest.id} activate`, () => {
       expect(rendered!.registered.tabs()).toEqual(["ai", "ai-agents"]),
     );
   });
+
+  it("adds Cluster Ops only for users with its permission", async () => {
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["ai.ops.use"],
+    });
+    await waitFor(() =>
+      expect([...rendered!.registered.tabs()].sort()).toEqual([
+        "ai",
+        "ai-agents",
+        "ai-ops",
+      ]),
+    );
+    expect(
+      rendered.registered.railItems().find((item) => item.id === "ai-ops"),
+    ).toMatchObject({ permission: "ai.ops.use" });
+  });
 });

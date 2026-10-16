@@ -2,6 +2,13 @@
 
 ## 1.0.2
 
+### Added
+
+- Cluster Ops: pick hosts by fleet, folder, tag or one by one, and let the assistant run shell commands on them in parallel, with live results per host
+- Every Cluster Ops command is recorded per host and written to the audit log
+- Admin settings for the Cluster Ops step limit, parallel hosts, command timeout and output kept per host
+- The `ai.ops.use` permission, for admins only by default
+
 ### Fixed
 
 - Change proposals showed a host id instead of the host name

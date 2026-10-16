@@ -19,6 +19,12 @@
     "secrets.share": {
       "title": "Share the API key",
       "description": "Other features may use the stored AI API key without seeing it."
+    },
+    "ops": {
+      "use": {
+        "title": "Use Cluster Ops",
+        "description": "Let the assistant run any shell command on the hosts you select. Admins only by default."
+      }
     }
   },
   "settings": {
@@ -36,6 +42,22 @@
       "privateEndpoints": {
         "label": "Allowed private AI hosts",
         "description": "Hosts on your private network that users may point a provider at, such as a self-hosted Ollama. Put one host on each line."
+      },
+      "opsMaxTurns": {
+        "label": "Cluster Ops step limit",
+        "description": "How many model turns one Cluster Ops message may take before it stops."
+      },
+      "opsConcurrency": {
+        "label": "Cluster Ops parallel hosts",
+        "description": "How many hosts a Cluster Ops command runs on at the same time."
+      },
+      "opsCommandTimeout": {
+        "label": "Cluster Ops command timeout (seconds)",
+        "description": "How long a command may run on a host before it is stopped. The assistant can ask for up to 600."
+      },
+      "opsOutputLimit": {
+        "label": "Cluster Ops output per host (characters)",
+        "description": "How much of each host's output is kept. Longer output keeps its start and end."
       }
     },
     "host": {
@@ -212,5 +234,36 @@
   },
   "plugin": {
     "name": "AI Assistant"
+  },
+  "ops": {
+    "title": "Cluster Ops",
+    "searchHosts": "Search hosts",
+    "selectedCount": "{{count}} selected",
+    "clear": "Clear",
+    "fleets": "Fleets",
+    "folders": "Folders",
+    "tags": "Tags",
+    "allHosts": "All hosts",
+    "noHosts": "No hosts",
+    "newConversation": "New conversation",
+    "emptyTitle": "Select hosts, then say what to do",
+    "emptyHint": "The assistant runs shell commands on the selected hosts and reports back per host.",
+    "inputPlaceholder": "What should happen on the selected hosts?",
+    "sendHint_one": "Runs on {{count}} host. Commands run without asking first.",
+    "sendHint_other": "Runs on {{count}} hosts. Commands run without asking first.",
+    "noTargets": "Select at least one host on the left.",
+    "runCommand": "Run command",
+    "hostFacts": "Host facts",
+    "hostCount_one": "{{count}} host",
+    "hostCount_other": "{{count}} hosts",
+    "succeeded": "{{count}} ok",
+    "failed": "{{count}} failed",
+    "exitCode": "exit {{code}}",
+    "timedOut": "timed out",
+    "stopped": "stopped",
+    "notRun": "not run",
+    "cached": "cached",
+    "duration": "{{seconds}}s",
+    "noOutput": "(no output)"
   }
 }

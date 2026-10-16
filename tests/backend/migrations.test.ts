@@ -54,6 +54,7 @@ describe("ai adoption migration", () => {
       "p_ai_agent_sessions",
       "p_ai_conversations",
       "p_ai_messages",
+      "p_ai_ops_runs",
       "p_ai_proposals",
       "p_ai_providers",
     ]);
@@ -94,6 +95,7 @@ describe("ai adoption migration", () => {
       "p_ai_agent_sessions",
       "p_ai_conversations",
       "p_ai_messages",
+      "p_ai_ops_runs",
       "p_ai_proposals",
       "p_ai_providers",
     ]);

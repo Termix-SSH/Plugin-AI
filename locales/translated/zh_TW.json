@@ -23,6 +23,12 @@
         "title": "分享 API 金鑰",
         "description": "其他功能可能會使用儲存的 AI API 金鑰，但無法查看其內容。"
       }
+    },
+    "ops": {
+      "use": {
+        "title": "使用叢集維運",
+        "description": "允許助理在你選擇的主機上執行任意 shell 指令。預設僅管理員擁有。"
+      }
     }
   },
   "settings": {
@@ -40,6 +46,22 @@
       "privateEndpoints": {
         "label": "允許的私人 AI 主機",
         "description": "您私人網路上的主機，使用者可將提供者指向這些主機，例如自行架設的 Ollama。每行輸入一個主機。"
+      },
+      "opsMaxTurns": {
+        "label": "叢集維運步數上限",
+        "description": "一則叢集維運訊息最多可使用多少輪模型呼叫，超過後停止。"
+      },
+      "opsConcurrency": {
+        "label": "叢集維運平行主機數",
+        "description": "叢集維運指令同時在多少台主機上執行。"
+      },
+      "opsCommandTimeout": {
+        "label": "叢集維運指令逾時（秒）",
+        "description": "指令在一台主機上執行多久後會被停止。助理最多可要求 600 秒。"
+      },
+      "opsOutputLimit": {
+        "label": "叢集維運每台主機輸出（字元）",
+        "description": "每台主機保留多少輸出。較長的輸出會保留開頭和結尾。"
       }
     },
     "host": {
@@ -216,5 +238,34 @@
   },
   "plugin": {
     "name": "AI 助手"
+  },
+  "ops": {
+    "title": "叢集維運",
+    "searchHosts": "搜尋主機",
+    "selectedCount": "已選擇 {{count}} 台",
+    "clear": "清除",
+    "fleets": "機群",
+    "folders": "資料夾",
+    "tags": "標籤",
+    "allHosts": "所有主機",
+    "noHosts": "沒有主機",
+    "newConversation": "新對話",
+    "emptyTitle": "選擇主機，然後說明要做什麼",
+    "emptyHint": "助理會在所選主機上執行 shell 指令，並依主機回報結果。",
+    "inputPlaceholder": "要在所選主機上做什麼？",
+    "sendHint_other": "將在 {{count}} 台主機上執行。指令會直接執行，不會事先詢問。",
+    "noTargets": "請先在左側選擇至少一台主機。",
+    "runCommand": "執行指令",
+    "hostFacts": "主機資訊",
+    "hostCount_other": "{{count}} 台主機",
+    "succeeded": "{{count}} 成功",
+    "failed": "{{count}} 失敗",
+    "exitCode": "結束碼 {{code}}",
+    "timedOut": "已逾時",
+    "stopped": "已停止",
+    "notRun": "未執行",
+    "cached": "已快取",
+    "duration": "{{seconds}} 秒",
+    "noOutput": "（無輸出）"
   }
 }

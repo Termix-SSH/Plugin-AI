@@ -1,6 +1,6 @@
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 
-type ToolCategory = "read" | "propose";
+type ToolCategory = "read" | "propose" | "ops";
 
 /** What tools and the proposal executor reach core and other plugins through. */
 export type ToolDeps = Pick<

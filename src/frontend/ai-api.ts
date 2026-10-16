@@ -255,3 +255,21 @@ export async function setAiOptIn(enabled: boolean): Promise<void> {
     notifyAiStatusChanged();
   }
 }
+
+export interface OpsFleet {
+  id: number;
+  name: string;
+  hostIds: number[];
+}
+
+/** Fleets for the Cluster Ops picker; available is false without the plugin. */
+export async function getOpsFleets(): Promise<{
+  available: boolean;
+  fleets: OpsFleet[];
+}> {
+  try {
+    return (await api().get("/ops/fleets")).data;
+  } catch (error) {
+    throw apiError(error, "list fleets");
+  }
+}

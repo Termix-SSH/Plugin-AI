@@ -201,6 +201,31 @@ describe("runAgent", () => {
     expect(streamChat.mock.calls.length).toBeLessThanOrEqual(8);
   });
 
+  it("takes the turn limit from the caller", async () => {
+    handler.mockResolvedValue({ ok: true });
+    streamChat.mockImplementation(() =>
+      chunks(
+        {
+          type: "tool_call",
+          call: { id: "c", name: "list_hosts", arguments: {} },
+        },
+        { type: "done" },
+      ),
+    );
+
+    const events: Array<{ type: string }> = [];
+    for await (const event of runAgent({
+      ...BASE,
+      history: [],
+      maxTurns: 20,
+    })) {
+      events.push(event);
+    }
+
+    expect(events.at(-1)).toMatchObject({ type: "error" });
+    expect(streamChat).toHaveBeenCalledTimes(20);
+  });
+
   it("emits every message it adds so the caller can store the run", async () => {
     handler.mockResolvedValue({ hosts: [] });
     streamChat

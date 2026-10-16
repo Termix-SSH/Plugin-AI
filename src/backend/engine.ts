@@ -21,7 +21,7 @@ import {
  * forever.
  */
 
-const MAX_TURNS = 8;
+const DEFAULT_MAX_TURNS = 8;
 
 export type EngineEvent =
   | { type: "token"; text: string }
@@ -42,6 +42,8 @@ export interface EngineOptions {
   /** What the model may call this turn; availableTools() decides. */
   tools: AiTool[];
   signal?: AbortSignal;
+  /** Model turns before giving up. Defaults to 8. */
+  maxTurns?: number;
 }
 
 export async function* runAgent(
@@ -52,7 +54,9 @@ export async function* runAgent(
   const byName = new Map(options.tools.map((tool) => [tool.name, tool]));
   const messages: ChatMessage[] = [...options.history];
 
-  for (let turn = 0; turn < MAX_TURNS; turn += 1) {
+  const maxTurns = options.maxTurns ?? DEFAULT_MAX_TURNS;
+
+  for (let turn = 0; turn < maxTurns; turn += 1) {
     let text = "";
     const calls: ToolCall[] = [];
     let failed = false;

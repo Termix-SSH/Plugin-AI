@@ -23,6 +23,12 @@
         "title": "共享 API 密钥",
         "description": "其他功能可能会使用存储的 AI API 密钥，而不会直接查看它。"
       }
+    },
+    "ops": {
+      "use": {
+        "title": "使用集群运维",
+        "description": "允许助手在你选择的主机上运行任意 shell 命令。默认仅管理员拥有。"
+      }
     }
   },
   "settings": {
@@ -40,6 +46,22 @@
       "privateEndpoints": {
         "label": "允许的私有 AI 主机",
         "description": "您私有网络上的主机，用户可以将提供商指向这些主机，例如自托管的 Ollama。每行填写一个主机。"
+      },
+      "opsMaxTurns": {
+        "label": "集群运维步数上限",
+        "description": "一条集群运维消息最多可使用多少轮模型调用，超过后停止。"
+      },
+      "opsConcurrency": {
+        "label": "集群运维并行主机数",
+        "description": "集群运维命令同时在多少台主机上运行。"
+      },
+      "opsCommandTimeout": {
+        "label": "集群运维命令超时（秒）",
+        "description": "命令在一台主机上运行多久后被停止。助手最多可请求 600 秒。"
+      },
+      "opsOutputLimit": {
+        "label": "集群运维每台主机输出（字符）",
+        "description": "每台主机保留多少输出。更长的输出会保留开头和结尾。"
       }
     },
     "host": {
@@ -216,5 +238,34 @@
   },
   "plugin": {
     "name": "AI 助手"
+  },
+  "ops": {
+    "title": "集群运维",
+    "searchHosts": "搜索主机",
+    "selectedCount": "已选择 {{count}} 台",
+    "clear": "清除",
+    "fleets": "主机群",
+    "folders": "文件夹",
+    "tags": "标签",
+    "allHosts": "所有主机",
+    "noHosts": "没有主机",
+    "newConversation": "新对话",
+    "emptyTitle": "选择主机，然后说明要做什么",
+    "emptyHint": "助手会在所选主机上运行 shell 命令，并按主机汇报结果。",
+    "inputPlaceholder": "要在所选主机上做什么？",
+    "sendHint_other": "将在 {{count}} 台主机上运行。命令会直接运行，不会事先询问。",
+    "noTargets": "请先在左侧选择至少一台主机。",
+    "runCommand": "运行命令",
+    "hostFacts": "主机信息",
+    "hostCount_other": "{{count}} 台主机",
+    "succeeded": "{{count}} 成功",
+    "failed": "{{count}} 失败",
+    "exitCode": "退出码 {{code}}",
+    "timedOut": "已超时",
+    "stopped": "已停止",
+    "notRun": "未运行",
+    "cached": "已缓存",
+    "duration": "{{seconds}} 秒",
+    "noOutput": "（无输出）"
   }
 }

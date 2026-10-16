@@ -45,6 +45,7 @@ export async function startServer(
     permissions?: string[];
     services?: Record<string, object>;
     fetch?: (url: string, init?: unknown) => Promise<Response>;
+    sshClient?: unknown;
   } = {},
 ): Promise<TestServer> {
   const db = await createTestDb(pluginDir);
@@ -64,6 +65,7 @@ export async function startServer(
     permissions: options.permissions ?? ALL_PERMISSIONS,
     services: options.services,
     fetch: options.fetch as never,
+    sshClient: options.sshClient,
     hosts: [
       {
         id: 1,

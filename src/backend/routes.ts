@@ -24,6 +24,7 @@ import type { AiProviderType, ProviderConfig } from "./providers/types.js";
 import { isAiProviderType } from "./providers/types.js";
 import type { AiRepository } from "./repository.js";
 import { serviceAvailable } from "./services.js";
+import { openEventStream } from "./sse.js";
 import { availableTools } from "./tools/catalog.js";
 import { applyProposal } from "./tools/executor.js";
 import type { ToolDeps } from "./tools/types.js";
@@ -716,6 +717,8 @@ export function registerAiRoutes(
         let conversation = conversationId
           ? await repository.findConversation(Number(conversationId), userId)
           : null;
+        // A Cluster Ops conversation can run commands; it never continues here.
+        if (conversation?.mode === "ops") conversation = null;
         if (!conversation) {
           conversation = await repository.createConversation({
             userId,
@@ -742,36 +745,7 @@ export function registerAiRoutes(
           { allowReadOnlyCommands: access.allowReadOnlyCommands },
         );
 
-        // no-transform keeps core's compression from buffering the stream,
-        // and X-Accel-Buffering does the same for nginx.
-        res.writeHead(200, {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-store, no-transform",
-          Connection: "keep-alive",
-          "X-Accel-Buffering": "no",
-        });
-        res.flushHeaders?.();
-
-        const heartbeat = setInterval(() => {
-          try {
-            res.write(": keepalive\n\n");
-          } catch {
-            clearInterval(heartbeat);
-          }
-        }, 30000);
-
-        // req's own "close" already fired once express read the body, so the
-        // response is what tells us the client went away.
-        const abort = new AbortController();
-        res.on("close", () => {
-          clearInterval(heartbeat);
-          if (!res.writableFinished) abort.abort();
-        });
-
-        const send = (event: unknown) => {
-          if (res.writableEnded || res.destroyed) return;
-          res.write(`data: ${JSON.stringify(event)}\n\n`);
-        };
+        const { send, signal, stopHeartbeat } = openEventStream(res);
 
         send({ type: "conversation", conversationId: conversation.id });
 
@@ -795,7 +769,7 @@ export function registerAiRoutes(
               deps: toolDeps,
             },
             tools,
-            signal: abort.signal,
+            signal,
           })) {
             if (event.type === "message") {
               // Every step is kept, tool results included, so the next message
@@ -832,7 +806,7 @@ export function registerAiRoutes(
             send(event);
           }
         } finally {
-          clearInterval(heartbeat);
+          stopHeartbeat();
         }
         await repository.touchConversation(conversation.id);
 

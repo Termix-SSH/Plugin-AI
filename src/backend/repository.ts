@@ -3,6 +3,7 @@ import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
   conversations as conversationsDef,
   messages as messagesDef,
+  opsRuns as opsRunsDef,
   proposals as proposalsDef,
   providers as providersDef,
 } from "./tables.js";
@@ -37,8 +38,24 @@ export interface AiConversationRecord {
   title: string | null;
   providerId: number | null;
   model: string | null;
+  mode: ConversationMode;
+  /** JSON host ids, for an ops conversation. */
+  targets: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ConversationMode = "chat" | "ops";
+
+/** One command on one host, as Cluster Ops records it. */
+export interface OpsRunInput {
+  conversationId: number;
+  userId: string;
+  hostId: number;
+  command: string;
+  exitCode: number | null;
+  durationMs: number;
+  output: string;
 }
 
 export interface AiMessageRecord {
@@ -103,6 +120,7 @@ export async function createAiRepository(
   const conversations: Table = await db.define(conversationsDef);
   const messages: Table = await db.define(messagesDef);
   const proposals: Table = await db.define(proposalsDef);
+  const opsRuns: Table = await db.define(opsRunsDef);
 
   const client = () => db.client<Drizzle>();
 
@@ -246,11 +264,14 @@ export async function createAiRepository(
     async listConversations(
       userId: string,
       limit = 50,
+      mode: ConversationMode = "chat",
     ): Promise<AiConversationRecord[]> {
       return (await client())
         .select()
         .from(conversations)
-        .where(eq(conversations.userId, userId))
+        .where(
+          and(eq(conversations.userId, userId), eq(conversations.mode, mode)),
+        )
         .orderBy(desc(conversations.updatedAt))
         .limit(limit);
     },
@@ -270,6 +291,8 @@ export async function createAiRepository(
       title?: string | null;
       providerId?: number | null;
       model?: string | null;
+      mode?: ConversationMode;
+      targets?: number[];
     }): Promise<AiConversationRecord> {
       const stamp = now();
       const id = await insertId(conversations, {
@@ -277,6 +300,8 @@ export async function createAiRepository(
         title: input.title ?? null,
         providerId: input.providerId ?? null,
         model: input.model ?? null,
+        mode: input.mode ?? "chat",
+        targets: input.targets ? JSON.stringify(input.targets) : null,
         createdAt: stamp,
         updatedAt: stamp,
       });
@@ -296,6 +321,16 @@ export async function createAiRepository(
       await db.persist();
     },
 
+    async setConversationTargets(id: number, targets: number[]): Promise<void> {
+      await (
+        await client()
+      )
+        .update(conversations)
+        .set({ targets: JSON.stringify(targets) })
+        .where(eq(conversations.id, id));
+      await db.persist();
+    },
+
     async deleteConversation(id: number, userId: string): Promise<boolean> {
       const existing = await repo.findConversation(id, userId);
       if (!existing) return false;
@@ -304,6 +339,7 @@ export async function createAiRepository(
       const drizzle = await client();
       await drizzle.delete(messages).where(eq(messages.conversationId, id));
       await drizzle.delete(proposals).where(eq(proposals.conversationId, id));
+      await drizzle.delete(opsRuns).where(eq(opsRuns.conversationId, id));
       await drizzle
         .delete(conversations)
         .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
@@ -334,6 +370,20 @@ export async function createAiRepository(
         toolCalls: input.toolCalls ?? null,
         createdAt: now(),
       });
+      await db.persist();
+    },
+
+    // --- ops runs ---
+
+    /** One insert and one persist for a whole fan-out. */
+    async recordOpsRuns(runs: OpsRunInput[]): Promise<void> {
+      if (!runs.length) return;
+      const createdAt = now();
+      await (
+        await client()
+      )
+        .insert(opsRuns)
+        .values(runs.map((run) => ({ ...run, createdAt })));
       await db.persist();
     },
 

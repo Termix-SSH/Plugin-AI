@@ -69,6 +69,10 @@ interface FleetsAccess {
   list: () => Promise<
     Array<{ id: number; name: string; color: string | null }>
   >;
+  /** A fleet's effective members: static ones plus tag matches. */
+  members: (
+    fleetId: number,
+  ) => Promise<Array<{ id: number; name: string | null; ip: string }>>;
   create: (input: {
     name: string;
     description?: string | null;

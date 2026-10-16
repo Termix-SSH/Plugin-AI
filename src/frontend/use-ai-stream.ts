@@ -2,6 +2,7 @@ import { getErrorMessage } from "./errors";
 import { useCallback, useRef, useState } from "react";
 import { aiApp } from "./app-ref";
 import type { AiProposal } from "./ai-api";
+import type { HostResult } from "../backend/ops/tools";
 
 /**
  * Drives the chat stream.
@@ -15,6 +16,26 @@ export interface ToolActivity {
   name: string;
   arguments: Record<string, unknown>;
   result?: unknown;
+  /** Cluster Ops: each host's result, in the order they finished. */
+  progress?: HostProgress[];
+}
+
+export type HostProgress = HostResult;
+
+/** Appends a host result to the newest call of `name` still running. */
+function withProgress(
+  tools: ToolActivity[],
+  name: string,
+  host: HostProgress,
+): ToolActivity[] {
+  const next = [...tools];
+  for (let i = next.length - 1; i >= 0; i -= 1) {
+    if (next[i].name === name && !("result" in next[i])) {
+      next[i] = { ...next[i], progress: [...(next[i].progress ?? []), host] };
+      break;
+    }
+  }
+  return next;
 }
 
 export interface StreamState {
@@ -56,6 +77,10 @@ export function useAiStream() {
       model?: string;
       conversationId?: number | null;
       activeTab?: string | null;
+      /** The stream route, chat/stream unless another surface has its own. */
+      endpoint?: string;
+      /** Extra fields for that route's body. */
+      extra?: Record<string, unknown>;
       /**
        * Called however the run ends, with its steps, which are then cleared
        * from the live state. Keeping them is up to the caller.
@@ -82,7 +107,7 @@ export function useAiStream() {
       let conversationId = input.conversationId ?? null;
       let replyText = "";
       let toolSequence = 0;
-      const runTools: ToolActivity[] = [];
+      let runTools: ToolActivity[] = [];
 
       const finish = (error?: string | null) => {
         // A newer send took over; this run's state is already gone.
@@ -98,7 +123,7 @@ export function useAiStream() {
       };
 
       try {
-        const response = await aiApp().fetch("chat/stream", {
+        const response = await aiApp().fetch(input.endpoint ?? "chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
@@ -108,6 +133,7 @@ export function useAiStream() {
             model: input.model,
             conversationId: input.conversationId ?? undefined,
             activeTab: input.activeTab ?? undefined,
+            ...input.extra,
           }),
         });
 
@@ -211,6 +237,12 @@ export function useAiStream() {
                 }
                 return { ...prev, tools };
               });
+            } else if (event.type === "tool_progress") {
+              runTools = withProgress(runTools, event.name, event.host);
+              setState((prev) => ({
+                ...prev,
+                tools: withProgress(prev.tools, event.name, event.host),
+              }));
             } else if (event.type === "proposal") {
               setState((prev) => ({
                 ...prev,
