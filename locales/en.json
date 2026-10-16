@@ -265,7 +265,9 @@
   },
   "assistant": {
     "title": "Termix assistant",
+    "moveHint": "Drag to move. Double-click to dock to the side.",
     "toggle": "Toggle the AI assistant",
+    "unread": "New results in the assistant",
     "close": "Close",
     "dock": "Dock to the right",
     "float": "Float",

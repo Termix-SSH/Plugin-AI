@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
   useCurrentUser,
   useTranslation,
@@ -17,9 +17,10 @@ import { AssistantChat } from "./AssistantChat";
 import { assistant, useAssistant } from "./store";
 
 /**
- * The assistant everywhere: a ball in the corner and the panel it opens,
- * rendered once in the shell's "shell.overlay" slot. Closing the panel only
- * hides it; a run in progress carries on in the store.
+ * The assistant everywhere: a ball that opens a panel you can drag and
+ * resize, rendered once in the shell's "shell.overlay" slot. The ball steps
+ * aside while the panel is open. Closing the panel only hides it; a run in
+ * progress carries on in the store.
  */
 
 export const OPS_TAB_ID = "ai-ops";
@@ -64,6 +65,16 @@ function clamp(position: Position): Position {
 function Ball({ userKey }: { userKey: string }) {
   const { t } = useTranslation();
   const { streaming, open } = useAssistant();
+  // A run that finished while the panel was closed leaves a dot to come back to.
+  const [unread, setUnread] = useState(false);
+  const wasStreaming = useRef(streaming);
+  useEffect(() => {
+    if (wasStreaming.current && !streaming && !open) setUnread(true);
+    wasStreaming.current = streaming;
+  }, [streaming, open]);
+  useEffect(() => {
+    if (open) setUnread(false);
+  }, [open]);
   const [position, setPosition] = useState(() =>
     clamp(readPosition(storageKey(userKey))),
   );
@@ -113,6 +124,7 @@ function Ball({ userKey }: { userKey: string }) {
       aria-label={t("assistant.toggle")}
       aria-expanded={open}
       title={t("assistant.toggle")}
+      hidden={open}
       className="pointer-events-auto fixed z-50 flex touch-none items-center justify-center rounded-full border border-accent-brand/40 bg-background text-accent-brand hover:bg-accent-brand/10"
       style={{
         right: position.right,
@@ -138,56 +150,153 @@ function Ball({ userKey }: { userKey: string }) {
       ) : (
         <Sparkles className="size-5" />
       )}
+      {unread && (
+        <span
+          data-testid="assistant-unread"
+          aria-label={t("assistant.unread")}
+          className="absolute right-0.5 top-0.5 size-2.5 rounded-full bg-accent-brand"
+        />
+      )}
     </button>
   );
 }
 
-const MIN_SIZE = 320;
+const MIN_WIDTH = 320;
+const MIN_HEIGHT = 360;
+/** How much of the header stays reachable when the panel is pushed off screen. */
+const GRIP = 48;
 
-/** The floating panel's size, from a handle on its top-left corner. */
-function usePanelSize() {
-  const [size, setSize] = useState({ width: 420, height: 560 });
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type Edge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+const panelKey = (user: string) => `termix-ai:assistant-panel:${user}`;
+
+/** On screen and no smaller than the minimum, wherever it was left. */
+function fitRect(rect: Rect): Rect {
+  const width = Math.min(Math.max(rect.width, MIN_WIDTH), window.innerWidth);
+  const height = Math.min(
+    Math.max(rect.height, MIN_HEIGHT),
+    window.innerHeight,
+  );
+  return {
+    width,
+    height,
+    x: Math.min(Math.max(rect.x, GRIP - width), window.innerWidth - GRIP),
+    y: Math.min(Math.max(rect.y, 0), window.innerHeight - GRIP),
+  };
+}
+
+/** The saved rect, or one opening just above the ball. */
+function initialRect(user: string): Rect {
+  try {
+    const saved = JSON.parse(localStorage.getItem(panelKey(user)) ?? "null");
+    if (
+      ["x", "y", "width", "height"].every((k) => Number.isFinite(saved?.[k]))
+    ) {
+      return fitRect(saved);
+    }
+  } catch {
+    // Open next to the ball instead.
+  }
+  const ball = clamp(readPosition(storageKey(user)));
+  const width = 420;
+  const height = 560;
+  return fitRect({
+    width,
+    height,
+    x: window.innerWidth - ball.right - width,
+    y: window.innerHeight - ball.bottom - BALL - MARGIN / 2 - height,
+  });
+}
+
+/** Moves a rect by a drag on `edge`, or the whole rect for the header. */
+function dragRect(start: Rect, edge: Edge | "move", dx: number, dy: number) {
+  if (edge === "move") return { ...start, x: start.x + dx, y: start.y + dy };
+  const next = { ...start };
+  if (edge.includes("e")) next.width = start.width + dx;
+  if (edge.includes("s")) next.height = start.height + dy;
+  if (edge.includes("w")) {
+    next.width = Math.max(start.width - dx, MIN_WIDTH);
+    next.x = start.x + start.width - next.width;
+  }
+  if (edge.includes("n")) {
+    next.height = Math.max(start.height - dy, MIN_HEIGHT);
+    next.y = start.y + start.height - next.height;
+  }
+  return next;
+}
+
+const EDGES: Array<[Edge, string]> = [
+  ["n", "left-2 right-2 top-0 h-1.5 cursor-ns-resize"],
+  ["s", "bottom-0 left-2 right-2 h-1.5 cursor-ns-resize"],
+  ["e", "bottom-2 right-0 top-2 w-1.5 cursor-ew-resize"],
+  ["w", "bottom-2 left-0 top-2 w-1.5 cursor-ew-resize"],
+  ["nw", "left-0 top-0 size-3 cursor-nwse-resize"],
+  ["se", "bottom-0 right-0 size-3 cursor-nwse-resize"],
+  ["ne", "right-0 top-0 size-3 cursor-nesw-resize"],
+  ["sw", "bottom-0 left-0 size-3 cursor-nesw-resize"],
+];
+
+/** Where the floating panel is, moved by its header and sized by its edges. */
+function usePanelRect(user: string) {
+  const [rect, setRect] = useState(() => initialRect(user));
   const drag = useRef<{
     x: number;
     y: number;
-    width: number;
-    height: number;
+    start: Rect;
+    edge: Edge | "move";
   } | null>(null);
-  const fit = (value: number, room: number) =>
-    Math.round(Math.min(Math.max(value, MIN_SIZE), Math.max(room, MIN_SIZE)));
 
-  const handle = {
-    onPointerDown: (event: PointerEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    const refit = () => setRect((current) => fitRect(current));
+    window.addEventListener("resize", refit);
+    return () => window.removeEventListener("resize", refit);
+  }, []);
+
+  const handlers = (edge: Edge | "move") => ({
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      // Buttons in the header stay clickable.
+      if ((event.target as HTMLElement).closest("button")) return;
       event.currentTarget.setPointerCapture?.(event.pointerId);
-      drag.current = { x: event.clientX, y: event.clientY, ...size };
+      drag.current = { x: event.clientX, y: event.clientY, start: rect, edge };
     },
-    onPointerMove: (event: PointerEvent<HTMLDivElement>) => {
-      const start = drag.current;
-      if (!start) return;
-      // Anchored bottom-right, so pulling up and left makes it bigger.
-      setSize({
-        width: fit(
-          start.width - (event.clientX - start.x),
-          window.innerWidth - 48,
+    onPointerMove: (event: PointerEvent<HTMLElement>) => {
+      const current = drag.current;
+      if (!current) return;
+      setRect(
+        fitRect(
+          dragRect(
+            current.start,
+            current.edge,
+            event.clientX - current.x,
+            event.clientY - current.y,
+          ),
         ),
-        height: fit(
-          start.height - (event.clientY - start.y),
-          window.innerHeight - 112,
-        ),
-      });
+      );
     },
     onPointerUp: () => {
+      if (!drag.current) return;
       drag.current = null;
+      setRect((current) => {
+        localStorage.setItem(panelKey(user), JSON.stringify(current));
+        return current;
+      });
     },
-  };
-  return { size, handle };
+  });
+  return { rect, handlers };
 }
 
-function Panel() {
+function Panel({ userKey }: { userKey: string }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { open, drawer } = useAssistant();
-  const { size, handle } = usePanelSize();
+  const { rect, handlers } = usePanelRect(userKey);
   const docked = drawer || isMobile;
 
   const iconButton = "size-7";
@@ -237,20 +346,38 @@ function Panel() {
       aria-label={t("assistant.title")}
       hidden={!open}
       className={`pointer-events-auto fixed z-50 flex flex-col overflow-hidden border border-border bg-background text-foreground ${
-        docked
-          ? "bottom-0 right-0 top-0 w-full sm:w-[440px]"
-          : "bottom-20 right-6 max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)]"
+        docked ? "bottom-0 right-0 top-0 w-full sm:w-[440px]" : ""
       }`}
-      style={docked ? undefined : size}
+      style={
+        docked
+          ? undefined
+          : {
+              left: rect.x,
+              top: rect.y,
+              width: rect.width,
+              height: rect.height,
+            }
+      }
     >
-      {!docked && (
-        <div
-          aria-hidden
-          className="absolute left-0 top-0 z-10 size-3 cursor-nwse-resize touch-none"
-          {...handle}
-        />
-      )}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5 text-xs font-medium">
+      {!docked &&
+        EDGES.map(([edge, place]) => (
+          <div
+            key={edge}
+            aria-hidden
+            data-edge={edge}
+            className={`absolute z-10 touch-none ${place}`}
+            {...handlers(edge)}
+          />
+        ))}
+      <div
+        className={`flex shrink-0 select-none items-center gap-2 border-b border-border px-3 py-1.5 text-xs font-medium ${
+          docked ? "" : "cursor-move touch-none"
+        }`}
+        data-testid="assistant-header"
+        title={docked ? undefined : t("assistant.moveHint")}
+        onDoubleClick={() => !isMobile && assistant.setDrawer(!drawer)}
+        {...(docked ? {} : handlers("move"))}
+      >
         <Sparkles className="size-3.5 text-accent-brand" />
         {t("assistant.title")}
       </div>
@@ -269,7 +396,7 @@ export function AssistantOverlay() {
   return (
     <>
       <Ball userKey={user?.userId ?? "anonymous"} />
-      {opened.current && <Panel />}
+      {opened.current && <Panel userKey={user?.userId ?? "anonymous"} />}
     </>
   );
 }

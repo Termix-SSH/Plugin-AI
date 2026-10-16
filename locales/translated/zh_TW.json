@@ -267,7 +267,9 @@
   },
   "assistant": {
     "title": "Termix 助理",
+    "moveHint": "拖曳可移動，按兩下可停靠到側邊。",
     "toggle": "開啟或關閉 AI 助理",
+    "unread": "助理有新結果",
     "close": "關閉",
     "dock": "停靠到右側",
     "float": "浮動",

@@ -124,11 +124,65 @@ describe(`${manifest.id} activate`, () => {
     expect(
       await within(overlay).findByRole("dialog", { name: "Termix assistant" }),
     ).toBeTruthy();
+    // The ball steps aside while the panel is open.
+    expect(
+      within(overlay).queryByRole("button", {
+        name: "Toggle the AI assistant",
+      }),
+    ).toBeNull();
 
-    // The default key toggles it too.
+    // The default key toggles it too, and the ball comes back.
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
     );
     expect(assistant.get().open).toBe(false);
+    expect(
+      await within(overlay).findByRole("button", {
+        name: "Toggle the AI assistant",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("moves the panel by its header and resizes it from an edge", async () => {
+    localStorage.clear();
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["ai.ops.use"],
+    });
+    await waitFor(() =>
+      expect(rendered!.registered.slot("shell.overlay")).toHaveLength(1),
+    );
+    Element.prototype.scrollTo = vi.fn();
+    const overlay = rendered.renderSlot("shell.overlay");
+    assistant.setOpen(true);
+    const dialog = await within(overlay).findByRole("dialog", {
+      name: "Termix assistant",
+    });
+    const start = { left: dialog.style.left, top: dialog.style.top };
+    const px = (value: string) => Number.parseFloat(value);
+
+    const header = within(overlay).getByTestId("assistant-header");
+    fireEvent.pointerDown(header, { clientX: 300, clientY: 300 });
+    fireEvent.pointerMove(header, { clientX: 260, clientY: 250 });
+    fireEvent.pointerUp(header, { clientX: 260, clientY: 250 });
+    expect(px(dialog.style.left)).toBe(px(start.left) - 40);
+    expect(px(dialog.style.top)).toBe(px(start.top) - 50);
+
+    const corner = dialog.querySelector('[data-edge="se"]')!;
+    const width = px(dialog.style.width);
+    fireEvent.pointerDown(corner, { clientX: 500, clientY: 500 });
+    fireEvent.pointerMove(corner, { clientX: 470, clientY: 520 });
+    fireEvent.pointerUp(corner, { clientX: 470, clientY: 520 });
+    expect(px(dialog.style.width)).toBe(Math.max(width - 30, 320));
+
+    const saved = Object.keys(localStorage).find((key) =>
+      key.startsWith("termix-ai:assistant-panel:"),
+    );
+    expect(JSON.parse(localStorage.getItem(saved!)!)).toMatchObject({
+      x: px(dialog.style.left),
+      width: px(dialog.style.width),
+    });
+    assistant.setOpen(false);
   });
 });
