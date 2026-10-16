@@ -38,7 +38,7 @@ describe("checkCliArgs", () => {
     [["hosts", "export"], "hosts export"],
     [["api-keys", "create", "--name", "x"], "api-keys create"],
   ])("refuses %j", (args, named) => {
-    expect(checkCliArgs(args)).toContain(`termix ${named} `);
+    expect(checkCliArgs(args, true)).toContain(`termix ${named} `);
   });
 
   it.each([
@@ -52,7 +52,7 @@ describe("checkCliArgs", () => {
     ["--output", "/tmp/out.json"],
     ["--password-stdin"],
   ])("refuses the flag in %j", (...flag) => {
-    expect(checkCliArgs(["hosts", "list", ...flag])).toMatch(/^--/);
+    expect(checkCliArgs(["hosts", "list", ...flag], true)).toMatch(/^--/);
   });
 
   it.each([
@@ -61,25 +61,53 @@ describe("checkCliArgs", () => {
     ["/admin/export/user-1"],
     ["/plugin-api/x/export?all=1"],
   ])("refuses the export route %s through api", (route) => {
-    expect(checkCliArgs(["api", "POST", route])).toContain("export routes");
+    expect(checkCliArgs(["api", "POST", route], true)).toContain(
+      "export routes",
+    );
   });
 
   it("lets help through for every command, and ordinary commands", () => {
-    expect(checkCliArgs(["ssh", "--help"])).toBeNull();
-    expect(checkCliArgs(["help", "tunnel"])).toBeNull();
-    expect(checkCliArgs(["tunnel", "start", "-h"])).toBeNull();
-    expect(checkCliArgs(["hosts", "list"])).toBeNull();
-    expect(checkCliArgs(["tunnel", "list"])).toBeNull();
-    expect(checkCliArgs(["files", "cat", "1", "/etc/hosts"])).toBeNull();
-    expect(checkCliArgs(["api", "GET", "/version"])).toBeNull();
-    expect(checkCliArgs(["api", "GET", "/exports-list"])).toBeNull();
-    expect(checkCliArgs(["hosts", "export", "--help"])).toBeNull();
-    expect(checkCliArgs([])).toContain("empty");
+    expect(checkCliArgs(["ssh", "--help"], true)).toBeNull();
+    expect(checkCliArgs(["help", "tunnel"], true)).toBeNull();
+    expect(checkCliArgs(["tunnel", "start", "-h"], true)).toBeNull();
+    expect(checkCliArgs(["hosts", "list"], true)).toBeNull();
+    expect(checkCliArgs(["tunnel", "list"], true)).toBeNull();
+    expect(checkCliArgs(["files", "cat", "1", "/etc/hosts"], true)).toBeNull();
+    expect(checkCliArgs(["api", "GET", "/version"], true)).toBeNull();
+    expect(checkCliArgs(["api", "GET", "/exports-list"], true)).toBeNull();
+    expect(checkCliArgs(["hosts", "export", "--help"], true)).toBeNull();
+    expect(checkCliArgs([], true)).toContain("empty");
+  });
+
+  it.each([
+    [["exec", "1", "uptime"]],
+    [["--json", "exec", "1", "rm", "-rf", "/tmp/x"]],
+    [["fleets", "exec", "3", "uptime"]],
+    [["snippets", "run", "4", "--host", "1"]],
+    [["api", "POST", "/plugin-api/snippets/execute", "--data", "{}"]],
+    [["api", "POST", "/plugin-api/fleets/3/execute"]],
+    [["api", "POST", "/plugin-api/docker/1/c1/exec?tty=0"]],
+  ])("refuses %j without a shell on hosts", (args) => {
+    expect(checkCliArgs(args, false)).toContain("ai.ops.use");
+    expect(checkCliArgs(args, true)).toBeNull();
+  });
+
+  it("lets the rest through without a shell on hosts", () => {
+    expect(checkCliArgs(["hosts", "list"], false)).toBeNull();
+    expect(checkCliArgs(["fleets", "list"], false)).toBeNull();
+    expect(checkCliArgs(["snippets", "list"], false)).toBeNull();
+    expect(checkCliArgs(["docker", "restart", "1", "c1"], false)).toBeNull();
+    expect(checkCliArgs(["exec", "--help"], false)).toBeNull();
+    expect(
+      checkCliArgs(["api", "GET", "/plugin-api/snippets"], false),
+    ).toBeNull();
+    // What is blocked for everyone stays blocked.
+    expect(checkCliArgs(["ssh", "1"], false)).toContain("termix ssh ");
   });
 
   it("still refuses a disk flag next to --help", () => {
     expect(
-      checkCliArgs(["snippets", "create", "--content-file", "/x", "-h"]),
+      checkCliArgs(["snippets", "create", "--content-file", "/x", "-h"], true),
     ).toMatch(/^--content-file/);
   });
 });

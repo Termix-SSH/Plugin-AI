@@ -262,7 +262,7 @@ export interface OpsFleet {
   hostIds: number[];
 }
 
-/** Fleets for the Cluster Ops picker; available is false without the plugin. */
+/** Fleets for the target picker; available is false without the plugin. */
 export async function getOpsFleets(): Promise<{
   available: boolean;
   fleets: OpsFleet[];
@@ -280,7 +280,7 @@ export interface AssistantConversation {
   updatedAt: string;
 }
 
-/** The assistant's conversations, shared by the floating panel and Cluster Ops. */
+/** The assistant's conversations, shared by the floating panel and the AI tab. */
 export async function listAssistantConversations(): Promise<
   AssistantConversation[]
 > {

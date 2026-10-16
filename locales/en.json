@@ -22,7 +22,7 @@
     },
     "ops": {
       "use": {
-        "title": "Use Cluster Ops",
+        "title": "Run commands on hosts with the AI assistant",
         "description": "Let the assistant run any shell command on the hosts you select. Admins only by default."
       }
     }
@@ -44,19 +44,19 @@
         "description": "Hosts on your private network that users may point a provider at, such as a self-hosted Ollama. Put one host on each line."
       },
       "opsMaxTurns": {
-        "label": "Cluster Ops step limit",
-        "description": "How many model turns one Cluster Ops message may take before it stops."
+        "label": "AI assistant step limit",
+        "description": "How many model turns one assistant message may take before it stops."
       },
       "opsConcurrency": {
-        "label": "Cluster Ops parallel hosts",
-        "description": "How many hosts a Cluster Ops command runs on at the same time."
+        "label": "AI assistant parallel hosts",
+        "description": "How many hosts an assistant command runs on at the same time."
       },
       "opsCommandTimeout": {
-        "label": "Cluster Ops command timeout (seconds)",
+        "label": "AI assistant command timeout (seconds)",
         "description": "How long a command may run on a host before it is stopped. The assistant can ask for up to 600."
       },
       "opsOutputLimit": {
-        "label": "Cluster Ops output per host (characters)",
+        "label": "AI assistant output per host (characters)",
         "description": "How much of each host's output is kept. Longer output keeps its start and end."
       }
     },
@@ -68,7 +68,6 @@
     }
   },
   "ai": {
-    "title": "Assistant",
     "send": "Send",
     "stop": "Stop",
     "save": "Save",
@@ -76,9 +75,7 @@
     "running": "running",
     "approve": "Approve",
     "reject": "Reject",
-    "inputPlaceholder": "Ask about your servers, or describe a change to propose",
     "selectProvider": "Select a provider",
-    "providerSettings": "Provider settings",
     "addProvider": "Add provider",
     "editProvider": "Edit provider",
     "removeProvider": "Remove provider",
@@ -113,12 +110,11 @@
     "modelCustom": "Enter a model name",
     "modelRefresh": "Refresh list",
     "modelPlaceholder": "Choose or type a model",
-    "attachHint": "Type @ to reference a host, snippet or automation. Changes are proposed for you to approve.",
     "runCommandTitle": "Run command",
     "assistant": "AI Assistant",
     "terminalPanelEmpty": "Ask the assistant about this host. Anything that changes state needs your approval first.",
     "terminalPanelPlaceholder": "Ask about this host...",
-    "noProvidersConfigured": "No AI provider is configured yet. Add one in the AI assistant tab.",
+    "noProvidersConfigured": "No AI provider is configured yet. Add one in Settings.",
     "runsInOpenTerminal": "Runs in your open terminal session.",
     "runInTerminal": "Run",
     "terminalContextPrefill": "Here is my terminal output:\n\n{{output}}\n\n",
@@ -128,7 +124,7 @@
     "removeProviderConfirm": "Remove the provider {{name}}?"
   },
   "nav": {
-    "ai": "AI"
+    "ai": "AI assistant"
   },
   "onboarding": {
     "aiTitle": "AI assistant",
@@ -138,9 +134,6 @@
     "aiEnableTitle": "Turn it on",
     "aiEnableDesc": "Adds an assistant that reads your setup and suggests changes you approve. Needs a provider you supply, such as a local Ollama.",
     "aiNote": "Nothing is sent anywhere until you add a provider and send a message."
-  },
-  "hosts": {
-    "docsLink": "View docs"
   },
   "agents": {
     "working": "Working...",
@@ -237,7 +230,6 @@
     "description": "An AI assistant that reads your setup and proposes changes for you to approve."
   },
   "ops": {
-    "title": "Cluster Ops",
     "searchHosts": "Search hosts",
     "selectedCount": "{{count}} selected",
     "clear": "Clear",
@@ -264,7 +256,7 @@
     "noOutput": "(no output)"
   },
   "assistant": {
-    "title": "Termix assistant",
+    "title": "AI assistant",
     "moveHint": "Drag to move. Double-click to dock to the side.",
     "toggle": "Toggle the AI assistant",
     "unread": "New results in the assistant",
@@ -288,6 +280,9 @@
       "fleet": "Fleet",
       "folder": "Folder",
       "tag": "Tag"
-    }
+    },
+    "emptyHintBasic": "The assistant works as you through the Termix CLI, with your permissions.",
+    "inputPlaceholderBasic": "Ask the assistant.",
+    "sendHintBasic": "Changes run without asking first."
   }
 }

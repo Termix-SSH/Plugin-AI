@@ -717,7 +717,7 @@ export function registerAiRoutes(
         let conversation = conversationId
           ? await repository.findConversation(Number(conversationId), userId)
           : null;
-        // A Cluster Ops conversation can run commands; it never continues here.
+        // An assistant conversation can run commands; it never continues here.
         if (conversation?.mode === "ops") conversation = null;
         if (!conversation) {
           conversation = await repository.createConversation({

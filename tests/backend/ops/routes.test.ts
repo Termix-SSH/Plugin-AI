@@ -75,14 +75,27 @@ async function addProvider(target: TestServer): Promise<number> {
 describe("ops routes", () => {
   it.each([
     ["GET", "/ops/fleets"],
+    ["GET", "/ops/conversations"],
     ["POST", "/ops/chat"],
-  ])("%s %s answers 403 without ai.ops.use", async (method, path) => {
-    server = await startServer({ permissions: ALL_PERMISSIONS });
+  ])("%s %s answers 403 without ai.use", async (method, path) => {
+    server = await startServer({ permissions: ["ai.ops.use"] });
     await server.enableFor("user-1");
     expect((await server.request(method, path, { body: {} })).status).toBe(403);
   });
 
-  it("answers 403 while the assistant is off, even with the permission", async () => {
+  it("refuses targets from a user without ai.ops.use", async () => {
+    server = await startServer({ permissions: ALL_PERMISSIONS });
+    await server.enableFor("user-1");
+    const providerId = await addProvider(server);
+
+    const reply = await server.request("POST", "/ops/chat", {
+      body: { providerId, message: "uptime please", hostIds: [1] },
+    });
+    expect(reply.status).toBe(403);
+    expect(reply.body.error).toContain("ai.ops.use");
+  });
+
+  it("answers 403 while the assistant is off, even with the permissions", async () => {
     server = await startServer({ permissions: OPS_PERMISSIONS });
     expect((await server.request("GET", "/ops/fleets")).status).toBe(403);
   });

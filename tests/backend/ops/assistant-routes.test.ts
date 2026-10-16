@@ -234,6 +234,39 @@ describe("assistant routes", () => {
     expect(model.bodies[0].messages[0].content).not.toContain("termix tool");
   });
 
+  it("gives a user without ai.ops.use the assistant but no shell on hosts", async () => {
+    const model = scriptedModel();
+    server = await startServer({
+      permissions: ALL_PERMISSIONS,
+      fetch: model.fetch,
+      process: { run: spawnRun },
+    });
+    await server.enableFor("user-1");
+    const providerId = await addProvider(server);
+
+    const reply = await server.request("POST", "/ops/chat", {
+      body: { providerId, message: "hi", hostIds: [] },
+      headers: { authorization: "Bearer user-jwt" },
+    });
+    expect(reply.status).toBe(200);
+    const names = model.bodies[0].tools?.map((tool) => tool.function.name);
+    expect(names).toEqual(
+      expect.arrayContaining(["termix", "open_tab", "open_settings"]),
+    );
+    for (const name of [
+      "run_command",
+      "get_host_facts",
+      "list_targets",
+      "set_targets",
+    ]) {
+      expect(names).not.toContain(name);
+    }
+    const system = model.bodies[0].messages[0].content;
+    expect(system).not.toContain("run_command");
+    expect(system).not.toContain("target host");
+    expect(system).toContain("cannot run shell commands on hosts");
+  });
+
   it("lists, loads and deletes the assistant's conversations only", async () => {
     const model = scriptedModel();
     server = await startServer({

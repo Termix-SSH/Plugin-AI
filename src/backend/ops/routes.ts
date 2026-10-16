@@ -88,8 +88,9 @@ export async function readOpsLimits(
 }
 
 /**
- * Cluster Ops: the assistant with a shell on hosts the user picked. Mounted
- * under /plugin-api/ai/ops, behind the ops.use permission and the AI gate.
+ * The assistant behind the floating panel and the AI tab. Mounted under
+ * /plugin-api/ai/ops, behind the use permission and the AI gate. A shell on
+ * the hosts the user picked additionally needs ops.use, checked per request.
  */
 export function registerOpsRoutes(
   router: Router,
@@ -97,7 +98,7 @@ export function registerOpsRoutes(
   ctx: PluginContext,
 ): void {
   const gate = createAiGate(ctx.settings, () => ctx.currentActor());
-  router.use("/ops", ctx.rbac.require("ops.use") as never, gate as never);
+  router.use("/ops", ctx.rbac.require("use") as never, gate as never);
 
   const toolDeps: ToolDeps = {
     hosts: ctx.hosts,
@@ -143,7 +144,7 @@ export function registerOpsRoutes(
    *   get:
    *     summary: The user's fleets with their member host ids
    *     description: >
-   *       For the Cluster Ops target picker. available is false while the
+   *       For the assistant's target picker. available is false while the
    *       fleets plugin is not running or the user may not read fleets.
    *     tags:
    *       - AI
@@ -151,7 +152,7 @@ export function registerOpsRoutes(
    *       200:
    *         description: Fleets and whether the fleets plugin is available.
    *       403:
-   *         description: Missing ai.ops.use, or the assistant is off.
+   *         description: Missing ai.use, or the assistant is off.
    */
   router.get("/ops/fleets", async (_req: Request, res: Response) => {
     const fleets = await readService(
@@ -175,14 +176,14 @@ export function registerOpsRoutes(
    *   get:
    *     summary: The assistant's conversations, newest first
    *     description: >
-   *       Shared by the floating assistant and the Cluster Ops tab.
+   *       Shared by the floating assistant and the AI tab.
    *     tags:
    *       - AI
    *     responses:
    *       200:
    *         description: Conversations with their targets.
    *       403:
-   *         description: Missing ai.ops.use, or the assistant is off.
+   *         description: Missing ai.use, or the assistant is off.
    */
   router.get("/ops/conversations", async (_req: Request, res: Response) => {
     const userId = ctx.currentActor() as string;
@@ -271,8 +272,10 @@ export function registerOpsRoutes(
    *       each host as its command finishes, a targets frame when the
    *       assistant changes the targets and a client_action frame when it asks
    *       the browser to open a view. hostIds become the conversation's
-   *       targets; leave them out to keep the ones it has. page is what the
-   *       user is looking at.
+   *       targets; leave them out to keep the ones it has. Targets, and the
+   *       tools that run commands on them, need ai.ops.use; without it a
+   *       non-empty hostIds is refused and the CLI cannot exec on hosts.
+   *       page is what the user is looking at.
    *     tags:
    *       - AI
    *     requestBody:
@@ -311,7 +314,9 @@ export function registerOpsRoutes(
    *       400:
    *         description: Invalid request body.
    *       403:
-   *         description: Missing ai.ops.use, or the assistant is off.
+   *         description: >
+   *           Missing ai.use, hostIds sent without ai.ops.use, or the
+   *           assistant is off.
    *       404:
    *         description: Provider or conversation not found.
    */
@@ -332,6 +337,12 @@ export function registerOpsRoutes(
       return res
         .status(400)
         .json({ error: "hostIds must be a list of host ids" });
+    }
+    const hostShell = await ctx.rbac.has("ops.use");
+    if (!hostShell && requested?.length) {
+      return res.status(403).json({
+        error: "Running commands on hosts needs the ai.ops.use permission",
+      });
     }
 
     try {
@@ -357,7 +368,9 @@ export function registerOpsRoutes(
         return res.status(404).json({ error: "Conversation not found" });
       }
 
-      const targets = requested ?? storedTargets(conversation?.targets);
+      const targets = hostShell
+        ? (requested ?? storedTargets(conversation?.targets))
+        : [];
 
       if (!conversation) {
         conversation = await repository.createConversation({
@@ -368,7 +381,7 @@ export function registerOpsRoutes(
           mode: "ops",
           targets,
         });
-      } else if (requested) {
+      } else if (requested && hostShell) {
         await repository.setConversationTargets(conversation.id, targets);
       }
 
@@ -397,6 +410,7 @@ export function registerOpsRoutes(
       const cliPath = bundledCliPath();
       const ownId = conversation.id;
       const session: AssistantSession = {
+        hostShell,
         targets,
         limits,
         signal,
@@ -421,7 +435,7 @@ export function registerOpsRoutes(
         recordCliRun: (run) => repository.recordCliRun(run),
       };
       const tools = [
-        ...createOpsTools(session),
+        ...(hostShell ? createOpsTools(session) : []),
         ...createAssistantTools(session),
       ];
 
@@ -436,6 +450,7 @@ export function registerOpsRoutes(
             targetCount: targets.length,
             page: parsePage(page),
             cli: session.cli !== null,
+            hostShell,
           }),
           history: chatHistory,
           context: {
@@ -465,7 +480,7 @@ export function registerOpsRoutes(
       send({ type: "done" });
       res.end();
     } catch (err) {
-      logError("Cluster Ops stream failed", err);
+      logError("Assistant stream failed", err);
       if (res.writableEnded || res.destroyed) return;
       if (res.headersSent) {
         res.write(

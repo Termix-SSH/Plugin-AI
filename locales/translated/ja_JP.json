@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "アシスタント",
     "send": "送信",
     "stop": "停止",
     "save": "保存",
@@ -58,9 +57,7 @@
     "running": "実行中",
     "approve": "承認",
     "reject": "拒否",
-    "inputPlaceholder": "サーバーについて質問するか、提案する変更を説明してください",
     "selectProvider": "プロバイダーを選択",
-    "providerSettings": "プロバイダー設定",
     "addProvider": "プロバイダーを追加",
     "editProvider": "プロバイダーを編集",
     "removeProvider": "プロバイダーを削除",
@@ -95,7 +92,6 @@
     "modelCustom": "モデル名を入力",
     "modelRefresh": "リストを更新",
     "modelPlaceholder": "モデルを選択または入力",
-    "attachHint": "@ を入力して、ホスト、スニペット、または自動化を参照してください。変更は承認のために提案されます。",
     "runCommandTitle": "コマンドを実行",
     "assistant": "AI アシスタント",
     "terminalPanelEmpty": "このホストについてアシスタントに質問してください。状態を変更する操作は、まずあなたの承認が必要です。",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "有効にする",
     "aiEnableDesc": "設定を読み取り、承認した変更を提案するアシスタントを追加します。Ollama のようなローカルプロバイダーが必要です。",
     "aiNote": "プロバイダーを追加してメッセージを送信するまで、何も送信されません。"
-  },
-  "hosts": {
-    "docsLink": "ドキュメントを表示"
   },
   "agents": {
     "working": "処理中...",

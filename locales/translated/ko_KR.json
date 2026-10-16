@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "어시스턴트",
     "send": "보내기",
     "stop": "중지",
     "save": "저장",
@@ -58,9 +57,7 @@
     "running": "실행 중",
     "approve": "승인",
     "reject": "거부",
-    "inputPlaceholder": "서버에 대해 질문하거나 제안할 변경 사항을 설명하세요",
     "selectProvider": "프로바이더 선택",
-    "providerSettings": "프로바이더 설정",
     "addProvider": "프로바이더 추가",
     "editProvider": "프로바이더 수정",
     "removeProvider": "프로바이더 제거",
@@ -95,7 +92,6 @@
     "modelCustom": "모델 이름 입력",
     "modelRefresh": "목록 새로고침",
     "modelPlaceholder": "모델 선택 또는 입력",
-    "attachHint": "@를 입력하여 호스트, 스니펫 또는 자동화를 참조하세요. 변경 사항은 승인을 위해 제안됩니다.",
     "runCommandTitle": "명령어 실행",
     "assistant": "AI 어시스턴트",
     "terminalPanelEmpty": "이 호스트에 대해 어시스턴트에게 질문하세요. 상태를 변경하는 작업은 먼저 승인이 필요합니다.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "활성화",
     "aiEnableDesc": "설정을 읽고 승인한 변경 사항을 제안하는 어시스턴트를 추가합니다. 로컬 Ollama와 같이 사용자가 제공하는 제공업체가 필요합니다.",
     "aiNote": "제공업체를 추가하고 메시지를 보내기 전까지는 아무것도 전송되지 않습니다."
-  },
-  "hosts": {
-    "docsLink": "문서 보기"
   },
   "agents": {
     "working": "작업 중...",

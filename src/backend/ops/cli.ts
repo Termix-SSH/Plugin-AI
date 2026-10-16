@@ -67,6 +67,22 @@ const BLOCKED: Record<string, { all?: true; sub?: string[]; why: string }> = {
 };
 
 /**
+ * Subcommands that run a shell command on a host. Only users holding
+ * ai.ops.use may have the assistant run them.
+ */
+const HOST_SHELL: Record<string, { all?: true; sub?: string[] }> = {
+  exec: { all: true },
+  fleets: { sub: ["exec"] },
+  snippets: { sub: ["run"] },
+};
+
+/** The routes those subcommands call, so termix api cannot reach them either. */
+const HOST_SHELL_PATH = /\/(execute|exec)(\/|\?|$)/i;
+
+const HOST_SHELL_REFUSED =
+  "You may not run commands on hosts: that needs the ai.ops.use permission, which an admin can grant.";
+
+/**
  * Export routes return decrypted credentials and user data, which would be
  * sent to the model provider.
  */
@@ -88,8 +104,14 @@ function blockedFlag(arg: string): string | null {
   return null;
 }
 
-/** Why `args` may not run, or null when they may. Help always may. */
-export function checkCliArgs(args: string[]): string | null {
+/**
+ * Why `args` may not run, or null when they may. Help always may. Without
+ * `hostShell`, anything that runs a shell command on a host is refused too.
+ */
+export function checkCliArgs(
+  args: string[],
+  hostShell: boolean,
+): string | null {
   if (!args.length) return 'args is empty. Try ["--help"].';
 
   for (const arg of args) {
@@ -103,11 +125,17 @@ export function checkCliArgs(args: string[]): string | null {
   if (group === "api" && !help && args.some((arg) => EXPORT_PATH.test(arg))) {
     return "termix api cannot call export routes: they return decrypted credentials and user data.";
   }
-  const rule = group && !help ? BLOCKED[group] : undefined;
-  if (rule && (rule.all || (sub && rule.sub?.includes(sub)))) {
+  if (help) return null;
+  const matches = (rule?: { all?: true; sub?: string[] }) =>
+    Boolean(rule && (rule.all || (sub && rule.sub?.includes(sub))));
+  const rule = BLOCKED[group];
+  if (matches(rule)) {
     return `termix ${rule.all ? group : `${group} ${sub}`} ${rule.why}`;
   }
-  return null;
+  if (hostShell) return null;
+  const shellApi =
+    group === "api" && args.some((arg) => HOST_SHELL_PATH.test(arg));
+  return matches(HOST_SHELL[group]) || shellApi ? HOST_SHELL_REFUSED : null;
 }
 
 const SECRET_FLAG = /^--[\w-]*(password|passphrase|secret|token|key)$/i;

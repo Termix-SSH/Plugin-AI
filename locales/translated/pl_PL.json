@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asystent",
     "send": "Wyślij",
     "stop": "Zatrzymaj",
     "save": "Zapisz",
@@ -58,9 +57,7 @@
     "running": "wykonywanie",
     "approve": "Zatwierdź",
     "reject": "Odrzuć",
-    "inputPlaceholder": "Zapytaj o swoje serwery lub opisz zmianę do zaproponowania",
     "selectProvider": "Wybierz dostawcę",
-    "providerSettings": "Ustawienia dostawcy",
     "addProvider": "Dodaj dostawcę",
     "editProvider": "Edytuj dostawcę",
     "removeProvider": "Usuń dostawcę",
@@ -95,7 +92,6 @@
     "modelCustom": "Wpisz nazwę modelu",
     "modelRefresh": "Odśwież listę",
     "modelPlaceholder": "Wybierz lub wpisz model",
-    "attachHint": "Wpisz @ aby odnieść się do hosta, fragmentu kodu lub automatyzacji. Zmiany są proponowane do Twojej akceptacji.",
     "runCommandTitle": "Uruchom polecenie",
     "assistant": "Asystent AI",
     "terminalPanelEmpty": "Zapytaj asystenta o tego hosta. Każda zmiana stanu wymaga najpierw Twojej akceptacji.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Włącz",
     "aiEnableDesc": "Dodaje asystenta, który analizuje konfigurację i sugeruje zmiany do akceptacji. Wymaga dostawcy dostarczonego przez Ciebie, np. lokalnego Ollama.",
     "aiNote": "Nic nie jest wysyłane nigdzie, dopóki nie dodasz dostawcy i nie wyślesz wiadomości."
-  },
-  "hosts": {
-    "docsLink": "Zobacz dokumentację"
   },
   "agents": {
     "working": "Praca...",

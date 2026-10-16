@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistents",
     "send": "Sūtīt",
     "stop": "Apturēt",
     "save": "Saglabāt",
@@ -58,9 +57,7 @@
     "running": "darbojas",
     "approve": "Apstiprināt",
     "reject": "Noraidīt",
-    "inputPlaceholder": "Jautājiet par saviem serveriem vai aprakstiet izmaiņas priekšlikumam",
     "selectProvider": "Izvēlieties pakalpojumu sniedzēju",
-    "providerSettings": "Pakalpojumu sniedzēja iestatījumi",
     "addProvider": "Pievienot pakalpojumu sniedzēju",
     "editProvider": "Rediģēt pakalpojumu sniedzēju",
     "removeProvider": "Noņemt pakalpojumu sniedzēju",
@@ -95,7 +92,6 @@
     "modelCustom": "Ievadiet modeļa nosaukumu",
     "modelRefresh": "Atsvaidzināt sarakstu",
     "modelPlaceholder": "Izvēlieties vai ierakstiet modeli",
-    "attachHint": "Ierakstiet @, lai atsauktos uz resursdatoru, fragmentu vai automatizāciju. Izmaiņas tiek piedāvātas jūsu apstiprināšanai.",
     "runCommandTitle": "Izpildīt komandu",
     "assistant": "MI palīgs",
     "terminalPanelEmpty": "Jautājiet palīgā par šo resursdatoru. Viss, kas maina stāvokli, vispirms prasa jūsu apstiprinājumu.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Ieslēgt",
     "aiEnableDesc": "Pievieno palīgu, kas lasa jūsu konfigurāciju un piedāvā izmaiņas, kuras jūs apstiprināt. Nepieciešams pakalpojumu sniedzējs, ko nodrošināt jūs, piemēram, lokāls Ollama.",
     "aiNote": "Nekas netiek nosūtīts nekur, līdz pievienojat pakalpojumu sniedzēju un nosūtāt ziņu."
-  },
-  "hosts": {
-    "docsLink": "Apskatīt dokumentāciju"
   },
   "agents": {
     "working": "Strādā...",

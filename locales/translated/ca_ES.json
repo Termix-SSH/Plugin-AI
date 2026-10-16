@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Enviar",
     "stop": "Aturar",
     "save": "Desar",
@@ -58,9 +57,7 @@
     "running": "executant-se",
     "approve": "Aprovar",
     "reject": "Rebutjar",
-    "inputPlaceholder": "Pregunta sobre els teus servidors o descriu un canvi per proposar",
     "selectProvider": "Selecciona un proveïdor",
-    "providerSettings": "Configuració del proveïdor",
     "addProvider": "Afegeix proveïdor",
     "editProvider": "Edita proveïdor",
     "removeProvider": "Elimina proveïdor",
@@ -95,7 +92,6 @@
     "modelCustom": "Introduïu un nom de model",
     "modelRefresh": "Actualitza la llista",
     "modelPlaceholder": "Trieu o escriviu un model",
-    "attachHint": "Escriviu @ per fer referència a un amfitrió, un fragment o una automatització. Els canvis es proposen perquè els aprovieu.",
     "runCommandTitle": "Executa l'ordre",
     "assistant": "Assistent d'IA",
     "terminalPanelEmpty": "Pregunteu a l'assistent sobre aquest amfitrió. Qualsevol cosa que modifiqui l'estat necessita la vostra aprovació prèvia.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Activeu-lo",
     "aiEnableDesc": "Afegeix un assistent que llegeix la vostra configuració i suggereix canvis que heu d'aprovar. Necessita un proveïdor que proporcioneu, com ara un Ollama local.",
     "aiNote": "No s'envia res enlloc fins que no afegiu un proveïdor i envieu un missatge."
-  },
-  "hosts": {
-    "docsLink": "Visualitza la documentació"
   },
   "agents": {
     "working": "Treballant...",

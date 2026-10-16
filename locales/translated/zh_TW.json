@@ -26,7 +26,7 @@
     },
     "ops": {
       "use": {
-        "title": "使用叢集維運",
+        "title": "透過 AI 助理在主機上執行指令",
         "description": "允許助理在你選擇的主機上執行任意 shell 指令。預設僅管理員擁有。"
       }
     }
@@ -48,19 +48,19 @@
         "description": "您私人網路上的主機，使用者可將提供者指向這些主機，例如自行架設的 Ollama。每行輸入一個主機。"
       },
       "opsMaxTurns": {
-        "label": "叢集維運步數上限",
-        "description": "一則叢集維運訊息最多可使用多少輪模型呼叫，超過後停止。"
+        "label": "AI 助理步數上限",
+        "description": "一則助理訊息最多可使用多少輪模型呼叫，超過後停止。"
       },
       "opsConcurrency": {
-        "label": "叢集維運平行主機數",
-        "description": "叢集維運指令同時在多少台主機上執行。"
+        "label": "AI 助理平行主機數",
+        "description": "助理的指令同時在多少台主機上執行。"
       },
       "opsCommandTimeout": {
-        "label": "叢集維運指令逾時（秒）",
+        "label": "AI 助理指令逾時（秒）",
         "description": "指令在一台主機上執行多久後會被停止。助理最多可要求 600 秒。"
       },
       "opsOutputLimit": {
-        "label": "叢集維運每台主機輸出（字元）",
+        "label": "AI 助理每台主機輸出（字元）",
         "description": "每台主機保留多少輸出。較長的輸出會保留開頭和結尾。"
       }
     },
@@ -72,7 +72,6 @@
     }
   },
   "ai": {
-    "title": "助理",
     "send": "傳送",
     "stop": "停止",
     "save": "儲存",
@@ -80,9 +79,7 @@
     "running": "執行中",
     "approve": "核准",
     "reject": "拒絕",
-    "inputPlaceholder": "詢問關於伺服器的問題，或描述要建議的變更",
     "selectProvider": "選擇提供者",
-    "providerSettings": "提供者設定",
     "addProvider": "新增提供者",
     "editProvider": "編輯提供者",
     "removeProvider": "移除提供者",
@@ -117,12 +114,11 @@
     "modelCustom": "輸入模型名稱",
     "modelRefresh": "重新整理列表",
     "modelPlaceholder": "選擇或輸入模型",
-    "attachHint": "輸入 @ 可參考主機、程式碼片段或自動化任務。所有變更都會先提出建議，供您批准。",
     "runCommandTitle": "執行指令",
     "assistant": "AI 助理",
     "terminalPanelEmpty": "向助理詢問關於此主機的問題。任何會變更狀態的操作都需要您先批准。",
     "terminalPanelPlaceholder": "詢問關於此主機的問題...",
-    "noProvidersConfigured": "尚未設定任何 AI 服務提供者。請在 AI 助理分頁中新增一個。",
+    "noProvidersConfigured": "尚未設定任何 AI 服務提供者。請在設定中新增一個。",
     "runsInOpenTerminal": "在您開啟的終端機工作階段中執行。",
     "runInTerminal": "執行",
     "terminalContextPrefill": "以下是我的終端機輸出：\n\n{{output}}\n\n",
@@ -132,7 +128,7 @@
     "removeProviderConfirm": "要移除服務提供者 {{name}} 嗎？"
   },
   "nav": {
-    "ai": "AI"
+    "ai": "AI 助理"
   },
   "onboarding": {
     "aiTitle": "AI 助理",
@@ -142,9 +138,6 @@
     "aiEnableTitle": "開啟",
     "aiEnableDesc": "新增一個會讀取您的設定並建議變更（需您批准）的助理。需要您提供服務提供者，例如本機 Ollama。",
     "aiNote": "在您新增服務提供者並傳送訊息之前，不會將任何資料傳送至外部。"
-  },
-  "hosts": {
-    "docsLink": "查看說明文件"
   },
   "agents": {
     "working": "處理中...",
@@ -241,7 +234,6 @@
     "description": "讀取你的設定並提出修改建議供你核准的 AI 助理。"
   },
   "ops": {
-    "title": "叢集維運",
     "searchHosts": "搜尋主機",
     "selectedCount": "已選擇 {{count}} 台",
     "clear": "清除",
@@ -266,7 +258,7 @@
     "noOutput": "（無輸出）"
   },
   "assistant": {
-    "title": "Termix 助理",
+    "title": "AI 助理",
     "moveHint": "拖曳可移動，按兩下可停靠到側邊。",
     "toggle": "開啟或關閉 AI 助理",
     "unread": "助理有新結果",
@@ -290,6 +282,9 @@
       "fleet": "機群",
       "folder": "資料夾",
       "tag": "標籤"
-    }
+    },
+    "emptyHintBasic": "助理以你的身分、依你的權限透過 Termix CLI 工作。",
+    "inputPlaceholderBasic": "向助理提問。",
+    "sendHintBasic": "修改會直接執行，不再詢問。"
   }
 }

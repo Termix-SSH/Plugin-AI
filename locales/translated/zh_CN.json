@@ -26,7 +26,7 @@
     },
     "ops": {
       "use": {
-        "title": "使用集群运维",
+        "title": "通过 AI 助手在主机上运行命令",
         "description": "允许助手在你选择的主机上运行任意 shell 命令。默认仅管理员拥有。"
       }
     }
@@ -48,19 +48,19 @@
         "description": "您私有网络上的主机，用户可以将提供商指向这些主机，例如自托管的 Ollama。每行填写一个主机。"
       },
       "opsMaxTurns": {
-        "label": "集群运维步数上限",
-        "description": "一条集群运维消息最多可使用多少轮模型调用，超过后停止。"
+        "label": "AI 助手步数上限",
+        "description": "一条助手消息最多可使用多少轮模型调用，超过后停止。"
       },
       "opsConcurrency": {
-        "label": "集群运维并行主机数",
-        "description": "集群运维命令同时在多少台主机上运行。"
+        "label": "AI 助手并行主机数",
+        "description": "助手的命令同时在多少台主机上运行。"
       },
       "opsCommandTimeout": {
-        "label": "集群运维命令超时（秒）",
+        "label": "AI 助手命令超时（秒）",
         "description": "命令在一台主机上运行多久后被停止。助手最多可请求 600 秒。"
       },
       "opsOutputLimit": {
-        "label": "集群运维每台主机输出（字符）",
+        "label": "AI 助手每台主机输出（字符）",
         "description": "每台主机保留多少输出。更长的输出会保留开头和结尾。"
       }
     },
@@ -72,7 +72,6 @@
     }
   },
   "ai": {
-    "title": "助手",
     "send": "发送",
     "stop": "停止",
     "save": "保存",
@@ -80,9 +79,7 @@
     "running": "运行中",
     "approve": "批准",
     "reject": "拒绝",
-    "inputPlaceholder": "询问有关服务器的问题，或描述要提出的更改",
     "selectProvider": "选择提供商",
-    "providerSettings": "提供商设置",
     "addProvider": "添加提供商",
     "editProvider": "编辑提供商",
     "removeProvider": "删除提供商",
@@ -117,12 +114,11 @@
     "modelCustom": "输入模型名称",
     "modelRefresh": "刷新列表",
     "modelPlaceholder": "选择或输入模型",
-    "attachHint": "输入 @ 以引用主机、代码片段或自动化任务。更改将供您批准。",
     "runCommandTitle": "运行命令",
     "assistant": "AI 助手",
     "terminalPanelEmpty": "向助手询问有关此主机的信息。任何会更改状态的操作都需要您先批准。",
     "terminalPanelPlaceholder": "询问有关此主机的信息...",
-    "noProvidersConfigured": "尚未配置任何 AI 提供商。请在 AI 助手选项卡中添加一个。",
+    "noProvidersConfigured": "尚未配置任何 AI 提供商。请在设置中添加一个。",
     "runsInOpenTerminal": "在您打开的终端会话中运行。",
     "runInTerminal": "运行",
     "terminalContextPrefill": "这是我的终端输出：\n\n{{output}}\n\n",
@@ -132,7 +128,7 @@
     "removeProviderConfirm": "移除提供商 {{name}}？"
   },
   "nav": {
-    "ai": "AI"
+    "ai": "AI 助手"
   },
   "onboarding": {
     "aiTitle": "AI 助手",
@@ -142,9 +138,6 @@
     "aiEnableTitle": "开启它",
     "aiEnableDesc": "添加一个助手，它会读取您的设置并建议您批准的更改。需要您提供提供商，例如本地 Ollama。",
     "aiNote": "在您添加提供商并发送消息之前，不会向任何地方发送任何数据。"
-  },
-  "hosts": {
-    "docsLink": "查看文档"
   },
   "agents": {
     "working": "工作中...",
@@ -241,7 +234,6 @@
     "description": "读取你的配置并提出修改建议供你审批的 AI 助手。"
   },
   "ops": {
-    "title": "集群运维",
     "searchHosts": "搜索主机",
     "selectedCount": "已选择 {{count}} 台",
     "clear": "清除",
@@ -266,7 +258,7 @@
     "noOutput": "（无输出）"
   },
   "assistant": {
-    "title": "Termix 助手",
+    "title": "AI 助手",
     "moveHint": "拖动可移动，双击可停靠到侧边。",
     "toggle": "打开或关闭 AI 助手",
     "unread": "助手有新结果",
@@ -290,6 +282,9 @@
       "fleet": "主机群",
       "folder": "文件夹",
       "tag": "标签"
-    }
+    },
+    "emptyHintBasic": "助手以你的身份、按你的权限通过 Termix CLI 工作。",
+    "inputPlaceholderBasic": "向助手提问。",
+    "sendHintBasic": "修改会直接执行，不再询问。"
   }
 }

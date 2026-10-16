@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "עוזר",
     "send": "שלח",
     "stop": "עצור",
     "save": "שמור",
@@ -58,9 +57,7 @@
     "running": "מפעיל",
     "approve": "אשר",
     "reject": "דחה",
-    "inputPlaceholder": "שאל על השרתים שלך, או תאר שינוי להצעה",
     "selectProvider": "בחר ספק",
-    "providerSettings": "הגדרות ספק",
     "addProvider": "הוסף ספק",
     "editProvider": "ערוך ספק",
     "removeProvider": "הסר ספק",
@@ -95,7 +92,6 @@
     "modelCustom": "הזן שם מודל",
     "modelRefresh": "רענן רשימה",
     "modelPlaceholder": "בחר או הקלד מודל",
-    "attachHint": "הקלד @ כדי להפנות לאירוח, קטע קוד או אוטומציה. שינויים מוצעים לאישורך.",
     "runCommandTitle": "הפעל פקודה",
     "assistant": "עוזר AI",
     "terminalPanelEmpty": "שאל את העוזר לגבי אירוח זה. כל פעולה המשנה מצב דורשת את אישורך תחילה.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "הפעל",
     "aiEnableDesc": "מוסיף עוזר הקורא את ההגדרות שלך ומציע שינויים שאותם תאשר. דורש ספק שאתה מספק, כמו Ollama מקומי.",
     "aiNote": "שום דבר לא נשלח לשום מקום עד שתוסיף ספק ותשלח הודעה."
-  },
-  "hosts": {
-    "docsLink": "צפה בתיעוד"
   },
   "agents": {
     "working": "עובד...",

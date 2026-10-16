@@ -29,7 +29,7 @@ const HOSTS = [
   host(4, null, null),
 ];
 
-function setup(cli: CliTarget | null = null) {
+function setup(cli: CliTarget | null = null, hostShell = true) {
   const mock = createMockCtx({
     capabilities: ["hosts:read"],
     hosts: HOSTS,
@@ -45,6 +45,7 @@ function setup(cli: CliTarget | null = null) {
   const saved: number[][] = [];
   const cliRuns: CliRunInput[] = [];
   const session: AssistantSession = {
+    hostShell,
     targets: [1],
     limits: { concurrency: 4, timeoutSec: 30, outputLimit: 4000 },
     signal: new AbortController().signal,
@@ -196,6 +197,31 @@ describe("termix", () => {
     });
     expect(run).not.toHaveBeenCalled();
     expect(cliRuns).toEqual([]);
+  });
+
+  it("refuses host commands to a user without a shell on hosts", async () => {
+    const run = vi.fn(spawnRun);
+    const { cliRuns, call, tools } = setup(
+      { run, cliPath, url: "u", token: "t" },
+      false,
+    );
+    expect(tools.has("set_targets")).toBe(false);
+    expect(tools.get("termix")!.description).not.toContain("run_command");
+    for (const args of [
+      ["exec", "1", "uptime"],
+      ["fleets", "exec", "3", "uptime"],
+      ["snippets", "run", "4", "--host", "1"],
+    ]) {
+      expect(await call("termix", { args })).toEqual({
+        error: expect.stringContaining("ai.ops.use"),
+      });
+    }
+    expect(run).not.toHaveBeenCalled();
+    expect(cliRuns).toEqual([]);
+
+    expect(await call("termix", { args: ["hosts", "list"] })).toMatchObject({
+      exitCode: 0,
+    });
   });
 
   it("is not offered when the request had no session to run as", () => {

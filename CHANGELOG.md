@@ -4,15 +4,17 @@
 
 ### Added
 
-- Cluster Ops: pick hosts by fleet, folder, tag or one by one, and let the assistant run shell commands on them in parallel, with live results per host
-- Every Cluster Ops command is recorded per host and written to the audit log
-- Admin settings for the Cluster Ops step limit, parallel hosts, command timeout and output kept per host
-- The `ai.ops.use` permission, for admins only by default
-- A floating assistant on every page, opened from a button or Ctrl+J, sharing its conversations with Cluster Ops
-- The assistant can manage Termix through the Termix CLI, which ships inside the plugin and runs as the signed-in user
-- The assistant can choose its own target hosts by host, fleet, folder or tag, and open terminals, tabs, settings and sidebar views
-- Add targets by typing `@` in the assistant, and pick up past conversations from Conversations
-- Every Termix CLI call is recorded and written to the audit log, with secret arguments masked
+- One AI assistant with two views that share their conversations: a floating panel on every page, opened from a button or Ctrl+J, and the full-screen AI tab
+- The assistant manages Termix through the Termix CLI, which ships inside the plugin and runs as the signed-in user, and can open terminals, tabs, settings and sidebar views
+- With the new `ai.ops.use` permission (admins only by default), the assistant runs shell commands on target hosts in parallel, with live results per host; pick targets by fleet, folder, tag or host, type `@` to add them, or let the assistant choose
+- Every command on a host and every Termix CLI call is recorded and written to the audit log, with secret arguments masked
+- Admin settings for the assistant's step limit, parallel hosts, command timeout and output kept per host
+- Pick up past conversations from Conversations
+
+### Changed
+
+- AI in the sidebar now opens the assistant full screen, replacing the old chat; the terminal assistant still proposes changes for you to approve
+- Without `ai.ops.use`, the assistant has no target hosts and cannot run commands on hosts through the CLI, including `exec`, `fleets exec`, `snippets run` and execute routes
 
 ### Fixed
 

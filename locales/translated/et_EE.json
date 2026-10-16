@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Saada",
     "stop": "Peata",
     "save": "Salvesta",
@@ -58,9 +57,7 @@
     "running": "töötab",
     "approve": "Kinnita",
     "reject": "Lükka tagasi",
-    "inputPlaceholder": "Küsi oma serverite kohta või kirjelda muudatust, mida ette panna",
     "selectProvider": "Vali pakkuja",
-    "providerSettings": "Pakkuja seaded",
     "addProvider": "Lisa pakkuja",
     "editProvider": "Muuda pakkuja",
     "removeProvider": "Eemalda pakkuja",
@@ -95,7 +92,6 @@
     "modelCustom": "Sisestage mudeli nimi",
     "modelRefresh": "Värskenda nimekirja",
     "modelPlaceholder": "Valige või sisestage mudel",
-    "attachHint": "Sisestage @, et viidata peremeesmasinale, koodilõikule või automatiseerimisele. Muudatused esitatakse teie heakskiitmiseks.",
     "runCommandTitle": "Käivita käsk",
     "assistant": "AI abiline",
     "terminalPanelEmpty": "Küsi abiliselt selle peremeesmasina kohta. Kõik olekuid muutev tegevus nõuab esmalt teie heakskiitu.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Lülita sisse",
     "aiEnableDesc": "Lisab abilise, mis loeb teie seadistused ja pakub välja muudatusi, mille te heaks kiidate. Nõuab pakkuja, mille te ise varustate, näiteks kohalikku Ollama.",
     "aiNote": "Midagi ei saadeta kuhugi, enne kui lisate pakkuja ja saatke sõnumi."
-  },
-  "hosts": {
-    "docsLink": "Vaata dokumentatsiooni"
   },
   "agents": {
     "working": "Töötab...",

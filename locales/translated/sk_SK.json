@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistent",
     "send": "Odoslať",
     "stop": "Zastaviť",
     "save": "Uložiť",
@@ -58,9 +57,7 @@
     "running": "beží",
     "approve": "Schváliť",
     "reject": "Odmietnuť",
-    "inputPlaceholder": "Spýtajte sa na svoje servery, alebo opíšte zmenu na návrh",
     "selectProvider": "Vyberte poskytovateľa",
-    "providerSettings": "Nastavenia poskytovateľa",
     "addProvider": "Pridať poskytovateľa",
     "editProvider": "Upraviť poskytovateľa",
     "removeProvider": "Odstrániť poskytovateľa",
@@ -95,7 +92,6 @@
     "modelCustom": "Zadajte názov modelu",
     "modelRefresh": "Obnoviť zoznam",
     "modelPlaceholder": "Vyberte alebo zadajte model",
-    "attachHint": "Zadajte @ na odkaz na hostiteľa, útržok alebo automatizáciu. Zmeny sa navrhujú na vaše schválenie.",
     "runCommandTitle": "Spustiť príkaz",
     "assistant": "AI asistent",
     "terminalPanelEmpty": "Opýtajte sa asistenta na tohto hostiteľa. Akákoľvek zmena stavu si vyžaduje vaše predchádzajúce schválenie.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Povoliť",
     "aiEnableDesc": "Pridá asistenta, ktorý číta vaše nastavenia a navrhuje zmeny, ktoré schválite. Vyžaduje poskytovateľa, ktorý dodáte, napríklad lokálny Ollama.",
     "aiNote": "Nič sa nikam neposielajú, kým nepridáte poskytovateľa a nepošlete správu."
-  },
-  "hosts": {
-    "docsLink": "Zobraziť dokumentáciu"
   },
   "agents": {
     "working": "Pracuje...",

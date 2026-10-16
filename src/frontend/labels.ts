@@ -60,12 +60,6 @@ const FIELD_LABELS: Record<string, string> = {
   cooldownMinutes: "Cooldown (minutes)",
 };
 
-const MENTION_LABELS: Record<string, string> = {
-  host: "Host",
-  snippet: "Snippet",
-  automation: "Automation",
-};
-
 /**
  * Splits snake_case and camelCase into words and capitalises the first.
  * Used whenever an identifier has no explicit label, so something added later
@@ -86,8 +80,4 @@ export function toolLabel(name: string): string {
 
 export function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? humanize(key);
-}
-
-export function mentionLabel(kind: string): string {
-  return MENTION_LABELS[kind] ?? humanize(kind);
 }

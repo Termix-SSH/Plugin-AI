@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Verzenden",
     "stop": "Stoppen",
     "save": "Opslaan",
@@ -58,9 +57,7 @@
     "running": "bezig",
     "approve": "Goedkeuren",
     "reject": "Afwijzen",
-    "inputPlaceholder": "Stel vragen over je servers, of beschrijf een wijziging om voor te stellen",
     "selectProvider": "Selecteer een provider",
-    "providerSettings": "Provider-instellingen",
     "addProvider": "Provider toevoegen",
     "editProvider": "Provider bewerken",
     "removeProvider": "Provider verwijderen",
@@ -95,7 +92,6 @@
     "modelCustom": "Voer een modelnaam in",
     "modelRefresh": "Lijst vernieuwen",
     "modelPlaceholder": "Kies of typ een model",
-    "attachHint": "Typ @ om een host, snippet of automatisering te refereren. Wijzigingen worden voorgesteld voor goedkeuring.",
     "runCommandTitle": "Opdracht uitvoeren",
     "assistant": "AI-assistent",
     "terminalPanelEmpty": "Vraag de assistent iets over deze host. Alles wat de status wijzigt, heeft eerst jouw goedkeuring nodig.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Inschakelen",
     "aiEnableDesc": "Voegt een assistent toe die je opstelling leest en wijzigingen voorstelt die je goedkeurt. Vereist een provider die je zelf levert, zoals een lokale Ollama.",
     "aiNote": "Er wordt niets ergens naartoe gestuurd totdat je een provider hebt toegevoegd en een bericht hebt verzonden."
-  },
-  "hosts": {
-    "docsLink": "Documentatie bekijken"
   },
   "agents": {
     "working": "Bezig...",

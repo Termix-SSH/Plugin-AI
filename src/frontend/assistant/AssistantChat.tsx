@@ -26,7 +26,7 @@ import { AiMessage } from "../AiMessage";
 import { AiToolCall } from "../AiToolCall";
 import { aiApp } from "../app-ref";
 import { buildTimeline } from "../transcript";
-import { activeMentionQuery } from "../useMentions";
+import { activeMentionQuery } from "../mention-query";
 import { OPS_RUN_TOOLS, OpsRunCard } from "../ops/OpsRunCard";
 import {
   mentionTargets,
@@ -35,13 +35,13 @@ import {
   toTargetHosts,
   type TargetChip,
 } from "../ops/targets";
-import { currentPage } from "./shell";
+import { currentPage, performClientAction } from "./shell";
 import { assistant, useAssistant } from "./store";
 
 /**
  * The assistant's conversation, history and composer, shared by the floating
- * panel and the Cluster Ops tab. Everything lives in the store, so both show
- * the same run.
+ * panel and the AI tab. Everything lives in the store, so both show the same
+ * run. Targets only appear for a user with a shell on hosts.
  */
 
 function Transcript() {
@@ -66,7 +66,11 @@ function Transcript() {
         <EmptyState
           icon={Sparkles}
           title={t("assistant.emptyTitle")}
-          hint={t("assistant.emptyHint")}
+          hint={t(
+            state.hostShell
+              ? "assistant.emptyHint"
+              : "assistant.emptyHintBasic",
+          )}
         />
       )}
       {timeline.map((item) => {
@@ -193,7 +197,10 @@ function Composer() {
     start: number;
   } | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
-  const matches = mention ? mentionTargets(hosts, groups, mention.query) : [];
+  const matches =
+    mention && state.hostShell
+      ? mentionTargets(hosts, groups, mention.query)
+      : [];
 
   const updateMention = (value: string, caret: number) => {
     setMention(activeMentionQuery(value, caret));
@@ -216,6 +223,11 @@ function Composer() {
 
   const canSend =
     Boolean(input.trim()) && Boolean(state.providerId) && !state.streaming;
+  const placeholder = t(
+    state.hostShell
+      ? "assistant.inputPlaceholder"
+      : "assistant.inputPlaceholderBasic",
+  );
 
   function send() {
     if (!canSend) return;
@@ -227,17 +239,19 @@ function Composer() {
 
   return (
     <div className="relative shrink-0 border-t border-border p-3">
-      <div className="mb-1.5 flex flex-wrap items-center gap-1">
-        {chips.length ? (
-          chips.map((chip) => (
-            <Chip key={chip.key} chip={chip} onRemove={() => remove(chip)} />
-          ))
-        ) : (
-          <span className="text-[11px] text-muted-foreground">
-            {t("assistant.noTargets")}
-          </span>
-        )}
-      </div>
+      {state.hostShell && (
+        <div className="mb-1.5 flex flex-wrap items-center gap-1">
+          {chips.length ? (
+            chips.map((chip) => (
+              <Chip key={chip.key} chip={chip} onRemove={() => remove(chip)} />
+            ))
+          ) : (
+            <span className="text-[11px] text-muted-foreground">
+              {t("assistant.noTargets")}
+            </span>
+          )}
+        </div>
+      )}
       {matches.length > 0 && (
         <ul
           role="listbox"
@@ -268,10 +282,10 @@ function Composer() {
         </ul>
       )}
       <Textarea
-        aria-label={t("assistant.inputPlaceholder")}
+        aria-label={placeholder}
         className="min-h-[64px] resize-none rounded-none text-sm"
         value={input}
-        placeholder={t("assistant.inputPlaceholder")}
+        placeholder={placeholder}
         disabled={!state.providerId}
         onChange={(event) => {
           setInput(event.target.value);
@@ -309,9 +323,11 @@ function Composer() {
       />
       <div className="mt-1.5 flex items-center gap-2">
         <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground">
-          {state.targets.length
-            ? t("ops.sendHint", { count: state.targets.length })
-            : t("assistant.sendHint")}
+          {!state.hostShell
+            ? t("assistant.sendHintBasic")
+            : state.targets.length
+              ? t("ops.sendHint", { count: state.targets.length })
+              : t("assistant.sendHint")}
         </p>
         {state.streaming ? (
           <Button size="sm" variant="outline" onClick={assistant.stop}>
@@ -365,9 +381,21 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
             </SelectContent>
           </Select>
         ) : (
-          <span className="text-xs text-muted-foreground">
-            {t("ai.noProvidersConfigured")}
-          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs"
+            title={t("ai.noProvidersConfigured")}
+            onClick={() =>
+              performClientAction(aiApp(), {
+                kind: "open_settings",
+                page: "plugin:ai",
+              })
+            }
+          >
+            <Plus size={14} />
+            {t("ai.addProvider")}
+          </Button>
         )}
         <span className="ml-auto" />
         <Button

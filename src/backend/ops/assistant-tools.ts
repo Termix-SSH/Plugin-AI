@@ -25,6 +25,11 @@ export type ClientAction =
   | { kind: "open_view"; id: string };
 
 export interface AssistantSession extends OpsSession {
+  /**
+   * Whether the user holds ai.ops.use. Without it the session has no shell
+   * on hosts: no target tools, and the CLI refuses its exec commands.
+   */
+  hostShell: boolean;
   /** Null when the request carried no session token to run the CLI with. */
   cli: CliTarget | null;
   /** Saves the conversation's new targets and tells the browser. */
@@ -37,14 +42,19 @@ const CLI_TIMEOUT_SEC = 120;
 /** JSON is only useful whole, so the CLI gets more room than a host. */
 const CLI_OUTPUT_LIMIT = 16000;
 
-const TERMIX_DESCRIPTION = [
-  "Run the Termix CLI as the current user to read or change anything in Termix. Output is JSON.",
-  'Pass the words after `termix` as args, e.g. ["hosts", "list"] or ["alerts", "list", "--unread"].',
-  "Command groups: hosts, credentials, snippets, fleets, alerts, plugins, sessions, api-keys, docker, files, users, audit-logs, status, version, whoami, exec, api.",
-  'Find hosts with ["hosts", "list"] (filters: --folder, --tag) and ["hosts", "get", "<id>"]; core routes are not REST-style, e.g. hosts are /host/db/host, not /hosts.',
-  'When unsure, call it with ["<group>", "--help"] first. For anything without a command use ["api", "<METHOD>", "<path>", "--data", "<json>"], e.g. ["api", "GET", "/plugin-api/<id>/..."].',
-  "Not available: ssh, login, logout, tunnel start, hosts export, api-keys create, export routes, and anything that reads or writes files on the Termix server's own disk. Use run_command for shell work on hosts.",
-].join(" ");
+function termixDescription(hostShell: boolean): string {
+  return [
+    "Run the Termix CLI as the current user to read or change anything in Termix. Output is JSON.",
+    'Pass the words after `termix` as args, e.g. ["hosts", "list"] or ["alerts", "list", "--unread"].',
+    `Command groups: hosts, credentials, snippets, fleets, alerts, plugins, sessions, api-keys, docker, files, users, audit-logs, status, version, whoami, ${hostShell ? "exec, " : ""}api.`,
+    'Find hosts with ["hosts", "list"] (filters: --folder, --tag) and ["hosts", "get", "<id>"]; core routes are not REST-style, e.g. hosts are /host/db/host, not /hosts.',
+    'When unsure, call it with ["<group>", "--help"] first. For anything without a command use ["api", "<METHOD>", "<path>", "--data", "<json>"], e.g. ["api", "GET", "/plugin-api/<id>/..."].',
+    "Not available: ssh, login, logout, tunnel start, hosts export, api-keys create, export routes, and anything that reads or writes files on the Termix server's own disk.",
+    hostShell
+      ? "Use run_command for shell work on hosts."
+      : "This user may not run shell commands on hosts, so exec, fleets exec, snippets run and execute routes are refused too.",
+  ].join(" ");
+}
 
 function cliFailure(result: Awaited<ReturnType<typeof runCli>>) {
   if (result.error) return result.error;
@@ -57,7 +67,7 @@ function cliFailure(result: Awaited<ReturnType<typeof runCli>>) {
 function termixTool(session: AssistantSession, cli: CliTarget): AiTool {
   return {
     name: "termix",
-    description: TERMIX_DESCRIPTION,
+    description: termixDescription(session.hostShell),
     category: "ops",
     parameters: objectSchema(
       {
@@ -78,7 +88,7 @@ function termixTool(session: AssistantSession, cli: CliTarget): AiTool {
         return { error: "args must be a list of strings" };
       }
       const args = raw.args.map(String);
-      const problem = checkCliArgs(args);
+      const problem = checkCliArgs(args, session.hostShell);
       if (problem) return { error: problem };
       const result = await runCli(cli, args, {
         timeoutMs: timeoutFor(raw.timeoutSec, CLI_TIMEOUT_SEC) * 1000,
@@ -242,7 +252,7 @@ function uiTools(session: AssistantSession): AiTool[] {
       name: "open_tab",
       description: [
         "Open a tab for the user. Needs a hostId: terminal, files, docker, tunnel, host-metrics, tmux_monitor, rdp, vnc, telnet.",
-        "Without a host: dashboard, host-manager, plugins, alerts, automations, fleet-inventory, network_graph, homepage, local-terminal, ai, ai-ops.",
+        "Without a host: dashboard, host-manager, plugins, alerts, automations, fleet-inventory, network_graph, homepage, local-terminal, ai.",
         "Tabs from a plugin that is not installed do not open.",
       ].join(" "),
       category: "ops",
@@ -291,7 +301,7 @@ function uiTools(session: AssistantSession): AiTool[] {
     {
       name: "open_plugin_view",
       description:
-        "Open a sidebar view for the user: hosts, credentials, quick-connect, connections, or a plugin's: snippets, fleets, workspaces, history, macros, ssh-tools, port-forwarding, ai.",
+        "Open a sidebar view for the user: hosts, credentials, quick-connect, connections, or a plugin's: snippets, fleets, workspaces, history, macros, ssh-tools, port-forwarding.",
       category: "ops",
       parameters: objectSchema({ id: str("The view id") }, ["id"]),
       handler: async (args) => {
@@ -307,7 +317,7 @@ function uiTools(session: AssistantSession): AiTool[] {
 export function createAssistantTools(session: AssistantSession): AiTool[] {
   return [
     ...(session.cli ? [termixTool(session, session.cli)] : []),
-    setTargetsTool(session),
+    ...(session.hostShell ? [setTargetsTool(session)] : []),
     ...uiTools(session),
   ];
 }

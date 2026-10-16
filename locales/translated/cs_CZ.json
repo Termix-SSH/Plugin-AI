@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistent",
     "send": "Odeslat",
     "stop": "Zastavit",
     "save": "Uložit",
@@ -58,9 +57,7 @@
     "running": "probíhá",
     "approve": "Schválit",
     "reject": "Odmítnout",
-    "inputPlaceholder": "Zeptejte se na své servery nebo popište změnu k návrhu",
     "selectProvider": "Vyberte poskytovatele",
-    "providerSettings": "Nastavení poskytovatele",
     "addProvider": "Přidat poskytovatele",
     "editProvider": "Upravit poskytovatele",
     "removeProvider": "Odebrat poskytovatele",
@@ -95,7 +92,6 @@
     "modelCustom": "Zadejte název modelu",
     "modelRefresh": "Obnovit seznam",
     "modelPlaceholder": "Vyberte nebo zadejte model",
-    "attachHint": "Zadejte @ pro odkaz na hostitele, úryvek nebo automatizaci. Změny jsou navrženy k vašemu schválení.",
     "runCommandTitle": "Spustit příkaz",
     "assistant": "AI asistent",
     "terminalPanelEmpty": "Zeptejte se asistenta na tohoto hostitele. Všechno, co mění stav, vyžaduje nejprve vaše schválení.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Zapnout",
     "aiEnableDesc": "Přidá asistenta, který čte vaše nastavení a navrhuje změny, které schválíte. Vyžaduje poskytovatele, který dodáte, například místní Ollama.",
     "aiNote": "Nic se nikam neposílá, dokud nepřidáte poskytovatele a nepošlete zprávu."
-  },
-  "hosts": {
-    "docsLink": "Zobrazit dokumentaci"
   },
   "agents": {
     "working": "Pracuje...",

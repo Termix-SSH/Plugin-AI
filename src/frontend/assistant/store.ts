@@ -30,7 +30,7 @@ import {
 } from "../use-ai-stream";
 
 /**
- * The one assistant behind the floating panel and the Cluster Ops tab. It
+ * The one assistant behind the floating panel and the AI tab. It
  * lives outside React, so closing the panel or the tab never ends a run:
  * the stream keeps going here and either view shows it when it comes back.
  */
@@ -50,6 +50,8 @@ export interface AssistantState {
   error: string | null;
   /** Host ids run_command may use; sent with every message. */
   targets: number[];
+  /** Whether the user holds ai.ops.use, so the assistant has a shell on targets. */
+  hostShell: boolean;
   providers: AiProvider[];
   providerId: number | null;
   /** Null while the fleets plugin is not available. */
@@ -67,6 +69,7 @@ const INITIAL: AssistantState = {
   tools: [],
   error: null,
   targets: [],
+  hostShell: false,
   providers: [],
   providerId: null,
   fleets: null,
@@ -177,6 +180,9 @@ export const assistant = {
   setTargets(targets: number[]) {
     set({ targets });
   },
+  setHostShell(hostShell: boolean) {
+    set({ hostShell });
+  },
   setProvider(providerId: number) {
     set({ providerId });
   },
@@ -244,7 +250,8 @@ export const assistant = {
           message: text,
           providerId: state.providerId,
           conversationId: state.conversationId ?? undefined,
-          hostIds: state.targets,
+          // The server refuses targets from a user without a shell on hosts.
+          hostIds: state.hostShell ? state.targets : undefined,
           page: page ?? undefined,
         }),
       });

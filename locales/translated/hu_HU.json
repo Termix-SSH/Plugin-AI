@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asszisztens",
     "send": "Küldés",
     "stop": "Megállítás",
     "save": "Mentés",
@@ -58,9 +57,7 @@
     "running": "fut",
     "approve": "Jóváhagyás",
     "reject": "Elutasítás",
-    "inputPlaceholder": "Kérdezz a szervereidről, vagy írj le egy javasolt módosítást",
     "selectProvider": "Válassz egy szolgáltatót",
-    "providerSettings": "Szolgáltató beállításai",
     "addProvider": "Szolgáltató hozzáadása",
     "editProvider": "Szolgáltató szerkesztése",
     "removeProvider": "Szolgáltató eltávolítása",
@@ -95,7 +92,6 @@
     "modelCustom": "Adjon meg egy modellnevet",
     "modelRefresh": "Lista frissítése",
     "modelPlaceholder": "Válasszon vagy írjon be egy modellt",
-    "attachHint": "Írja be a @ jelet egy gazdagép, kódrészlet vagy automatizálás hivatkozásához. A változtatásokat jóváhagyásra javasolja.",
     "runCommandTitle": "Parancs futtatása",
     "assistant": "AI-asszisztens",
     "terminalPanelEmpty": "Kérdezzen az asszisztensnél erről a gazdagépről. Minden állapotot módosító művelethez először az Ön jóváhagyása szükséges.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Kapcsolja be",
     "aiEnableDesc": "Egy asszisztenst ad hozzá, amely elemzi a beállításait, és javaslatokat tesz, amelyeket Ön jóváhagy. Szükséges egy Ön által biztosított szolgáltató, például egy helyi Ollama.",
     "aiNote": "Semmit nem küldünk sehova, amíg nem ad hozzá egy szolgáltatót és nem küld egy üzenetet."
-  },
-  "hosts": {
-    "docsLink": "Dokumentáció megtekintése"
   },
   "agents": {
     "working": "Folyamatban...",

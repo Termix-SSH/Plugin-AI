@@ -23,7 +23,8 @@ import { assistant, useAssistant } from "./store";
  * progress carries on in the store.
  */
 
-export const OPS_TAB_ID = "ai-ops";
+/** The AI tab, the assistant's full view. Also its rail id. */
+export const AI_TAB_ID = "ai";
 
 const BALL = 44;
 const MARGIN = 16;
@@ -121,9 +122,9 @@ function Ball({ userKey }: { userKey: string }) {
   return (
     <button
       type="button"
-      aria-label={t("assistant.toggle")}
+      aria-label={t("assistant.title")}
       aria-expanded={open}
-      title={t("assistant.toggle")}
+      title={t("assistant.title")}
       hidden={open}
       className="pointer-events-auto fixed z-50 flex touch-none items-center justify-center rounded-full border border-accent-brand/40 bg-background text-accent-brand hover:bg-accent-brand/10"
       style={{
@@ -321,7 +322,7 @@ function Panel({ userKey }: { userKey: string }) {
         aria-label={t("assistant.openTab")}
         title={t("assistant.openTab")}
         onClick={() => {
-          aiApp().tabs.openSingletonTab(OPS_TAB_ID);
+          aiApp().tabs.openSingletonTab(AI_TAB_ID);
           assistant.setOpen(false);
         }}
       >

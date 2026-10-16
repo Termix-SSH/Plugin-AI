@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Send",
     "stop": "Stop",
     "save": "Gem",
@@ -58,9 +57,7 @@
     "running": "kører",
     "approve": "Godkend",
     "reject": "Afvis",
-    "inputPlaceholder": "Spørg om dine servere, eller beskriv en ændring, der skal foreslås",
     "selectProvider": "Vælg en udbyder",
-    "providerSettings": "Udbyderindstillinger",
     "addProvider": "Tilføj udbyder",
     "editProvider": "Rediger udbyder",
     "removeProvider": "Fjern udbyder",
@@ -95,7 +92,6 @@
     "modelCustom": "Indtast et modelnavn",
     "modelRefresh": "Opdater liste",
     "modelPlaceholder": "Vælg eller skriv en model",
-    "attachHint": "Skriv @ for at referere til en vært, et uddrag eller en automatisering. Ændringer foreslås til din godkendelse.",
     "runCommandTitle": "Kør kommando",
     "assistant": "AI-assistent",
     "terminalPanelEmpty": "Spørg assistenten om denne vært. Alt, der ændrer tilstand, skal godkendes af dig først.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Aktivér den",
     "aiEnableDesc": "Tilføjer en assistent, der læser din opsætning og foreslår ændringer, du godkender. Kræver en udbyder, du leverer, f.eks. en lokal Ollama.",
     "aiNote": "Der sendes ingenting nogen steder, før du tilføjer en udbyder og sender en besked."
-  },
-  "hosts": {
-    "docsLink": "Se dokumentation"
   },
   "agents": {
     "working": "Arbejder...",

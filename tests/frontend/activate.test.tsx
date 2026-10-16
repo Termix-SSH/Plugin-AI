@@ -71,26 +71,33 @@ describe(`${manifest.id} activate`, () => {
     );
   });
 
-  it("adds Cluster Ops only for users with its permission", async () => {
+  it("opens the assistant's full view from the AI rail item, with no ai-ops tab", async () => {
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["ai.use"],
+    });
+    await waitFor(() =>
+      expect(rendered!.registered.tabs()).toEqual(["ai", "ai-agents"]),
+    );
+    expect(rendered.registered.panels()).toEqual([]);
+    expect(
+      rendered.registered.railItems().map((item) => item.id),
+    ).not.toContain("ai-ops");
+    expect(
+      rendered.registered.railItems().find((item) => item.id === "ai"),
+    ).toMatchObject({ permission: "ai.use", hidden: false });
+    expect(
+      manifest.contributes?.tabs?.map((tab: { id: string }) => tab.id),
+    ).not.toContain("ai-ops");
+  });
+
+  it("shows the floating assistant to users who may use the assistant", async () => {
     rendered = await renderWithApp(plugin, {
       manifest,
       locales,
       permissions: ["ai.ops.use"],
     });
-    await waitFor(() =>
-      expect([...rendered!.registered.tabs()].sort()).toEqual([
-        "ai",
-        "ai-agents",
-        "ai-ops",
-      ]),
-    );
-    expect(
-      rendered.registered.railItems().find((item) => item.id === "ai-ops"),
-    ).toMatchObject({ permission: "ai.ops.use" });
-  });
-
-  it("shows the floating assistant only to users with ai.ops.use", async () => {
-    rendered = await renderWithApp(plugin, { manifest, locales });
     await waitFor(() => expect(rendered!.registered.tabs()).toContain("ai"));
     expect(rendered.registered.slot("shell.overlay")).toEqual([]);
     expect(rendered.registered.keybindingActions()).toEqual([]);
@@ -99,13 +106,14 @@ describe(`${manifest.id} activate`, () => {
     rendered = await renderWithApp(plugin, {
       manifest,
       locales,
-      permissions: ["ai.ops.use"],
+      permissions: ["ai.use"],
     });
     await waitFor(() =>
       expect(rendered!.registered.slot("shell.overlay")).toEqual([
         "ai.toggleAssistant",
       ]),
     );
+    expect(assistant.get().hostShell).toBe(false);
     expect(rendered.registered.keybindingActions()).toEqual([
       "ai.toggleAssistant",
     ]);
@@ -116,31 +124,50 @@ describe(`${manifest.id} activate`, () => {
     Element.prototype.scrollTo = vi.fn();
     const overlay = rendered.renderSlot("shell.overlay");
     const ball = await within(overlay).findByRole("button", {
-      name: "Toggle the AI assistant",
+      name: "AI assistant",
     });
     fireEvent.pointerDown(ball, { clientX: 10, clientY: 10 });
     fireEvent.pointerUp(ball, { clientX: 10, clientY: 10 });
     expect(assistant.get().open).toBe(true);
     expect(
-      await within(overlay).findByRole("dialog", { name: "Termix assistant" }),
+      await within(overlay).findByRole("dialog", { name: "AI assistant" }),
     ).toBeTruthy();
     // The ball steps aside while the panel is open.
     expect(
-      within(overlay).queryByRole("button", {
-        name: "Toggle the AI assistant",
-      }),
+      within(overlay).queryByRole("button", { name: "AI assistant" }),
     ).toBeNull();
+
+    // The full view is the AI tab.
+    fireEvent.click(
+      within(overlay).getByRole("button", { name: "Open full view" }),
+    );
+    expect(rendered.shellCalls).toContainEqual({
+      method: "openSingletonTab",
+      args: ["ai"],
+    });
+    expect(assistant.get().open).toBe(false);
 
     // The default key toggles it too, and the ball comes back.
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
     );
+    expect(assistant.get().open).toBe(true);
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
+    );
     expect(assistant.get().open).toBe(false);
     expect(
-      await within(overlay).findByRole("button", {
-        name: "Toggle the AI assistant",
-      }),
+      await within(overlay).findByRole("button", { name: "AI assistant" }),
     ).toBeTruthy();
+  });
+
+  it("gives the assistant a shell on hosts only with ai.ops.use", async () => {
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["ai.use", "ai.ops.use"],
+    });
+    await waitFor(() => expect(assistant.get().hostShell).toBe(true));
   });
 
   it("moves the panel by its header and resizes it from an edge", async () => {
@@ -148,7 +175,7 @@ describe(`${manifest.id} activate`, () => {
     rendered = await renderWithApp(plugin, {
       manifest,
       locales,
-      permissions: ["ai.ops.use"],
+      permissions: ["ai.use"],
     });
     await waitFor(() =>
       expect(rendered!.registered.slot("shell.overlay")).toHaveLength(1),
@@ -157,7 +184,7 @@ describe(`${manifest.id} activate`, () => {
     const overlay = rendered.renderSlot("shell.overlay");
     assistant.setOpen(true);
     const dialog = await within(overlay).findByRole("dialog", {
-      name: "Termix assistant",
+      name: "AI assistant",
     });
     const start = { left: dialog.style.left, top: dialog.style.top };
     const px = (value: string) => Number.parseFloat(value);

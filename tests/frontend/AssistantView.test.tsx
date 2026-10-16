@@ -41,7 +41,7 @@ vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
 vi.mock("../../src/frontend/AiMessage", () => ({
   AiMessage: ({ content }: { content: string }) => <p>{content}</p>,
 }));
-import { OpsPanel } from "../../src/frontend/ops/OpsPanel";
+import { AssistantView } from "../../src/frontend/assistant/AssistantView";
 import { assistant } from "../../src/frontend/assistant/store";
 
 const frames = (...events: unknown[]) =>
@@ -57,6 +57,7 @@ beforeEach(() => {
     removeEventListener: vi.fn(),
   });
   mocks.fetch.mockResolvedValue(frames({ type: "done" }));
+  assistant.setHostShell(true);
 });
 afterEach(() => {
   cleanup();
@@ -64,11 +65,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function ready() {
-  render(<OpsPanel {...({} as TabProps)} />);
-  const input = screen.getByRole("textbox", {
-    name: "assistant.inputPlaceholder",
-  });
+async function ready(placeholder = "assistant.inputPlaceholder") {
+  render(<AssistantView {...({} as TabProps)} />);
+  const input = screen.getByRole("textbox", { name: placeholder });
   await waitFor(() => expect(input.hasAttribute("disabled")).toBe(false));
   return input;
 }
@@ -161,7 +160,25 @@ it("keeps a run going when the view closes, and shows it again", async () => {
   act(() => end());
   await waitFor(() => expect(assistant.get().streaming).toBe(false));
 
-  render(<OpsPanel {...({} as TabProps)} />);
+  render(<AssistantView {...({} as TabProps)} />);
   expect(await screen.findByText("Finished while away.")).toBeTruthy();
   expect(mocks.fetch.mock.calls[0][1].signal.aborted).toBe(false);
+});
+
+it("leaves out targets for a user without a shell on hosts", async () => {
+  assistant.setHostShell(false);
+  assistant.setTargets([1]);
+  const input = await ready("assistant.inputPlaceholderBasic");
+  expect(screen.queryByRole("checkbox", { name: "web-1" })).toBeNull();
+  expect(screen.queryByText("assistant.noTargets")).toBeNull();
+
+  fireEvent.change(input, { target: { value: "@pro", selectionStart: 4 } });
+  expect(screen.queryByRole("option")).toBeNull();
+  fireEvent.change(input, { target: { value: "list my hosts" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(1));
+  expect(JSON.parse(mocks.fetch.mock.calls[0][1].body)).not.toHaveProperty(
+    "hostIds",
+  );
 });
