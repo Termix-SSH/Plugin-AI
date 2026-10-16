@@ -1,4 +1,8 @@
-import type { ChatMessage } from "./providers/types.js";
+import type {
+  ChatMessage,
+  ModelInfo,
+  ProviderAdapter,
+} from "./providers/types.js";
 
 /**
  * How much of a model's context a conversation takes, and the cheap ways of
@@ -39,19 +43,86 @@ const KNOWN_WINDOWS: Array<[RegExp, number]> = [
   [/gemma-?3/i, 128_000],
 ];
 
-export function defaultContextWindow(model: string | null | undefined) {
+/** The window the model's family usually has, or null for a stranger. */
+export function knownContextWindow(model: string | null | undefined) {
   const match = KNOWN_WINDOWS.find(([pattern]) => pattern.test(model ?? ""));
-  return match ? match[1] : DEFAULT_CONTEXT_WINDOW;
+  return match ? match[1] : null;
 }
 
-/** The provider's own setting when it has one, else the model's family. */
-export function contextWindowFor(
-  provider: { contextWindow?: number | null },
-  model: string,
-): number {
-  return provider.contextWindow && provider.contextWindow > 0
-    ? provider.contextWindow
-    : defaultContextWindow(model);
+export function defaultContextWindow(model: string | null | undefined) {
+  return knownContextWindow(model) ?? DEFAULT_CONTEXT_WINDOW;
+}
+
+/** Compaction starts once the prompt would take this share of the budget. */
+export const COMPACT_AT = 0.8;
+
+/** Kept free for the reply when neither provider nor adapter says how much. */
+export const DEFAULT_RESERVED_OUTPUT = 8_192;
+
+/** The reply never takes more than this share of the window. */
+const MAX_RESERVED_SHARE = 0.25;
+
+/** Kept free besides the reply, for estimates that come in short. */
+const SAFETY_MARGIN = 0.02;
+
+/** Where a window came from, best first. */
+export type WindowSource = "override" | "provider" | "guess" | "default";
+
+/** Per-model settings of a provider, keyed by model id. */
+export type ModelOverrides = Record<string, { contextWindow?: number }>;
+
+export interface ContextPlan {
+  contextWindow: number;
+  source: WindowSource;
+  /** Tokens kept free for the reply. */
+  reservedOutput: number;
+  /** What a prompt may take: the window less the reply and a margin. */
+  budget: number;
+  /** The share of the budget a prompt reaches before compaction. */
+  compactAt: number;
+}
+
+/**
+ * The window a conversation is sized for: the user's override, else what
+ * the provider reports, else the model family's, else 128k. An override is
+ * still held to what the model can take at all.
+ */
+export function planContext(input: {
+  model: string;
+  overrides: ModelOverrides;
+  info: ModelInfo;
+  adapter: Pick<ProviderAdapter, "maxTokens" | "compactAt">;
+}): ContextPlan {
+  const { info, adapter } = input;
+  const override = input.overrides[input.model]?.contextWindow;
+  const limit = info.contextLimit ?? info.contextWindow ?? Infinity;
+  const candidates: Array<[number | null | undefined, WindowSource]> = [
+    [override && Math.min(override, limit), "override"],
+    [info.contextWindow, "provider"],
+    [knownContextWindow(input.model), "guess"],
+    [DEFAULT_CONTEXT_WINDOW, "default"],
+  ];
+  const [contextWindow, source] = candidates.find(([tokens]) => tokens) as [
+    number,
+    WindowSource,
+  ];
+  // The reply can be no longer than either side allows.
+  const asked = [info.maxOutputTokens, adapter.maxTokens].filter(
+    (tokens): tokens is number => !!tokens,
+  );
+  const reservedOutput = Math.min(
+    asked.length ? Math.min(...asked) : DEFAULT_RESERVED_OUTPUT,
+    Math.floor(contextWindow * MAX_RESERVED_SHARE),
+  );
+  return {
+    contextWindow,
+    source,
+    reservedOutput,
+    budget: Math.floor(
+      contextWindow - reservedOutput - contextWindow * SAFETY_MARGIN,
+    ),
+    compactAt: adapter.compactAt ?? COMPACT_AT,
+  };
 }
 
 export function estimateTokens(text: string): number {

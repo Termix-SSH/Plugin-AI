@@ -11,8 +11,10 @@
 - Admin settings for the assistant's parallel hosts, command timeout and output kept per host
 - Pick up past conversations from Conversations, with the tokens each has used
 - The assistant shows its replies in the order they happened, text and tool calls interleaved, with the model's thinking in a collapsed Thinking block of its own
-- A context meter in the assistant's header, and a Context window setting per provider with defaults for common models
-- Automatic compaction: as a conversation nears the context window, older tool results are trimmed and then the earlier part is summarised, marked with "Context compacted"; a header button compacts on request
+- A context meter in the assistant's header, with the window read from the provider: `max_model_len` and the other fields of OpenAI-compatible model lists (vLLM, OpenRouter, Groq and more), Ollama's `num_ctx` and trained length, Gemini's and Anthropic's model limits; a guess from the model name only when the provider says nothing, marked with `~`
+- A context window override per model in the provider settings, which list each model's window and where it came from, with Refresh to ask the provider again
+- The assistant loads Ollama models with the conversation's window as `num_ctx`, and uses prompt caching on Anthropic
+- Automatic compaction: as a conversation nears what the context window leaves after the reply's tokens, older tool results are trimmed and then the earlier part is summarised, marked with "Context compacted"; a header button compacts on request
 - Token usage for every AI call, with a usage view in the assistant and in settings, a dashboard card, and every user's usage for those with the new `ai.usage.view_all` permission (admins only by default)
 
 ### Changed

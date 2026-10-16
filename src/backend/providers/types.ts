@@ -62,6 +62,8 @@ export interface ChatRequest {
   system: string;
   messages: ChatMessage[];
   tools: ToolDefinition[];
+  /** The window the conversation is sized for; Ollama loads the model with it. */
+  contextWindow?: number;
   signal?: AbortSignal;
 }
 
@@ -98,6 +100,18 @@ export interface ProviderConfig {
   fetch: ProviderFetch;
 }
 
+/** What a provider says about one of its models; what it leaves out is unknown. */
+export interface ModelInfo {
+  /** Tokens one request may hold as served, e.g. vLLM's max_model_len. */
+  contextWindow?: number;
+  /**
+   * The most the model can take at all, when that is more than it is served
+   * with: Ollama's trained context length against its num_ctx.
+   */
+  contextLimit?: number;
+  maxOutputTokens?: number;
+}
+
 export interface ProviderAdapter {
   /** Streams a single assistant turn. Tool execution happens in the engine. */
   streamChat(
@@ -106,6 +120,12 @@ export interface ProviderAdapter {
   ): AsyncIterable<ChatChunk>;
   /** Model ids to offer in the picker, best effort. */
   listModels(config: ProviderConfig): Promise<string[]>;
+  /** The model's limits as the provider reports them, best effort. */
+  describeModel(config: ProviderConfig, model: string): Promise<ModelInfo>;
+  /** Output tokens the adapter asks for on every call, when it sets a limit. */
+  maxTokens?: number;
+  /** The share of the budget a prompt may take before compaction, if not 80%. */
+  compactAt?: number;
 }
 
 export class AiProviderError extends Error {

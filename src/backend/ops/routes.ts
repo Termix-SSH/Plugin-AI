@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import type { Request, Response, Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { buildAssistantSystemPrompt, type PageContext } from "../context.js";
-import { contextWindowFor, estimateRequest } from "../context-window.js";
+import { estimateRequest, planContext } from "../context-window.js";
 import { compactHistory, runAgent, type ModelUsage } from "../engine.js";
 import {
   createAiGate,
@@ -10,6 +10,7 @@ import {
   type SettingsReader,
 } from "../gating.js";
 import { toChatHistory, toStoredMessage, toStoredSummary } from "../history.js";
+import { contextPlanFor, type ModelInfoCache } from "../model-info.js";
 import { createProviderFetch } from "../providers/http.js";
 import type { ProviderConfig } from "../providers/types.js";
 import type { AiProviderWithSecret, AiRepository } from "../repository.js";
@@ -96,6 +97,7 @@ export function registerOpsRoutes(
   router: Router,
   repository: AiRepository,
   ctx: PluginContext,
+  modelInfo: ModelInfoCache,
 ): void {
   const gate = createAiGate(ctx.settings, () => ctx.currentActor());
   router.use("/ops", ctx.rbac.require("use") as never, gate as never);
@@ -148,6 +150,22 @@ export function registerOpsRoutes(
       ctx.fetch,
       await readPrivateAllowlist(ctx.settings),
     ),
+  });
+
+  /** The window and budget of a provider's model, from what it reports. */
+  const planFor = async (
+    provider: AiProviderWithSecret | null,
+    model: string,
+  ) =>
+    provider
+      ? contextPlanFor(modelInfo, provider, await configFor(provider), model)
+      : planContext({ model, overrides: {}, info: {}, adapter: {} });
+
+  /** What the context meter shows of a plan. */
+  const meterOf = (plan: Awaited<ReturnType<typeof planFor>>) => ({
+    contextWindow: plan.contextWindow,
+    contextSource: plan.source,
+    reservedOutput: plan.reservedOutput,
   });
 
   /** Counts each model call of a conversation against its user. */
@@ -267,7 +285,7 @@ export function registerOpsRoutes(
     // The window of whichever provider and model made the latest call.
     const providerId = last?.providerId ?? conversation.providerId;
     const provider = providerId
-      ? await repository.findProvider(providerId, userId)
+      ? await repository.findProviderWithSecret(providerId, userId)
       : null;
     const model = last?.model ?? conversation.model ?? "";
     // Compacted since its last call: what is left is an estimate until the
@@ -290,10 +308,7 @@ export function registerOpsRoutes(
         targets: storedTargets(conversation.targets),
         totalTokens: tokens.get(conversation.id) ?? 0,
         context: context
-          ? {
-              ...context,
-              contextWindow: contextWindowFor(provider ?? {}, model),
-            }
+          ? { ...context, ...meterOf(await planFor(provider, model)) }
           : null,
       },
       messages,
@@ -399,14 +414,15 @@ export function registerOpsRoutes(
       }
 
       try {
-        const contextWindow = contextWindowFor(provider, chosenModel);
+        const plan = await planFor(provider, chosenModel);
         const compacted = await compactHistory({
           config: await configFor(provider),
           model: chosenModel,
           history: toChatHistory(
             await repository.listMessages(conversation.id),
           ),
-          contextWindow,
+          contextWindow: plan.contextWindow,
+          contextBudget: plan.budget,
           onUsage: usageRecorder(
             userId,
             provider,
@@ -428,7 +444,7 @@ export function registerOpsRoutes(
               tools: [],
             }),
             estimated: true,
-            contextWindow,
+            ...meterOf(plan),
           },
         });
       } catch (err) {
@@ -451,8 +467,9 @@ export function registerOpsRoutes(
    *       assistant changes the targets and a client_action frame when it asks
    *       the browser to open a view. reasoning frames carry the model's
    *       thinking apart from its tokens, a usage frame follows every model
-   *       call with its tokens and the context window, and a compacted frame
-   *       marks where the history was summarised to fit. There is no step
+   *       call with its tokens, the context window, its source (override,
+   *       provider, guess or default) and the tokens kept for the reply, and
+   *       a compacted frame marks where the history was summarised to fit. There is no step
    *       limit; the run ends when the model answers, the client goes away,
    *       or it repeats one call with one result five times. hostIds become the conversation's
    *       targets; leave them out to keep the ones it has. Targets, and the
@@ -577,7 +594,7 @@ export function registerOpsRoutes(
 
       const limits = await readOpsLimits(ctx.settings);
       const config = await configFor(provider);
-      const contextWindow = contextWindowFor(provider, chosenModel);
+      const plan = await planFor(provider, chosenModel);
 
       const { send, signal, stopHeartbeat } = openEventStream(res);
       send({ type: "conversation", conversationId: conversation.id });
@@ -637,7 +654,9 @@ export function registerOpsRoutes(
           },
           tools,
           signal,
-          contextWindow,
+          contextWindow: plan.contextWindow,
+          contextBudget: plan.budget,
+          compactAt: plan.compactAt,
           onUsage: usageRecorder(userId, provider, chosenModel, ownId),
         })) {
           if (event.type === "message") {
@@ -655,7 +674,7 @@ export function registerOpsRoutes(
             send({ type: "compacted" });
             continue;
           }
-          send(event);
+          send(event.type === "usage" ? { ...event, ...meterOf(plan) } : event);
         }
       } finally {
         stopHeartbeat();

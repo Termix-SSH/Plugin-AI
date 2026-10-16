@@ -124,8 +124,16 @@
       "shareApiKey": "Let other features use your AI provider API key for their own requests. The key is never copied, and you can revoke this at any time."
     },
     "removeProviderConfirm": "Remove the provider {{name}}?",
-    "contextWindow": "Context window (tokens)",
-    "contextWindowHint": "How many tokens the model can hold. Leave it empty to use the model's default, {{tokens}}. The assistant compacts a conversation as it gets close.",
+    "contextWindows": "Context window per model",
+    "contextWindowsHint": "Read from the provider where it reports one. Enter a number of tokens to override it for a model, or leave it empty to use what the provider reports. Refresh asks the provider again.",
+    "contextWindowValue": "Context window: {{tokens}} ({{source}})",
+    "contextOverride": "Context window override for {{model}}",
+    "contextSourceOverride": "set by you",
+    "contextSourceProvider": "reported by the provider",
+    "contextSourceGuess": "guessed from the model name",
+    "contextSourceDefault": "default for unknown models",
+    "contextLoadFailed": "Could not read the context windows",
+    "contextRefresh": "Refresh",
     "contextWindowInvalid": "Enter the context window as a whole number of tokens, at least 1024."
   },
   "nav": {
@@ -295,6 +303,8 @@
     "compact": "Compact the conversation",
     "nothingToCompact": "The conversation is too short to compact yet.",
     "contextMeter": "Context: {{used}} of {{window}} tokens used by the latest call",
+    "contextMeterSource": "The window is {{source}}.",
+    "contextMeterReserved": "{{tokens}} tokens are kept free for the reply.",
     "todayTokens": "Today {{tokens}}",
     "todayTitle": "Tokens you used today. Click for details.",
     "usage": "Token usage",

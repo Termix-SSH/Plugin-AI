@@ -35,11 +35,16 @@ interface ModelBody {
   stream_options?: unknown;
 }
 
+/** The endpoint's model list, as vLLM serves it. */
+const MODELS = { data: [{ id: "glm-5.3-flash", max_model_len: 524288 }] };
+
 /** A model that answers each call with the next reply, recording requests. */
 function model(...replies: Response[]) {
   const bodies: ModelBody[] = [];
   const fetch = async (_url: string, init?: unknown) => {
-    bodies.push(JSON.parse((init as { body: string }).body));
+    const body = (init as { body?: string }).body;
+    if (!body) return new Response(JSON.stringify(MODELS), { status: 200 });
+    bodies.push(JSON.parse(body));
     return replies[bodies.length - 1] ?? sse(text("ok"));
   };
   return { fetch, bodies };
@@ -53,7 +58,7 @@ async function addProvider(target: TestServer): Promise<number> {
       baseUrl: "https://glm.example/v1",
       apiKey: "sk-test",
       defaultModel: "glm-5.3-flash",
-      contextWindow: 128000,
+      modelOverrides: { "glm-5.3-flash": { contextWindow: 128000 } },
     },
   });
   return created.body.provider.id;
@@ -118,6 +123,8 @@ describe("usage recording", () => {
       promptTokens: Number(rows[1].prompt_tokens),
       estimated: true,
       contextWindow: 128000,
+      contextSource: "override",
+      reservedOutput: 8192,
     });
   });
 

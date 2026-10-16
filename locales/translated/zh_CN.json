@@ -128,8 +128,16 @@
       "shareApiKey": "允许其他功能使用您的 AI 提供商 API 密钥进行其自身的请求。密钥不会被复制，您可以随时撤销此权限。"
     },
     "removeProviderConfirm": "移除提供商 {{name}}？",
-    "contextWindow": "上下文窗口（token）",
-    "contextWindowHint": "模型能容纳的 token 数。留空则使用该模型的默认值 {{tokens}}。对话接近上限时，助手会自动压缩。",
+    "contextWindows": "各模型的上下文窗口",
+    "contextWindowsHint": "提供商报告了就以其为准。为某个模型填写 token 数可覆盖它，留空则使用提供商报告的值。刷新会重新询问提供商。",
+    "contextWindowValue": "上下文窗口：{{tokens}}（{{source}}）",
+    "contextOverride": "{{model}} 的上下文窗口覆盖值",
+    "contextSourceOverride": "由你设置",
+    "contextSourceProvider": "由提供商报告",
+    "contextSourceGuess": "根据模型名称推测",
+    "contextSourceDefault": "未知模型的默认值",
+    "contextLoadFailed": "无法读取上下文窗口",
+    "contextRefresh": "刷新",
     "contextWindowInvalid": "上下文窗口需填写一个整数 token 数，至少 1024。"
   },
   "nav": {
@@ -297,6 +305,8 @@
     "compact": "压缩对话",
     "nothingToCompact": "对话还太短，暂时无需压缩。",
     "contextMeter": "上下文：最近一次调用使用了 {{window}} 个 token 中的 {{used}} 个",
+    "contextMeterSource": "窗口{{source}}。",
+    "contextMeterReserved": "为回复预留 {{tokens}} 个 token。",
     "todayTokens": "今日 {{tokens}}",
     "todayTitle": "你今天使用的 token。点击查看详情。",
     "usage": "Token 用量",

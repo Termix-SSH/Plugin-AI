@@ -6,6 +6,7 @@ import {
 } from "./compaction.js";
 import {
   capToolResult,
+  COMPACT_AT,
   estimateRequest,
   estimateTokens,
   shrinkOldToolResults,
@@ -37,13 +38,10 @@ import {
 /** The same call with the same result this many times in a row is a loop. */
 export const REPEAT_LIMIT = 5;
 
-/** Compaction starts once the prompt would take this share of the window. */
-const COMPACT_AT = 0.8;
-
-/** The share of the window the verbatim tail may keep after a summary. */
+/** The share of the budget the verbatim tail may keep after a summary. */
 const KEEP_RECENT = 0.3;
 
-/** The share of the window the summariser's input may take. */
+/** The share of the budget the summariser's input may take. */
 const SUMMARY_INPUT = 0.6;
 
 export type UsageSource = "assistant" | "terminal" | "compaction";
@@ -85,8 +83,16 @@ export interface EngineOptions {
   signal?: AbortSignal;
   /** Model turns before giving up. Unset runs until the model is done. */
   maxTurns?: number;
-  /** The model's context in tokens. Set, it turns on automatic compaction. */
+  /**
+   * The model's context in tokens, sent with every call. Set, it turns on
+   * automatic compaction unless `compact` is false.
+   */
   contextWindow?: number;
+  /** What a prompt may take, the window less the reply. Defaults to it. */
+  contextBudget?: number;
+  /** The share of the budget that starts compaction. Defaults to 80%. */
+  compactAt?: number;
+  compact?: boolean;
   /** Where every model call is counted, compaction's included. */
   onUsage?: (usage: ModelUsage) => unknown;
   /** What the run's model calls are counted as. Defaults to "assistant". */
@@ -136,12 +142,12 @@ export async function* runAgent(
     turn += 1
   ) {
     if (options.signal?.aborted) return;
-    if (options.contextWindow) {
-      const window = options.contextWindow;
+    if (options.contextWindow && options.compact !== false) {
+      const budget = options.contextBudget ?? options.contextWindow;
       const fits = (list: ChatMessage[]) =>
         estimateRequest({ system: options.system, messages: list, tools }) *
           calibration <=
-        window * COMPACT_AT;
+        budget * (options.compactAt ?? COMPACT_AT);
       if (!fits(messages)) {
         messages = shrinkOldToolResults(messages);
         if (!fits(messages)) {
@@ -149,8 +155,8 @@ export async function* runAgent(
             ...options,
             adapter,
             messages,
-            budget: (window * KEEP_RECENT) / calibration,
-            inputLimit: (window * SUMMARY_INPUT * 4) / calibration,
+            budget: (budget * KEEP_RECENT) / calibration,
+            inputLimit: (budget * SUMMARY_INPUT * 4) / calibration,
           });
           if (summary) {
             yield { type: "compacted", ...summary };
@@ -180,6 +186,7 @@ export async function* runAgent(
         system: options.system,
         messages,
         tools,
+        contextWindow: options.contextWindow,
         signal: options.signal,
       })) {
         if (chunk.type === "text") {
@@ -327,7 +334,7 @@ function estimatedUsage(
 
 interface SummarizeOptions extends Pick<
   EngineOptions,
-  "config" | "model" | "signal" | "onUsage"
+  "config" | "model" | "signal" | "onUsage" | "contextWindow"
 > {
   adapter: ProviderAdapter;
   messages: ChatMessage[];
@@ -356,6 +363,7 @@ async function summarize(
     system: SUMMARY_SYSTEM,
     messages: [{ role: "user" as const, content: input }],
     tools: [],
+    contextWindow: options.contextWindow,
     signal: options.signal,
   };
   let text = "";
@@ -394,17 +402,18 @@ async function summarize(
 export async function compactHistory(
   options: Pick<
     EngineOptions,
-    "config" | "model" | "signal" | "onUsage" | "history"
+    "config" | "model" | "signal" | "onUsage" | "history" | "contextBudget"
   > & { contextWindow: number },
 ): Promise<{ summary: string; keep: number; history: ChatMessage[] } | null> {
   const messages = options.history;
   const size = estimateRequest({ system: "", messages, tools: [] });
+  const budget = options.contextBudget ?? options.contextWindow;
   const summary = await summarize({
     ...options,
     adapter: getAdapter(options.config.providerType),
     messages,
-    budget: Math.min(options.contextWindow, size) * KEEP_RECENT,
-    inputLimit: options.contextWindow * SUMMARY_INPUT * 4,
+    budget: Math.min(budget, size) * KEEP_RECENT,
+    inputLimit: budget * SUMMARY_INPUT * 4,
   });
   if (!summary) return null;
   return {

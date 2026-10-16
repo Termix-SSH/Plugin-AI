@@ -40,8 +40,11 @@ export const providers = adoptLegacyTable(
       // First few characters, kept in the clear so the UI can tell keys apart.
       apiKeyPrefix: text(),
       defaultModel: text(),
-      // Tokens; null means the model family's default.
+      // Unused since 0008 moved it into modelOverrides; a removed column
+      // needs a hand-written migration for no gain.
       contextWindow: integer(),
+      // JSON { "<model>": { "contextWindow": tokens } }, set by the user.
+      modelOverrides: text(),
       enabled: boolean().notNull().default(true),
       createdAt: timestamp().notNull().defaultNow(),
       updatedAt: timestamp().notNull().defaultNow(),

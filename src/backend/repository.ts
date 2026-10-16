@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
+import type { ModelOverrides } from "./context-window.js";
 import {
   cliRuns as cliRunsDef,
   conversations as conversationsDef,
@@ -24,8 +25,8 @@ export interface AiProviderRecord {
   baseUrl: string | null;
   apiKeyPrefix: string | null;
   defaultModel: string | null;
-  /** Tokens; null for the model family's default. */
-  contextWindow: number | null;
+  /** The user's per-model settings, such as a context window override. */
+  modelOverrides: ModelOverrides;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -124,7 +125,7 @@ export interface AiProviderInput {
   baseUrl?: string | null;
   apiKey?: string | null;
   defaultModel?: string | null;
-  contextWindow?: number | null;
+  modelOverrides?: ModelOverrides;
   enabled?: boolean;
 }
 
@@ -143,6 +144,30 @@ export function apiKeyPrefix(apiKey: string | null | undefined): string | null {
 }
 
 const now = () => new Date().toISOString();
+
+/** The column's JSON as a map; anything unreadable is no overrides. */
+function parseOverrides(raw: unknown): ModelOverrides {
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+const storedOverrides = (overrides: ModelOverrides) =>
+  Object.keys(overrides).length ? JSON.stringify(overrides) : null;
+
+/** A provider row as callers see it, without the retired window column. */
+function toProvider(row: Record<string, unknown>): AiProviderRecord {
+  const { contextWindow: _retired, modelOverrides, ...rest } = row;
+  return {
+    ...(rest as Omit<AiProviderRecord, "modelOverrides">),
+    modelOverrides: parseOverrides(modelOverrides),
+  };
+}
 
 export type AiRepository = Awaited<ReturnType<typeof createAiRepository>>;
 
@@ -199,21 +224,36 @@ export async function createAiRepository(
 
     /** Never includes key material; callers get the masked prefix only. */
     async listProviders(userId: string): Promise<AiProviderRecord[]> {
-      return (await client())
+      const rows = await (
+        await client()
+      )
         .select()
         .from(providers)
         .where(eq(providers.userId, userId))
         .orderBy(providers.id);
+      return rows.map(toProvider);
     },
 
     async findProvider(
       id: number,
       userId: string,
     ): Promise<AiProviderRecord | null> {
-      return first<AiProviderRecord>(
+      const row = await first<Record<string, unknown>>(
         providers,
         and(eq(providers.id, id), eq(providers.userId, userId)),
       );
+      return row && toProvider(row);
+    },
+
+    /** Every model the user has called through a provider. */
+    async providerModels(id: number, userId: string): Promise<string[]> {
+      const rows = await (
+        await client()
+      )
+        .selectDistinct({ model: usage.model })
+        .from(usage)
+        .where(and(eq(usage.providerId, id), eq(usage.userId, userId)));
+      return rows.map((row: { model: string }) => row.model);
     },
 
     /**
@@ -241,7 +281,7 @@ export async function createAiRepository(
         baseUrl: input.baseUrl ?? null,
         apiKeyPrefix: apiKeyPrefix(input.apiKey),
         defaultModel: input.defaultModel ?? null,
-        contextWindow: input.contextWindow ?? null,
+        modelOverrides: storedOverrides(input.modelOverrides ?? {}),
         enabled: input.enabled ?? true,
         createdAt: stamp,
         updatedAt: stamp,
@@ -270,8 +310,8 @@ export async function createAiRepository(
       if (input.baseUrl !== undefined) updates.baseUrl = input.baseUrl;
       if (input.defaultModel !== undefined)
         updates.defaultModel = input.defaultModel;
-      if (input.contextWindow !== undefined)
-        updates.contextWindow = input.contextWindow;
+      if (input.modelOverrides !== undefined)
+        updates.modelOverrides = storedOverrides(input.modelOverrides);
       if (input.enabled !== undefined) updates.enabled = input.enabled;
 
       // An empty string clears the key; undefined leaves it untouched.

@@ -62,11 +62,35 @@ Every command on every host is kept with its exit code, duration and output, and
 
 ## Context and compaction
 
-A model can only read so much at once, its context window. The header shows how much of it the latest call took, for example `42k / 128k`. A `~` in front means it is an estimate, because the provider did not report its token counts.
+A model can only read so much at once, its context window. The header shows how much of it the latest call took, for example `42k / 524k`. A `~` in front of the tokens used means they are an estimate, because the provider did not report its token counts; a `~` in front of the window means the window is a guess. Hover the meter to see where the window came from and how much is kept free for the reply.
 
-Each provider has a Context window setting under Settings, AI Assistant, Providers. Leave it empty to use the model's default: Claude 200k, GPT-5 400k, GPT-4.1 and Gemini 1M, GLM 4.6 and later 200k, Qwen 2.5 and Mistral 32k, and 128k for anything else. Set it when your endpoint allows less, for example an Ollama model with a small `num_ctx`.
+The window comes from the provider wherever it says:
 
-Before each call, when the conversation would take more than about 80% of the window, the assistant makes room on its own:
+| Provider                                                                           | Where the window is read                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenAI-compatible (vLLM, SGLang, OpenRouter, LM Studio, Groq, Together and others) | The model's entry in `GET /models`: `max_model_len`, `context_length`, `top_provider.context_length`, `context_window`, `max_context_length` or `input_token_limit`. The reply's limit from `top_provider.max_completion_tokens`, `max_completion_tokens` or `max_output_tokens` |
+| Ollama                                                                             | `POST /api/show`: the `num_ctx` the model is set to load with, else its trained `context_length`                                                                                                                                                                                 |
+| Gemini                                                                             | The model's `inputTokenLimit` and `outputTokenLimit`                                                                                                                                                                                                                             |
+| Anthropic                                                                          | The models API's `max_input_tokens` and `max_tokens`                                                                                                                                                                                                                             |
+
+What a provider reports is kept for six hours, or five minutes when it said nothing or did not answer within five seconds. Editing the provider, or Refresh in its settings, asks again.
+
+In order, the window is:
+
+1. Your override for the model, under Settings, AI Assistant, Providers, edit, Context window per model. It is still held to what the model can take at all.
+2. What the provider reports.
+3. A guess from the model's name: Claude 200k, GPT-5 400k, GPT-4.1 and Gemini 1M, GLM 4.6 and later 200k, Qwen 2.5 and Mistral 32k.
+4. 128k.
+
+The settings list the default model, every model with an override and every model you have used, each with its window and where it came from.
+
+Part of the window is kept free for the reply: what the provider allows for a reply, or what the assistant asks for (16,000 tokens for Anthropic) if that is less, else 8,192, and never more than a quarter of the window. Another 2% is kept as a margin for estimates.
+
+On Ollama the assistant loads the model with the window as `num_ctx`, so Ollama does not cut the start of a long conversation at its own small default. Lower the window with an override if the model does not fit in memory at its full length.
+
+On Anthropic the tools, the system prompt and the newest message are marked for prompt caching, so each call of a long run reads the earlier part from the cache.
+
+Before each call, when the conversation would take more than about 80% of what is left after the reply (85% on Anthropic, as compaction starts the cache over), the assistant makes room on its own:
 
 1. Older tool results are cut to their start and end. The last four stay whole.
 2. If that is not enough, one extra model call summarises the earlier part of the conversation. The summary stands in for it from then on, and the most recent steps and your latest message are kept word for word. A tool call is never separated from its result.

@@ -113,6 +113,15 @@ export function describeProviderError(
   return error.message || fallback;
 }
 
+/** The first of `values` that is a positive whole number of tokens. */
+export function firstCount(...values: unknown[]): number | undefined {
+  return values
+    .map((value) => (typeof value === "string" ? Number(value) : value))
+    .find(
+      (value): value is number => Number.isInteger(value) && Number(value) > 0,
+    );
+}
+
 export function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }

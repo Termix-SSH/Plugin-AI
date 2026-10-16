@@ -1,8 +1,9 @@
-import { assertOk, joinUrl, readJsonLines } from "./http.js";
+import { assertOk, firstCount, joinUrl, readJsonLines } from "./http.js";
 import { createThinkSplitter } from "./think-tags.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
 } from "./types.js";
@@ -56,6 +57,11 @@ export const ollamaAdapter: ProviderAdapter = {
         model: request.model,
         messages: toOllamaMessages(request),
         stream: true,
+        // Without it Ollama loads the model with its own small default and
+        // silently drops the start of a longer prompt.
+        ...(request.contextWindow
+          ? { options: { num_ctx: request.contextWindow } }
+          : {}),
         ...(request.tools.length
           ? {
               tools: request.tools.map((tool) => ({
@@ -149,5 +155,32 @@ export const ollamaAdapter: ProviderAdapter = {
       .map((entry: any) => entry.name)
       .filter((name: unknown): name is string => typeof name === "string")
       .sort();
+  },
+
+  /**
+   * The trained context length from model_info, and the num_ctx the model
+   * is set to load with, when its Modelfile sets one.
+   */
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    const response = await config.fetch(joinUrl(baseFor(config), "api/show"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model }),
+    });
+    await assertOk(response, "Ollama");
+
+    const body: any = await response.json();
+    const trained = firstCount(
+      Object.entries(body.model_info ?? {}).find(([key]) =>
+        key.endsWith(".context_length"),
+      )?.[1],
+    );
+    const numCtx = firstCount(
+      /^\s*num_ctx\s+(\d+)/m.exec(String(body.parameters ?? ""))?.[1],
+    );
+    return { contextWindow: numCtx ?? trained, contextLimit: trained };
   },
 };

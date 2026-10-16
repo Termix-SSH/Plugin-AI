@@ -1,7 +1,8 @@
-import { assertOk, readSseLines } from "./http.js";
+import { assertOk, firstCount, readSseLines } from "./http.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
 } from "./types.js";
@@ -205,5 +206,24 @@ export const geminiAdapter: ProviderAdapter = {
       .map((entry: any) => String(entry.name ?? "").replace(/^models\//, ""))
       .filter((name: string) => name.length > 0)
       .sort();
+  },
+
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    if (!config.apiKey) return {};
+
+    const response = await config.fetch(
+      `${baseFor(config).replace(/\/+$/, "")}/models/${encodeURIComponent(model)}`,
+      { method: "GET", headers: { "x-goog-api-key": config.apiKey } },
+    );
+    await assertOk(response, "Gemini");
+
+    const body: any = await response.json();
+    return {
+      contextWindow: firstCount(body.inputTokenLimit),
+      maxOutputTokens: firstCount(body.outputTokenLimit),
+    };
   },
 };

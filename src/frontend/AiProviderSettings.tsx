@@ -21,12 +21,15 @@ import {
   createAiProvider,
   deleteAiProvider,
   getAiProviderModels,
+  getProviderContext,
   probeAiModels,
   updateAiProvider,
   type AiProvider,
   type AiProviderType,
+  CONTEXT_SOURCE_KEYS,
+  type ModelContext,
+  type ModelOverrides,
 } from "./ai-api";
-import { defaultContextWindow } from "../backend/context-window";
 
 const PROVIDER_TYPES: Array<{
   value: AiProviderType;
@@ -81,9 +84,11 @@ interface AiProviderSettingsProps {
 function ModelRefreshButton({
   detecting,
   onClick,
+  label = "ai.modelRefresh",
 }: {
   detecting: boolean;
   onClick: () => void;
+  label?: string;
 }) {
   const { t } = useTranslation();
   return (
@@ -98,7 +103,7 @@ function ModelRefreshButton({
       ) : (
         <RefreshCw size={11} />
       )}
-      {t("ai.modelRefresh")}
+      {t(label)}
     </button>
   );
 }
@@ -192,36 +197,103 @@ function parseContextWindow(value: string): number | null | false {
   return Number.isInteger(tokens) && tokens >= 1024 ? tokens : false;
 }
 
-/** Tokens the model holds; empty means the model family's default. */
-function ContextWindowField({
-  id,
-  value,
+/** The overrides the form's fields describe, or null when one is invalid. */
+function toOverrides(fields: Record<string, string>): ModelOverrides | null {
+  const overrides: ModelOverrides = {};
+  for (const [model, value] of Object.entries(fields)) {
+    const tokens = parseContextWindow(value);
+    if (tokens === false) return null;
+    if (tokens) overrides[model] = { contextWindow: tokens };
+  }
+  return overrides;
+}
+
+/**
+ * Each model's context window as the provider reports it, with a field to
+ * override it per model. Covers the default model, any with an override
+ * and any the user has called.
+ */
+function ContextWindowTable({
+  providerId,
   model,
+  values,
   onChange,
 }: {
-  id: string;
-  value: string;
+  providerId: number;
   model: string;
-  onChange: (value: string) => void;
+  values: Record<string, string>;
+  onChange: (model: string, value: string) => void;
 }) {
   const { t } = useTranslation();
-  const fallback = defaultContextWindow(model);
+  const [rows, setRows] = useState<ModelContext[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(
+    async (refresh: boolean) => {
+      setLoading(true);
+      setError(null);
+      try {
+        setRows(
+          await getProviderContext(providerId, {
+            models: model.trim() ? [model.trim()] : [],
+            refresh,
+          }),
+        );
+      } catch (failure) {
+        setError(getErrorMessage(failure, t("ai.contextLoadFailed")));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [providerId, model, t],
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => void load(false), 400);
+    return () => clearTimeout(timer);
+  }, [load]);
+
   return (
     <div className={FIELD}>
-      <Label htmlFor={id}>{t("ai.contextWindow")}</Label>
-      <Input
-        id={id}
-        type="number"
-        inputMode="numeric"
-        min={1024}
-        step={1024}
-        value={value}
-        placeholder={String(fallback)}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <div className="flex items-center gap-2">
+        <Label className="min-w-0 flex-1">{t("ai.contextWindows")}</Label>
+        <ModelRefreshButton
+          detecting={loading}
+          onClick={() => void load(true)}
+          label="ai.contextRefresh"
+        />
+      </div>
+      {rows.map((row) => (
+        <div key={row.model} className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-xs">{row.model}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {t("ai.contextWindowValue", {
+                tokens: row.contextWindow.toLocaleString(),
+                source: t(CONTEXT_SOURCE_KEYS[row.source]),
+              })}
+            </span>
+          </div>
+          <Input
+            className="h-7 w-28"
+            type="number"
+            inputMode="numeric"
+            min={1024}
+            step={1024}
+            aria-label={t("ai.contextOverride", { model: row.model })}
+            placeholder={String(row.reportedWindow ?? "")}
+            value={values[row.model] ?? ""}
+            onChange={(event) => onChange(row.model, event.target.value)}
+          />
+        </div>
+      ))}
       <p className="text-[11px] leading-snug text-muted-foreground">
-        {t("ai.contextWindowHint", { tokens: fallback.toLocaleString() })}
+        {t("ai.contextWindowsHint")}
       </p>
+      {error && (
+        <p className="text-[11px] leading-snug text-destructive">{error}</p>
+      )}
     </div>
   );
 }
@@ -238,8 +310,13 @@ function AiProviderEditForm({
   const { t } = useTranslation();
   const [label, setLabel] = useState(provider.label);
   const [defaultModel, setDefaultModel] = useState(provider.defaultModel ?? "");
-  const [contextWindow, setContextWindow] = useState(
-    provider.contextWindow ? String(provider.contextWindow) : "",
+  const [overrides, setOverrides] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      Object.entries(provider.modelOverrides).map(([model, value]) => [
+        model,
+        value.contextWindow ? String(value.contextWindow) : "",
+      ]),
+    ),
   );
   const [models, setModels] = useState<string[]>([]);
   const [customModel, setCustomModel] = useState(false);
@@ -275,8 +352,8 @@ function AiProviderEditForm({
       toast.error(t("ai.labelRequired"));
       return;
     }
-    const windowTokens = parseContextWindow(contextWindow);
-    if (windowTokens === false) {
+    const modelOverrides = toOverrides(overrides);
+    if (!modelOverrides) {
       toast.error(t("ai.contextWindowInvalid"));
       return;
     }
@@ -286,7 +363,7 @@ function AiProviderEditForm({
       await updateAiProvider(provider.id, {
         label: label.trim(),
         defaultModel: defaultModel.trim() || null,
-        contextWindow: windowTokens,
+        modelOverrides,
       });
       toast.success(t("ai.providerUpdated"));
       onSaved();
@@ -327,11 +404,13 @@ function AiProviderEditForm({
         onRefresh={() => void detectModels()}
       />
 
-      <ContextWindowField
-        id={`ai-provider-context-${provider.id}`}
-        value={contextWindow}
+      <ContextWindowTable
+        providerId={provider.id}
         model={defaultModel}
-        onChange={setContextWindow}
+        values={overrides}
+        onChange={(model, value) =>
+          setOverrides((current) => ({ ...current, [model]: value }))
+        }
       />
 
       <FormFooter
@@ -360,7 +439,6 @@ export function AiProviderSettings({
   const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
   const [apiKey, setApiKey] = useState("");
   const [defaultModel, setDefaultModel] = useState("");
-  const [contextWindow, setContextWindow] = useState("");
 
   const [models, setModels] = useState<string[]>([]);
   const [detecting, setDetecting] = useState(false);
@@ -420,11 +498,6 @@ export function AiProviderSettings({
       toast.error(t("ai.labelRequired"));
       return;
     }
-    const windowTokens = parseContextWindow(contextWindow);
-    if (windowTokens === false) {
-      toast.error(t("ai.contextWindowInvalid"));
-      return;
-    }
     setSaving(true);
     try {
       const created = await createAiProvider({
@@ -433,13 +506,11 @@ export function AiProviderSettings({
         baseUrl: baseUrl.trim() || null,
         apiKey: apiKey.trim() || null,
         defaultModel: defaultModel.trim() || null,
-        contextWindow: windowTokens,
       });
       setAdding(false);
       setLabel("");
       setApiKey("");
       setDefaultModel("");
-      setContextWindow("");
       onChanged(created.id);
       onAdded?.();
     } catch (error) {
@@ -614,13 +685,6 @@ export function AiProviderSettings({
               setDefaultModel("");
             }}
             onRefresh={() => void detectModels()}
-          />
-
-          <ContextWindowField
-            id="ai-provider-new-context"
-            value={contextWindow}
-            model={defaultModel}
-            onChange={setContextWindow}
           />
 
           <FormFooter

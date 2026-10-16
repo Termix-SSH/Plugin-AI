@@ -30,6 +30,7 @@ import { AiThinking } from "../AiThinking";
 import { AiToolCall } from "../AiToolCall";
 import { aiApp } from "../app-ref";
 import { assistantTimeline } from "../transcript";
+import { CONTEXT_SOURCE_KEYS } from "../ai-api";
 import { formatTokens } from "../usage/format";
 import { UsageView } from "../usage/UsageView";
 import { activeMentionQuery } from "../mention-query";
@@ -402,20 +403,33 @@ function ContextMeter() {
       : share >= 0.6
         ? "text-amber-500"
         : "text-muted-foreground";
+  // A window nobody reported or set is a guess, and says so.
+  const source = context.contextSource ?? "guess";
+  const guessed = source === "guess" || source === "default";
   const label = `${context.estimated ? "~" : ""}${formatTokens(
     context.promptTokens,
-  )} / ${formatTokens(context.contextWindow)}`;
+  )} / ${guessed ? "~" : ""}${formatTokens(context.contextWindow)}`;
+  const description = [
+    t("assistant.contextMeter", {
+      used: context.promptTokens.toLocaleString(),
+      window: context.contextWindow.toLocaleString(),
+    }),
+    t("assistant.contextMeterSource", {
+      source: t(CONTEXT_SOURCE_KEYS[source]),
+    }),
+    context.reservedOutput
+      ? t("assistant.contextMeterReserved", {
+          tokens: context.reservedOutput.toLocaleString(),
+        })
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <span
       className={`shrink-0 px-1 text-[11px] tabular-nums ${tone}`}
-      title={t("assistant.contextMeter", {
-        used: context.promptTokens.toLocaleString(),
-        window: context.contextWindow.toLocaleString(),
-      })}
-      aria-label={t("assistant.contextMeter", {
-        used: context.promptTokens.toLocaleString(),
-        window: context.contextWindow.toLocaleString(),
-      })}
+      title={description}
+      aria-label={description}
     >
       {label}
     </span>

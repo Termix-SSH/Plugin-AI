@@ -24,6 +24,12 @@ vi.mock("../../src/frontend/app-ref", () => ({
 }));
 vi.mock("../../src/frontend/ai-api", () => ({
   AI_PROVIDERS_CHANGED_EVENT: "termix-ai:providers-changed",
+  CONTEXT_SOURCE_KEYS: {
+    override: "ai.contextSourceOverride",
+    provider: "ai.contextSourceProvider",
+    guess: "ai.contextSourceGuess",
+    default: "ai.contextSourceDefault",
+  },
   getAiStatus: async () => ({ globallyEnabled: true, enabled: true }),
   setAiOptIn: async () => {},
   getAiProviders: async () => [{ id: 5, label: "Work", enabled: true }],
@@ -224,6 +230,8 @@ it("shows a run in the order it streamed, its thinking kept apart", async () => 
         type: "usage",
         usage: { promptTokens: 42000, completionTokens: 100, estimated: false },
         contextWindow: 128000,
+        contextSource: "provider",
+        reservedOutput: 8192,
       },
       { type: "token", text: "You have two hosts." },
       { type: "done" },
@@ -247,7 +255,11 @@ it("shows a run in the order it streamed, its thinking kept apart", async () => 
   fireEvent.click(thinking);
   expect(screen.getByText("The user wants their hosts.")).toBeTruthy();
 
-  expect(screen.getByText("42k / 128k")).toBeTruthy();
+  const meter = screen.getByText("42k / 128k");
+  // Where the window came from, and what is kept for the reply.
+  expect(meter.getAttribute("title")).toBe(
+    "assistant.contextMeter assistant.contextMeterSource assistant.contextMeterReserved",
+  );
   // Today's total sits next to the meter.
   expect(
     screen.getByRole("button", { name: "assistant.usage" }).textContent,
@@ -281,7 +293,12 @@ it("reloads a conversation in the order it happened", async () => {
       title: "Restore",
       targets: [],
       totalTokens: 5000,
-      context: { promptTokens: 9000, contextWindow: 128000, estimated: true },
+      context: {
+        promptTokens: 9000,
+        contextWindow: 128000,
+        estimated: true,
+        contextSource: "override",
+      },
     },
     messages: [
       { id: 1, role: "user", content: "restore web-1", toolCalls: null },
@@ -333,7 +350,12 @@ it("compacts the open conversation from the header", async () => {
   });
   mocks.compact.mockResolvedValue({
     compacted: true,
-    context: { promptTokens: 5000, contextWindow: 128000, estimated: true },
+    context: {
+      promptTokens: 5000,
+      contextWindow: 128000,
+      estimated: true,
+      contextSource: "guess",
+    },
   });
   await ready();
   await act(() => assistant.openConversation(4));
@@ -341,7 +363,8 @@ it("compacts the open conversation from the header", async () => {
   fireEvent.click(screen.getByRole("button", { name: "assistant.compact" }));
 
   await waitFor(() => expect(mocks.compact).toHaveBeenCalledWith(4, 5));
-  expect(await screen.findByText("~5k / 128k")).toBeTruthy();
+  // A guessed window is marked as one.
+  expect(await screen.findByText("~5k / ~128k")).toBeTruthy();
 });
 
 it("opens the usage view from the header", async () => {

@@ -317,6 +317,10 @@ export const assistant = {
                 contextWindow:
                   event.contextWindow ?? state.context?.contextWindow ?? 0,
                 estimated: event.usage.estimated,
+                contextSource:
+                  event.contextSource ?? state.context?.contextSource,
+                reservedOutput:
+                  event.reservedOutput ?? state.context?.reservedOutput,
               },
               todayTokens:
                 (state.todayTokens ?? 0) +

@@ -156,6 +156,29 @@ describe("ollamaAdapter", () => {
     expect(chunks.at(-1)).toMatchObject({ type: "done", stopReason: "stop" });
   });
 
+  it("loads the model with the conversation's window as num_ctx", async () => {
+    providerFetch.mockResolvedValue(streamingResponse(['{"done":true}\n']));
+
+    await collect(
+      ollamaAdapter.streamChat(
+        { fetch: providerFetch, providerType: "ollama" },
+        { ...REQUEST, contextWindow: 32768 },
+      ),
+    );
+    await collect(
+      ollamaAdapter.streamChat(
+        { fetch: providerFetch, providerType: "ollama" },
+        REQUEST,
+      ),
+    );
+
+    const bodies = providerFetch.mock.calls.map(([, init]) =>
+      JSON.parse(init.body),
+    );
+    expect(bodies[0].options).toEqual({ num_ctx: 32768 });
+    expect(bodies[1]).not.toHaveProperty("options");
+  });
+
   it("accepts tool arguments as an object or a json string", async () => {
     providerFetch.mockResolvedValue(
       streamingResponse([

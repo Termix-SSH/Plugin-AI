@@ -1,8 +1,9 @@
-import { assertOk, joinUrl, readSseLines } from "./http.js";
+import { assertOk, firstCount, joinUrl, readSseLines } from "./http.js";
 import { createThinkSplitter } from "./think-tags.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
   ToolCall,
@@ -201,22 +202,56 @@ export const openAiAdapter: ProviderAdapter = {
   },
 
   async listModels(config: ProviderConfig): Promise<string[]> {
-    const headers: Record<string, string> = {};
-    if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
-
-    const response = await config.fetch(joinUrl(baseFor(config), "models"), {
-      method: "GET",
-      headers,
-    });
-    await assertOk(response, "OpenAI");
-
-    const body: any = await response.json();
-    return (body.data ?? [])
+    return (await fetchModels(config))
       .map((entry: any) => entry.id)
       .filter((id: unknown): id is string => typeof id === "string")
       .sort();
   },
+
+  /**
+   * Read from the same model list. Servers name the window differently:
+   * vLLM and SGLang max_model_len, OpenRouter and LM Studio context_length,
+   * Groq and Together context_window.
+   */
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    const entry = (await fetchModels(config)).find(
+      (candidate: any) => candidate?.id === model,
+    );
+    if (!entry) return {};
+    return {
+      contextWindow: firstCount(
+        entry.max_model_len,
+        entry.context_length,
+        entry.top_provider?.context_length,
+        entry.context_window,
+        entry.max_context_length,
+        entry.input_token_limit,
+      ),
+      maxOutputTokens: firstCount(
+        entry.top_provider?.max_completion_tokens,
+        entry.max_completion_tokens,
+        entry.max_output_tokens,
+      ),
+    };
+  },
 };
+
+async function fetchModels(config: ProviderConfig): Promise<any[]> {
+  const headers: Record<string, string> = {};
+  if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
+
+  const response = await config.fetch(joinUrl(baseFor(config), "models"), {
+    method: "GET",
+    headers,
+  });
+  await assertOk(response, "OpenAI");
+
+  const body: any = await response.json();
+  return Array.isArray(body.data) ? body.data : [];
+}
 
 function finalizeCall(call: PartialCall): ToolCall {
   let args: Record<string, unknown> = {};

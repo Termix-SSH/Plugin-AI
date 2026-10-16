@@ -49,10 +49,35 @@ export interface AiProvider {
   /** The first few characters only; the key itself never leaves the server. */
   apiKeyPrefix: string | null;
   defaultModel: string | null;
-  /** Tokens; null for the model's default. */
-  contextWindow: number | null;
+  /** Per model id, a context window that replaces the provider's. */
+  modelOverrides: ModelOverrides;
   enabled: boolean;
   createdAt: string;
+}
+
+export type ModelOverrides = Record<string, { contextWindow?: number }>;
+
+/** Where a context window came from, best first. */
+export type ContextSource = "override" | "provider" | "guess" | "default";
+
+/** How each source reads, as translation keys. */
+export const CONTEXT_SOURCE_KEYS: Record<ContextSource, string> = {
+  override: "ai.contextSourceOverride",
+  provider: "ai.contextSourceProvider",
+  guess: "ai.contextSourceGuess",
+  default: "ai.contextSourceDefault",
+};
+
+/** One model's context window, as the server resolved it. */
+export interface ModelContext {
+  model: string;
+  contextWindow: number;
+  source: ContextSource;
+  /** Tokens kept free for the reply. */
+  reservedOutput: number;
+  /** What the provider reported, null when it said nothing. */
+  reportedWindow: number | null;
+  override: number | null;
 }
 
 interface AiConversation {
@@ -114,7 +139,6 @@ export async function createAiProvider(input: {
   baseUrl?: string | null;
   apiKey?: string | null;
   defaultModel?: string | null;
-  contextWindow?: number | null;
 }): Promise<AiProvider> {
   try {
     const provider = (await api().post("/providers", input)).data.provider;
@@ -132,7 +156,7 @@ export async function updateAiProvider(
     baseUrl: string | null;
     apiKey: string | null;
     defaultModel: string | null;
-    contextWindow: number | null;
+    modelOverrides: ModelOverrides;
     enabled: boolean;
   }>,
 ): Promise<AiProvider> {
@@ -181,6 +205,24 @@ export async function getAiProviderModels(id: number): Promise<string[]> {
     return (await api().get(`/providers/${id}/models`)).data.models;
   } catch (error) {
     throw apiError(error, "list provider models");
+  }
+}
+
+/**
+ * The context window of the provider's known models plus `models`; refresh
+ * asks the provider again.
+ */
+export async function getProviderContext(
+  id: number,
+  options: { models?: string[]; refresh?: boolean } = {},
+): Promise<ModelContext[]> {
+  try {
+    const query = new URLSearchParams();
+    if (options.models?.length) query.set("models", options.models.join(","));
+    if (options.refresh) query.set("refresh", "1");
+    return (await api().get(`/providers/${id}/context?${query}`)).data.models;
+  } catch (error) {
+    throw apiError(error, "read context windows");
   }
 }
 
@@ -294,6 +336,9 @@ export interface ContextUse {
   promptTokens: number;
   contextWindow: number;
   estimated: boolean;
+  contextSource?: ContextSource;
+  /** Tokens kept free for the reply. */
+  reservedOutput?: number;
 }
 
 /** The assistant's conversations, shared by the floating panel and the AI tab. */

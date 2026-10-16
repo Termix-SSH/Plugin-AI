@@ -128,8 +128,16 @@
       "shareApiKey": "允許其他功能使用您的 AI 服務提供者 API 金鑰來進行各自的請求。金鑰絕不會被複製，且您可以隨時撤銷此授權。"
     },
     "removeProviderConfirm": "要移除服務提供者 {{name}} 嗎？",
-    "contextWindow": "上下文視窗（token）",
-    "contextWindowHint": "模型能容納的 token 數。留空則使用該模型的預設值 {{tokens}}。對話接近上限時，助理會自動壓縮。",
+    "contextWindows": "各模型的上下文視窗",
+    "contextWindowsHint": "供應商有回報就以其為準。為某個模型填寫 token 數可覆寫它，留空則使用供應商回報的值。重新整理會再次詢問供應商。",
+    "contextWindowValue": "上下文視窗：{{tokens}}（{{source}}）",
+    "contextOverride": "{{model}} 的上下文視窗覆寫值",
+    "contextSourceOverride": "由你設定",
+    "contextSourceProvider": "由供應商回報",
+    "contextSourceGuess": "依模型名稱推測",
+    "contextSourceDefault": "未知模型的預設值",
+    "contextLoadFailed": "無法讀取上下文視窗",
+    "contextRefresh": "重新整理",
     "contextWindowInvalid": "上下文視窗需填寫一個整數 token 數，至少 1024。"
   },
   "nav": {
@@ -297,6 +305,8 @@
     "compact": "壓縮對話",
     "nothingToCompact": "對話還太短，暫時無需壓縮。",
     "contextMeter": "上下文：最近一次呼叫使用了 {{window}} 個 token 中的 {{used}} 個",
+    "contextMeterSource": "視窗{{source}}。",
+    "contextMeterReserved": "為回覆預留 {{tokens}} 個 token。",
     "todayTokens": "今日 {{tokens}}",
     "todayTitle": "你今天使用的 token。點擊查看詳情。",
     "usage": "Token 用量",

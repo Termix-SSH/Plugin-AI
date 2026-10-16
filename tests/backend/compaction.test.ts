@@ -14,6 +14,7 @@ import {
 import {
   capToolResult,
   defaultContextWindow,
+  estimateRequest,
   shrinkOldToolResults,
   TOOL_RESULT_LIMIT,
 } from "../../src/backend/context-window.js";
@@ -31,6 +32,7 @@ vi.mock("../../src/backend/providers/registry.js", () => ({
 }));
 
 const { runAgent } = await import("../../src/backend/engine.js");
+const { toolDefinitions } = await import("../../src/backend/tools/catalog.js");
 
 function chunks(...values: ChatChunk[]) {
   return (async function* () {
@@ -311,6 +313,64 @@ describe("automatic compaction", () => {
 
     expect(events.some((e) => e.type === "compacted")).toBe(false);
     expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+});
+
+describe("compaction budget", () => {
+  const trimmed = (call: number) =>
+    (streamChat.mock.calls[call][1].messages as ChatMessage[]).some((message) =>
+      message.content.includes("[trimmed"),
+    );
+
+  beforeEach(() => {
+    streamChat.mockReset();
+    streamChat.mockImplementation(() => chunks({ type: "text", text: "ok" }));
+  });
+
+  it("compacts against what is left after the reply, not the whole window", async () => {
+    const history = longRun(6, 3000);
+
+    await run({ history, contextWindow: 100_000 });
+    await run({ history, contextWindow: 100_000, contextBudget: 5000 });
+
+    expect(trimmed(0)).toBe(false);
+    expect(trimmed(1)).toBe(true);
+    // The provider is still told the whole window.
+    expect(streamChat.mock.calls[1][1].contextWindow).toBe(100_000);
+  });
+
+  it("starts at the adapter's share of the budget", async () => {
+    const history = longRun(6, 3000);
+    const size = estimateRequest({
+      system: BASE.system,
+      messages: history,
+      tools: toolDefinitions(BASE.tools),
+    });
+    // The prompt takes 83% of this budget.
+    const contextBudget = Math.ceil(size / 0.83);
+
+    await run({ history, contextWindow: 100_000, contextBudget });
+    await run({
+      history,
+      contextWindow: 100_000,
+      contextBudget,
+      compactAt: 0.85,
+    });
+
+    expect(trimmed(0)).toBe(true);
+    expect(trimmed(1)).toBe(false);
+  });
+
+  it("leaves the history alone when compaction is off", async () => {
+    const events = await run({
+      history: longRun(6, 3000),
+      contextWindow: 2000,
+      compact: false,
+    });
+
+    expect(trimmed(0)).toBe(false);
+    expect(events.some((e) => e.type === "compacted")).toBe(false);
+    expect(streamChat.mock.calls[0][1].contextWindow).toBe(2000);
   });
 });
 

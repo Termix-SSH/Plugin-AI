@@ -1,6 +1,7 @@
 import type { Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { hostImportNormalizer } from "./host-import.js";
+import { createModelInfoCache } from "./model-info.js";
 import { createAiRepository } from "./repository.js";
 import { registerProviderSync } from "./sync.js";
 import { registerAgentRoutes } from "./agents/routes.js";
@@ -14,9 +15,11 @@ export async function activate(ctx: PluginContext) {
   await registerProviderSync(ctx, repository);
 
   const router = ctx.http.router<Router>();
-  registerAiRoutes(router, repository, ctx);
+  // Shared, so a refresh in settings reaches the chat too.
+  const modelInfo = createModelInfoCache();
+  registerAiRoutes(router, repository, ctx, modelInfo);
   registerAgentRoutes(router, repository, ctx, await createAgentStore(ctx));
-  registerOpsRoutes(router, repository, ctx);
+  registerOpsRoutes(router, repository, ctx, modelInfo);
   registerUsageRoutes(router, repository, ctx);
 
   ctx.registry.provide("ai.hostImportNormalizer", hostImportNormalizer);

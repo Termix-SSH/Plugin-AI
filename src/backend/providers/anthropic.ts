@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { firstCount } from "./http.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
 } from "./types.js";
@@ -16,6 +18,16 @@ const ANTHROPIC_MODELS = [
   "claude-sonnet-5",
   "claude-haiku-4-5",
 ];
+
+/** Output tokens asked for on every call. */
+const MAX_TOKENS = 16000;
+
+/**
+ * A prompt cache breakpoint: the request up to here is cached for a few
+ * minutes, so the next call of a long run reads it back instead of paying
+ * for it again.
+ */
+const EPHEMERAL = { type: "ephemeral" } as const;
 
 function createClient(config: ProviderConfig): Anthropic {
   if (!config.apiKey) {
@@ -75,6 +87,26 @@ function toAnthropicMessages(request: ChatRequest): Anthropic.MessageParam[] {
 }
 
 /**
+ * The newest message gets a cache breakpoint: the history only grows, so
+ * everything up to it is the next call's prefix.
+ */
+function withCacheBreakpoint(
+  messages: Anthropic.MessageParam[],
+): Anthropic.MessageParam[] {
+  const last = messages.at(-1);
+  if (!last) return messages;
+  const blocks: Anthropic.ContentBlockParam[] =
+    typeof last.content === "string"
+      ? [{ type: "text", text: last.content }]
+      : [...last.content];
+  blocks[blocks.length - 1] = {
+    ...blocks[blocks.length - 1],
+    cache_control: EPHEMERAL,
+  } as Anthropic.ContentBlockParam;
+  return [...messages.slice(0, -1), { ...last, content: blocks }];
+}
+
+/**
  * The SDK throws its own typed errors rather than going through assertOk, so
  * they are translated here to match what every other provider reports.
  */
@@ -112,16 +144,21 @@ export const anthropicAdapter: ProviderAdapter = {
 
     const stream = client.messages.stream({
       model: request.model,
-      max_tokens: 16000,
-      system: request.system,
-      messages: toAnthropicMessages(request),
+      max_tokens: MAX_TOKENS,
+      // Tools, then the system prompt, then the history: each breakpoint
+      // caches everything before it.
+      system: [
+        { type: "text", text: request.system, cache_control: EPHEMERAL },
+      ],
+      messages: withCacheBreakpoint(toAnthropicMessages(request)),
       thinking: { type: "adaptive" },
       ...(request.tools.length
         ? {
-            tools: request.tools.map((tool) => ({
+            tools: request.tools.map((tool, index, all) => ({
               name: tool.name,
               description: tool.description,
               input_schema: tool.parameters as Anthropic.Tool.InputSchema,
+              ...(index === all.length - 1 ? { cache_control: EPHEMERAL } : {}),
             })),
           }
         : {}),
@@ -184,4 +221,22 @@ export const anthropicAdapter: ProviderAdapter = {
   async listModels(): Promise<string[]> {
     return [...ANTHROPIC_MODELS];
   },
+
+  /** Null limits, or a proxy without the models API, fall back to the table. */
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    const info = await createClient(config).models.retrieve(model, null, {
+      maxRetries: 0,
+    });
+    return {
+      contextWindow: firstCount(info.max_input_tokens),
+      maxOutputTokens: firstCount(info.max_tokens),
+    };
+  },
+
+  maxTokens: MAX_TOKENS,
+  // Compacting rewrites the history and so loses the cache; wait longer.
+  compactAt: 0.85,
 };

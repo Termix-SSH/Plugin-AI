@@ -39,6 +39,9 @@
         "contextWindow": {
           "type": "integer"
         },
+        "modelOverrides": {
+          "type": "text"
+        },
         "enabled": {
           "type": "boolean",
           "notNull": true,
