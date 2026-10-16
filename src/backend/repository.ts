@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
   cliRuns as cliRunsDef,
@@ -7,6 +7,7 @@ import {
   opsRuns as opsRunsDef,
   proposals as proposalsDef,
   providers as providersDef,
+  usage as usageDef,
 } from "./tables.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,6 +24,8 @@ export interface AiProviderRecord {
   baseUrl: string | null;
   apiKeyPrefix: string | null;
   defaultModel: string | null;
+  /** Tokens; null for the model family's default. */
+  contextWindow: number | null;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -76,6 +79,29 @@ export interface AiMessageRecord {
   role: string;
   content: string;
   toolCalls: string | null;
+  reasoning: string | null;
+  createdAt: string;
+}
+
+/** One model call's tokens, as recorded. */
+export interface UsageInput {
+  userId: string;
+  providerId: number | null;
+  model: string;
+  conversationId: number | null;
+  source: string;
+  promptTokens: number;
+  completionTokens: number;
+  estimated: boolean;
+}
+
+export interface UsageRow {
+  userId: string;
+  model: string;
+  source: string;
+  promptTokens: number;
+  completionTokens: number;
+  estimated: boolean;
   createdAt: string;
 }
 
@@ -98,6 +124,7 @@ export interface AiProviderInput {
   baseUrl?: string | null;
   apiKey?: string | null;
   defaultModel?: string | null;
+  contextWindow?: number | null;
   enabled?: boolean;
 }
 
@@ -134,6 +161,7 @@ export async function createAiRepository(
   const proposals: Table = await db.define(proposalsDef);
   const opsRuns: Table = await db.define(opsRunsDef);
   const cliRuns: Table = await db.define(cliRunsDef);
+  const usage: Table = await db.define(usageDef);
 
   const client = () => db.client<Drizzle>();
 
@@ -213,6 +241,7 @@ export async function createAiRepository(
         baseUrl: input.baseUrl ?? null,
         apiKeyPrefix: apiKeyPrefix(input.apiKey),
         defaultModel: input.defaultModel ?? null,
+        contextWindow: input.contextWindow ?? null,
         enabled: input.enabled ?? true,
         createdAt: stamp,
         updatedAt: stamp,
@@ -241,6 +270,8 @@ export async function createAiRepository(
       if (input.baseUrl !== undefined) updates.baseUrl = input.baseUrl;
       if (input.defaultModel !== undefined)
         updates.defaultModel = input.defaultModel;
+      if (input.contextWindow !== undefined)
+        updates.contextWindow = input.contextWindow;
       if (input.enabled !== undefined) updates.enabled = input.enabled;
 
       // An empty string clears the key; undefined leaves it untouched.
@@ -376,12 +407,14 @@ export async function createAiRepository(
       role: string;
       content: string;
       toolCalls?: string | null;
+      reasoning?: string | null;
     }): Promise<void> {
       await insertId(messages, {
         conversationId: input.conversationId,
         role: input.role,
         content: input.content,
         toolCalls: input.toolCalls ?? null,
+        reasoning: input.reasoning ?? null,
         createdAt: now(),
       });
       await db.persist();
@@ -404,6 +437,96 @@ export async function createAiRepository(
     async recordCliRun(run: CliRunInput): Promise<void> {
       await insertId(cliRuns, { ...run, createdAt: now() });
       await db.persist();
+    },
+
+    // --- usage ---
+
+    /** Every model call writes one; a lazy persist keeps that cheap. */
+    async recordUsage(input: UsageInput): Promise<void> {
+      await (await client()).insert(usage).values({
+        ...input,
+        promptTokens: Math.max(0, Math.round(input.promptTokens)),
+        completionTokens: Math.max(0, Math.round(input.completionTokens)),
+        createdAt: now(),
+      });
+      await db.persist({ lazy: true });
+    },
+
+    /** Calls since `since`, for one user or, with null, everyone. */
+    async usageSince(
+      since: string,
+      userId: string | null,
+    ): Promise<UsageRow[]> {
+      const after = gte(usage.createdAt, since);
+      return (await client())
+        .select({
+          userId: usage.userId,
+          model: usage.model,
+          source: usage.source,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          estimated: usage.estimated,
+          createdAt: usage.createdAt,
+        })
+        .from(usage)
+        .where(userId ? and(eq(usage.userId, userId), after) : after);
+    },
+
+    /** Total tokens per conversation, for the ones asked about. */
+    async conversationTokens(ids: number[]): Promise<Map<number, number>> {
+      const totals = new Map<number, number>();
+      if (!ids.length) return totals;
+      const rows: Array<{
+        conversationId: number;
+        promptTokens: number;
+        completionTokens: number;
+      }> = await (
+        await client()
+      )
+        .select({
+          conversationId: usage.conversationId,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+        })
+        .from(usage)
+        .where(inArray(usage.conversationId, ids));
+      for (const row of rows) {
+        totals.set(
+          row.conversationId,
+          (totals.get(row.conversationId) ?? 0) +
+            row.promptTokens +
+            row.completionTokens,
+        );
+      }
+      return totals;
+    },
+
+    /** The prompt of the conversation's latest call, as the context it holds. */
+    async lastContext(conversationId: number): Promise<{
+      promptTokens: number;
+      estimated: boolean;
+      providerId: number | null;
+      model: string;
+    } | null> {
+      const rows = await (
+        await client()
+      )
+        .select({
+          promptTokens: usage.promptTokens,
+          estimated: usage.estimated,
+          providerId: usage.providerId,
+          model: usage.model,
+        })
+        .from(usage)
+        .where(
+          and(
+            eq(usage.conversationId, conversationId),
+            inArray(usage.source, ["assistant", "terminal"]),
+          ),
+        )
+        .orderBy(desc(usage.id))
+        .limit(1);
+      return rows[0] ? { ...rows[0], estimated: !!rows[0].estimated } : null;
     },
 
     // --- proposals ---

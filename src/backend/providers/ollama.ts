@@ -1,4 +1,5 @@
 import { assertOk, joinUrl, readJsonLines } from "./http.js";
+import { createThinkSplitter } from "./think-tags.js";
 import type {
   ChatChunk,
   ChatRequest,
@@ -74,16 +75,26 @@ export const ollamaAdapter: ProviderAdapter = {
 
     let index = 0;
     let stopReason: string | undefined;
+    const think = createThinkSplitter();
 
     // Ollama streams newline-delimited JSON rather than SSE.
     for await (const frame of readJsonLines(response)) {
       const payload = frame as any;
 
+      // Thinking models send it in its own field, older builds inline it in
+      // the content between <think> tags.
+      if (
+        typeof payload.message?.thinking === "string" &&
+        payload.message.thinking
+      ) {
+        yield { type: "reasoning", text: payload.message.thinking };
+      }
+
       if (
         typeof payload.message?.content === "string" &&
         payload.message.content
       ) {
-        yield { type: "text", text: payload.message.content };
+        yield* think.push(payload.message.content);
       }
 
       for (const call of payload.message?.tool_calls ?? []) {
@@ -109,9 +120,20 @@ export const ollamaAdapter: ProviderAdapter = {
 
       if (payload.done) {
         stopReason = payload.done_reason ?? "stop";
+        if (typeof payload.prompt_eval_count === "number") {
+          yield {
+            type: "usage",
+            usage: {
+              promptTokens: payload.prompt_eval_count,
+              completionTokens: Number(payload.eval_count) || 0,
+            },
+          };
+        }
         break;
       }
     }
+
+    yield* think.flush();
 
     yield { type: "done", stopReason };
   },

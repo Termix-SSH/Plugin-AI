@@ -40,6 +40,8 @@ export const providers = adoptLegacyTable(
       // First few characters, kept in the clear so the UI can tell keys apart.
       apiKeyPrefix: text(),
       defaultModel: text(),
+      // Tokens; null means the model family's default.
+      contextWindow: integer(),
       enabled: boolean().notNull().default(true),
       createdAt: timestamp().notNull().defaultNow(),
       updatedAt: timestamp().notNull().defaultNow(),
@@ -90,8 +92,10 @@ export const messages = adoptLegacyTable(
       // user | assistant | tool
       role: text().notNull(),
       content: text().notNull().default(""),
-      // Serialized tool calls for this turn.
+      // Serialized tool calls for this turn. A summary row keeps {keep} here.
       toolCalls: text(),
+      // The model's thinking before this assistant turn, shown apart.
+      reasoning: text(),
       createdAt: timestamp().notNull().defaultNow(),
     },
     {
@@ -264,6 +268,36 @@ export const cliRuns = defineTable(
   },
 );
 
+/**
+ * Tokens every model call used, whichever feature made it. Estimated rows are
+ * from providers that report nothing, counted at about four characters per
+ * token.
+ */
+export const usage = defineTable(
+  "usage",
+  {
+    id: id(),
+    userId: refUser(),
+    providerId: integer(),
+    model: text().notNull(),
+    // Null outside a conversation.
+    conversationId: integer(),
+    // assistant | terminal | compaction
+    source: varchar(16).notNull(),
+    promptTokens: integer().notNull().default(0),
+    completionTokens: integer().notNull().default(0),
+    estimated: boolean().notNull().default(false),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_usage_user", columns: ["userId", "createdAt"] },
+      { name: "idx_ai_usage_created", columns: ["createdAt"] },
+      { name: "idx_ai_usage_conversation", columns: ["conversationId"] },
+    ],
+  },
+);
+
 export const tables = [
   providers,
   conversations,
@@ -274,4 +308,5 @@ export const tables = [
   agentQueue,
   opsRuns,
   cliRuns,
+  usage,
 ];

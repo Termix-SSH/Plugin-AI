@@ -22,6 +22,7 @@ const EXPECTED = [
   "ai.secrets.share",
   "ai.agents",
   "ai.ops.use",
+  "ai.usage.view_all",
 ];
 
 describe("ai permissions", () => {
@@ -58,7 +59,7 @@ describe("ai permissions", () => {
   // has to keep giving them to the user role. Agents and Cluster Ops run
   // commands on hosts, so only admins start with them.
   it("keeps the fresh-install defaults core used to seed", () => {
-    const adminOnly = ["agents", "ops.use"];
+    const adminOnly = ["agents", "ops.use", "usage.view_all"];
     for (const permission of manifest.manifest?.contributes?.permissions ??
       []) {
       expect(permission.defaultRoles).toEqual([

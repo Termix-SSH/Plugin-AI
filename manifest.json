@@ -120,6 +120,13 @@
         "kind": "button"
       }
     ],
+    "dashboardCards": [
+      {
+        "id": "ai-usage",
+        "titleKey": "usage.cardTitle",
+        "icon": "ChartColumn"
+      }
+    ],
     "keybindingActions": [
       {
         "id": "ai.toggleAssistant"
@@ -167,6 +174,12 @@
         "titleKey": "permissions.ops.use.title",
         "descriptionKey": "permissions.ops.use.description",
         "defaultRoles": ["admin"]
+      },
+      {
+        "name": "usage.view_all",
+        "titleKey": "permissions.usage.view_all.title",
+        "descriptionKey": "permissions.usage.view_all.description",
+        "defaultRoles": ["admin"]
       }
     ],
     "settings": {
@@ -185,16 +198,6 @@
           "descriptionKey": "settings.admin.privateEndpoints.description",
           "requires": "globallyEnabled",
           "default": "localhost\n127.0.0.1\n::1\nhost.docker.internal"
-        },
-        {
-          "key": "opsMaxTurns",
-          "type": "number",
-          "labelKey": "settings.admin.opsMaxTurns.label",
-          "descriptionKey": "settings.admin.opsMaxTurns.description",
-          "requires": "globallyEnabled",
-          "default": 30,
-          "min": 1,
-          "max": 100
         },
         {
           "key": "opsConcurrency",
@@ -248,6 +251,13 @@
           "type": "custom",
           "component": "providers",
           "permission": "manage_providers"
+        },
+        {
+          "key": "usage",
+          "type": "custom",
+          "component": "usage",
+          "permission": "use",
+          "requires": "enabled"
         }
       ],
       "host": {

@@ -9,12 +9,17 @@ import {
   waitFor,
 } from "@testing-library/react";
 
-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  fetch: vi.fn(),
+  getConversation: vi.fn(),
+  compact: vi.fn(),
+}));
 vi.mock("../../src/frontend/app-ref", () => ({
   aiApp: () => ({
     fetch: mocks.fetch,
     tabs: { getLayout: () => null },
     confirm: async () => true,
+    hasPermission: async () => false,
   }),
 }));
 vi.mock("../../src/frontend/ai-api", () => ({
@@ -24,8 +29,27 @@ vi.mock("../../src/frontend/ai-api", () => ({
   getAiProviders: async () => [{ id: 5, label: "Work", enabled: true }],
   getOpsFleets: async () => ({ available: false, fleets: [] }),
   listAssistantConversations: async () => [],
-  getAssistantConversation: async () => ({}),
+  getAssistantConversation: mocks.getConversation,
   deleteAssistantConversation: async () => {},
+  compactAssistantConversation: mocks.compact,
+  getAiUsage: async () => {
+    const totals = {
+      promptTokens: 800,
+      completionTokens: 200,
+      totalTokens: 1000,
+      calls: 2,
+      estimated: false,
+    };
+    return {
+      scope: "me",
+      today: totals,
+      week: totals,
+      month: totals,
+      byDay: [{ day: "2026-10-16", ...totals }],
+      byModel: [{ model: "glm-5.3-flash", ...totals }],
+      bySource: [{ source: "assistant", ...totals }],
+    };
+  },
 }));
 vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
   ...(await original<object>()),
@@ -181,4 +205,148 @@ it("leaves out targets for a user without a shell on hosts", async () => {
   expect(JSON.parse(mocks.fetch.mock.calls[0][1].body)).not.toHaveProperty(
     "hostIds",
   );
+});
+
+/** True when `a` comes before `b` in the document. */
+const before = (a: Element, b: Element) =>
+  Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+it("shows a run in the order it streamed, its thinking kept apart", async () => {
+  mocks.fetch.mockResolvedValue(
+    frames(
+      { type: "conversation", conversationId: 3 },
+      { type: "reasoning", text: "The user wants " },
+      { type: "reasoning", text: "their hosts." },
+      { type: "token", text: "Let me check." },
+      { type: "tool_call", name: "list_hosts", arguments: {} },
+      { type: "tool_result", name: "list_hosts", result: { hosts: 2 } },
+      {
+        type: "usage",
+        usage: { promptTokens: 42000, completionTokens: 100, estimated: false },
+        contextWindow: 128000,
+      },
+      { type: "token", text: "You have two hosts." },
+      { type: "done" },
+    ),
+  );
+  const input = await ready();
+  fireEvent.change(input, { target: { value: "how many hosts" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+
+  const answer = await screen.findByText("You have two hosts.");
+  await waitFor(() => expect(assistant.get().streaming).toBe(false));
+  const thinking = screen.getByRole("button", { name: "assistant.thinking" });
+  const first = screen.getByText("Let me check.");
+  const tool = screen.getByText("Reading hosts");
+  expect(before(thinking, first)).toBe(true);
+  expect(before(first, tool)).toBe(true);
+  expect(before(tool, answer)).toBe(true);
+
+  // Thinking is collapsed and never part of the answer text.
+  expect(screen.queryByText("The user wants their hosts.")).toBeNull();
+  fireEvent.click(thinking);
+  expect(screen.getByText("The user wants their hosts.")).toBeTruthy();
+
+  expect(screen.getByText("42k / 128k")).toBeTruthy();
+  // Today's total sits next to the meter.
+  expect(
+    screen.getByRole("button", { name: "assistant.usage" }).textContent,
+  ).toContain("assistant.todayTokens");
+});
+
+it("marks where the context was compacted during a run", async () => {
+  mocks.fetch.mockResolvedValue(
+    frames(
+      { type: "token", text: "Working." },
+      { type: "compacted" },
+      { type: "token", text: "Still working." },
+      { type: "done" },
+    ),
+  );
+  const input = await ready();
+  fireEvent.change(input, { target: { value: "restore hosts" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+
+  const after = await screen.findByText("Still working.");
+  const note = screen.getByRole("note");
+  expect(note.textContent).toContain("assistant.compacted");
+  expect(before(screen.getByText("Working."), note)).toBe(true);
+  expect(before(note, after)).toBe(true);
+});
+
+it("reloads a conversation in the order it happened", async () => {
+  mocks.getConversation.mockResolvedValue({
+    conversation: {
+      id: 9,
+      title: "Restore",
+      targets: [],
+      totalTokens: 5000,
+      context: { promptTokens: 9000, contextWindow: 128000, estimated: true },
+    },
+    messages: [
+      { id: 1, role: "user", content: "restore web-1", toolCalls: null },
+      {
+        id: 2,
+        role: "assistant",
+        content: "Looking it up.",
+        reasoning: "Need the host first.",
+        toolCalls: JSON.stringify([
+          { id: "c1", name: "list_hosts", arguments: {} },
+        ]),
+      },
+      {
+        id: 3,
+        role: "tool",
+        content: "{}",
+        toolCalls: JSON.stringify([{ id: "c1", name: "list_hosts" }]),
+      },
+      {
+        id: 4,
+        role: "summary",
+        content: "The user is restoring web-1.",
+        toolCalls: JSON.stringify({ keep: 2 }),
+      },
+      { id: 5, role: "assistant", content: "Restored.", toolCalls: null },
+    ],
+  });
+  await ready();
+  await act(() => assistant.openConversation(9));
+
+  const thinking = screen.getByRole("button", { name: "assistant.thinking" });
+  const text = screen.getByText("Looking it up.");
+  const tool = screen.getByText("Reading hosts");
+  const note = screen.getByRole("note");
+  const last = screen.getByText("Restored.");
+  expect(before(screen.getByText("restore web-1"), thinking)).toBe(true);
+  expect(before(thinking, text)).toBe(true);
+  expect(before(text, tool)).toBe(true);
+  expect(before(tool, note)).toBe(true);
+  expect(before(note, last)).toBe(true);
+  expect(screen.queryByText("The user is restoring web-1.")).toBeNull();
+  expect(screen.getByText("~9k / 128k")).toBeTruthy();
+});
+
+it("compacts the open conversation from the header", async () => {
+  mocks.getConversation.mockResolvedValue({
+    conversation: { id: 4, title: "x", targets: [], context: null },
+    messages: [],
+  });
+  mocks.compact.mockResolvedValue({
+    compacted: true,
+    context: { promptTokens: 5000, contextWindow: 128000, estimated: true },
+  });
+  await ready();
+  await act(() => assistant.openConversation(4));
+
+  fireEvent.click(screen.getByRole("button", { name: "assistant.compact" }));
+
+  await waitFor(() => expect(mocks.compact).toHaveBeenCalledWith(4, 5));
+  expect(await screen.findByText("~5k / 128k")).toBeTruthy();
+});
+
+it("opens the usage view from the header", async () => {
+  await ready();
+  fireEvent.click(screen.getByRole("button", { name: "assistant.usage" }));
+  expect(await screen.findByText("usage.today")).toBeTruthy();
+  expect(screen.getByText("glm-5.3-flash")).toBeTruthy();
 });

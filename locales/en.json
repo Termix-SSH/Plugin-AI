@@ -25,6 +25,12 @@
         "title": "Run commands on hosts with the AI assistant",
         "description": "Let the assistant run any shell command on the hosts you select. Admins only by default."
       }
+    },
+    "usage": {
+      "view_all": {
+        "title": "View everyone's AI usage",
+        "description": "See the tokens every user's AI calls used, not only your own. Admins only by default."
+      }
     }
   },
   "settings": {
@@ -42,10 +48,6 @@
       "privateEndpoints": {
         "label": "Allowed private AI hosts",
         "description": "Hosts on your private network that users may point a provider at, such as a self-hosted Ollama. Put one host on each line."
-      },
-      "opsMaxTurns": {
-        "label": "AI assistant step limit",
-        "description": "How many model turns one assistant message may take before it stops."
       },
       "opsConcurrency": {
         "label": "AI assistant parallel hosts",
@@ -121,7 +123,10 @@
     "secrets": {
       "shareApiKey": "Let other features use your AI provider API key for their own requests. The key is never copied, and you can revoke this at any time."
     },
-    "removeProviderConfirm": "Remove the provider {{name}}?"
+    "removeProviderConfirm": "Remove the provider {{name}}?",
+    "contextWindow": "Context window (tokens)",
+    "contextWindowHint": "How many tokens the model can hold. Leave it empty to use the model's default, {{tokens}}. The assistant compacts a conversation as it gets close.",
+    "contextWindowInvalid": "Enter the context window as a whole number of tokens, at least 1024."
   },
   "nav": {
     "ai": "AI assistant"
@@ -283,6 +288,47 @@
     },
     "emptyHintBasic": "The assistant works as you through the Termix CLI, with your permissions.",
     "inputPlaceholderBasic": "Ask the assistant.",
-    "sendHintBasic": "Changes run without asking first."
+    "sendHintBasic": "Changes run without asking first.",
+    "thinking": "Thinking",
+    "thinkingActive": "Thinking...",
+    "compacted": "Context compacted: earlier messages were summarized",
+    "compact": "Compact the conversation",
+    "nothingToCompact": "The conversation is too short to compact yet.",
+    "contextMeter": "Context: {{used}} of {{window}} tokens used by the latest call",
+    "todayTokens": "Today {{tokens}}",
+    "todayTitle": "Tokens you used today. Click for details.",
+    "usage": "Token usage",
+    "conversationTokens": "{{tokens}} tokens"
+  },
+  "usage": {
+    "title": "Token usage",
+    "settingDescription": "Tokens your AI calls used over the last 30 days.",
+    "cardTitle": "AI token usage",
+    "today": "Today",
+    "week": "7 days",
+    "month": "30 days",
+    "mine": "Mine",
+    "everyone": "All users",
+    "mineCaption": "Your tokens across every AI feature.",
+    "everyoneCaption": "Tokens across every user and AI feature.",
+    "byDay": "Per day",
+    "byModel": "Per model",
+    "bySource": "Per feature",
+    "byUser": "Per user",
+    "model": "Model",
+    "feature": "Feature",
+    "user": "User",
+    "calls": "Calls",
+    "prompt": "Input",
+    "completion": "Output",
+    "total": "Total",
+    "empty": "No AI usage in the last 30 days.",
+    "loadFailed": "Could not load usage",
+    "estimatedNote": "Some figures are estimates, at about four characters per token, because the provider did not report its usage.",
+    "source": {
+      "assistant": "Assistant",
+      "terminal": "Terminal panel",
+      "compaction": "Compaction"
+    }
   }
 }

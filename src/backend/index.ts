@@ -7,6 +7,7 @@ import { registerAgentRoutes } from "./agents/routes.js";
 import { createAgentStore } from "./agents/store.js";
 import { registerOpsRoutes } from "./ops/routes.js";
 import { registerAiRoutes } from "./routes.js";
+import { registerUsageRoutes } from "./usage.js";
 
 export async function activate(ctx: PluginContext) {
   const repository = await createAiRepository(ctx);
@@ -16,6 +17,7 @@ export async function activate(ctx: PluginContext) {
   registerAiRoutes(router, repository, ctx);
   registerAgentRoutes(router, repository, ctx, await createAgentStore(ctx));
   registerOpsRoutes(router, repository, ctx);
+  registerUsageRoutes(router, repository, ctx);
 
   ctx.registry.provide("ai.hostImportNormalizer", hostImportNormalizer);
   ctx.disposables.add(

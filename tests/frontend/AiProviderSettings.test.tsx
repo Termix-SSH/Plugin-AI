@@ -34,6 +34,7 @@ const provider: AiProvider = {
   baseUrl: "http://localhost:11434",
   apiKeyPrefix: null,
   defaultModel: "llama3.1",
+  contextWindow: null,
   enabled: true,
   createdAt: "2026-08-21T00:00:00Z",
 };
@@ -65,6 +66,7 @@ describe("AiProviderSettings", () => {
       expect(api.updateAiProvider).toHaveBeenCalledWith(7, {
         label: "Production Ollama",
         defaultModel: "qwen3:32b",
+        contextWindow: null,
       });
     });
     expect(onChanged).toHaveBeenCalledWith(7);

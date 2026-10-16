@@ -21,7 +21,9 @@ Changes run without asking you first. Only use it for requests you would trust a
 
 Pick a provider at the top. With none set up yet, Add provider takes you to Settings, AI Assistant, Providers.
 
-Conversations shows past conversations. Plus starts a new one.
+Conversations shows past conversations, with the tokens each has used. Plus starts a new one.
+
+A reply shows in the order it happened: some text, a tool call, more text, the next tool call. When the model thinks before answering, its thinking shows as a collapsed Thinking block above the text it led to; click it to read it. It is never mixed into the answer.
 
 ## What it can do
 
@@ -58,10 +60,35 @@ The targets go with every message, and the conversation remembers them. The assi
 
 Every command on every host is kept with its exit code, duration and output, and written to the audit log. Your own SSH access to each host still applies.
 
+## Context and compaction
+
+A model can only read so much at once, its context window. The header shows how much of it the latest call took, for example `42k / 128k`. A `~` in front means it is an estimate, because the provider did not report its token counts.
+
+Each provider has a Context window setting under Settings, AI Assistant, Providers. Leave it empty to use the model's default: Claude 200k, GPT-5 400k, GPT-4.1 and Gemini 1M, GLM 4.6 and later 200k, Qwen 2.5 and Mistral 32k, and 128k for anything else. Set it when your endpoint allows less, for example an Ollama model with a small `num_ctx`.
+
+Before each call, when the conversation would take more than about 80% of the window, the assistant makes room on its own:
+
+1. Older tool results are cut to their start and end. The last four stay whole.
+2. If that is not enough, one extra model call summarises the earlier part of the conversation. The summary stands in for it from then on, and the most recent steps and your latest message are kept word for word. A tool call is never separated from its result.
+
+A "Context compacted" line marks the spot in the conversation. The summary is saved, so the conversation carries on from it after a reload. The compact button in the header does the same on request.
+
+A single tool result is never sent to the model at more than 12,000 characters; longer ones keep their start and end. You still see the whole result in the tool card.
+
+## Usage
+
+Every model call is counted: the assistant, the terminal assistant and compaction. The chart button in the header shows today's tokens; click it for the usage view, which is also under Settings, AI Assistant, Token usage. It shows today, the last 7 and 30 days, tokens per day, per model and per feature. Someone with `ai.usage.view_all`, admins by default, can switch to all users and see a breakdown per user.
+
+Providers that report token counts are counted exactly: OpenAI and compatible endpoints from their final usage chunk, Anthropic, Gemini and Ollama from their own counts. When a provider reports nothing, the tokens are estimated at about four characters each and marked as estimated.
+
+The dashboard can show an AI token usage card with today's and the last 30 days' tokens, your own, or the whole server's if you can see everyone's.
+
 ## Limits
 
-An admin can change the step limit, how many hosts run at once, the command timeout and how much output is kept per host, under Settings, AI Assistant. The assistant can ask for a longer timeout on one command, up to 600 seconds.
+The assistant keeps going until it is done or you press Stop; there is no step limit. It does stop on its own when it calls the same tool with the same arguments and gets the same result five times in a row, since it is then going nowhere.
+
+An admin can change how many hosts run at once, the command timeout and how much output is kept per host, under Settings, AI Assistant. The assistant can ask for a longer timeout on one command, up to 600 seconds.
 
 ## Who can use it
 
-Anyone with the `ai.use` permission, once an admin has turned the assistant on. Opening it turns it on for you. Running commands on hosts also needs `ai.ops.use`, which only admins have at first.
+Anyone with the `ai.use` permission, once an admin has turned the assistant on. Opening it turns it on for you. Running commands on hosts also needs `ai.ops.use`, which only admins have at first. Seeing every user's token usage needs `ai.usage.view_all`, also admins only at first.

@@ -2,16 +2,17 @@ import { existsSync } from "node:fs";
 import type { Request, Response, Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { buildAssistantSystemPrompt, type PageContext } from "../context.js";
-import { runAgent } from "../engine.js";
+import { contextWindowFor, estimateRequest } from "../context-window.js";
+import { compactHistory, runAgent, type ModelUsage } from "../engine.js";
 import {
   createAiGate,
   readPrivateAllowlist,
   type SettingsReader,
 } from "../gating.js";
-import { toChatHistory, toStoredMessage } from "../history.js";
+import { toChatHistory, toStoredMessage, toStoredSummary } from "../history.js";
 import { createProviderFetch } from "../providers/http.js";
 import type { ProviderConfig } from "../providers/types.js";
-import type { AiRepository } from "../repository.js";
+import type { AiProviderWithSecret, AiRepository } from "../repository.js";
 import { readService, SERVICE } from "../services.js";
 import { openEventStream } from "../sse.js";
 import type { ToolDeps } from "../tools/types.js";
@@ -68,7 +69,7 @@ function parsePage(raw: unknown): PageContext | null {
 
 export async function readOpsLimits(
   settings: SettingsReader,
-): Promise<OpsLimits & { maxTurns: number }> {
+): Promise<OpsLimits> {
   const read = async (
     key: string,
     fallback: number,
@@ -80,7 +81,6 @@ export async function readOpsLimits(
     return Math.min(Math.max(Math.floor(value), min), max);
   };
   return {
-    maxTurns: await read("opsMaxTurns", 30, 1, 100),
     concurrency: await read("opsConcurrency", 8, 1, 64),
     timeoutSec: await read("opsCommandTimeout", 120, 5, MAX_TIMEOUT_SEC),
     outputLimit: await read("opsOutputLimit", 4000, 500, 20000),
@@ -138,6 +138,35 @@ export function registerOpsRoutes(
       error instanceof Error ? error : new Error(String(error)),
     );
 
+  const configFor = async (
+    provider: AiProviderWithSecret,
+  ): Promise<ProviderConfig> => ({
+    providerType: provider.providerType as ProviderConfig["providerType"],
+    baseUrl: provider.baseUrl,
+    apiKey: provider.apiKey,
+    fetch: createProviderFetch(
+      ctx.fetch,
+      await readPrivateAllowlist(ctx.settings),
+    ),
+  });
+
+  /** Counts each model call of a conversation against its user. */
+  const usageRecorder =
+    (
+      userId: string,
+      provider: AiProviderWithSecret,
+      model: string,
+      conversationId: number,
+    ) =>
+    (usage: ModelUsage) =>
+      repository.recordUsage({
+        userId,
+        providerId: provider.id,
+        model,
+        conversationId,
+        ...usage,
+      });
+
   /**
    * @openapi
    * /plugin-api/ai/ops/fleets:
@@ -181,18 +210,24 @@ export function registerOpsRoutes(
    *       - AI
    *     responses:
    *       200:
-   *         description: Conversations with their targets.
+   *         description: >
+   *           Conversations with their targets and the tokens each has used.
    *       403:
    *         description: Missing ai.use, or the assistant is off.
    */
   router.get("/ops/conversations", async (_req: Request, res: Response) => {
     const userId = ctx.currentActor() as string;
     const conversations = await repository.listConversations(userId, 50, "ops");
+    const tokens = await repository.conversationTokens(
+      conversations.map((conversation) => conversation.id),
+    );
     res.json({
       conversations: conversations.map((conversation) => ({
         id: conversation.id,
         title: conversation.title,
         updatedAt: conversation.updatedAt,
+        targets: storedTargets(conversation.targets),
+        totalTokens: tokens.get(conversation.id) ?? 0,
       })),
     });
   });
@@ -212,7 +247,9 @@ export function registerOpsRoutes(
    *           type: integer
    *     responses:
    *       200:
-   *         description: The conversation.
+   *         description: >
+   *           The conversation, with the tokens it has used and how much of
+   *           the model's context its latest call took.
    *       404:
    *         description: Conversation not found.
    */
@@ -221,13 +258,45 @@ export function registerOpsRoutes(
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
+    const userId = ctx.currentActor() as string;
+    const messages = await repository.listMessages(conversation.id);
+    const [tokens, last] = await Promise.all([
+      repository.conversationTokens([conversation.id]),
+      repository.lastContext(conversation.id),
+    ]);
+    // The window of whichever provider and model made the latest call.
+    const providerId = last?.providerId ?? conversation.providerId;
+    const provider = providerId
+      ? await repository.findProvider(providerId, userId)
+      : null;
+    const model = last?.model ?? conversation.model ?? "";
+    // Compacted since its last call: what is left is an estimate until the
+    // next one.
+    const compacted = messages.at(-1)?.role === "summary";
+    const context = compacted
+      ? {
+          promptTokens: estimateRequest({
+            system: "",
+            messages: toChatHistory(messages),
+            tools: [],
+          }),
+          estimated: true,
+        }
+      : last && { promptTokens: last.promptTokens, estimated: last.estimated };
     res.json({
       conversation: {
         id: conversation.id,
         title: conversation.title,
         targets: storedTargets(conversation.targets),
+        totalTokens: tokens.get(conversation.id) ?? 0,
+        context: context
+          ? {
+              ...context,
+              contextWindow: contextWindowFor(provider ?? {}, model),
+            }
+          : null,
       },
-      messages: await repository.listMessages(conversation.id),
+      messages,
     });
   });
 
@@ -264,6 +333,115 @@ export function registerOpsRoutes(
 
   /**
    * @openapi
+   * /plugin-api/ai/ops/conversations/{id}/compact:
+   *   post:
+   *     summary: Summarise the earlier part of an assistant conversation
+   *     description: >
+   *       What happens on its own once the context is nearly full, on
+   *       request: one model call summarises all but the most recent steps,
+   *       and the summary stands in for them from then on. compacted is
+   *       false when the conversation is too short to gain anything.
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               providerId:
+   *                 type: integer
+   *               model:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Whether it was compacted, and the context left.
+   *       400:
+   *         description: No provider or model.
+   *       404:
+   *         description: Conversation or provider not found.
+   *       502:
+   *         description: The provider could not summarise it.
+   */
+  router.post(
+    "/ops/conversations/:id/compact",
+    async (req: Request, res: Response) => {
+      const userId = ctx.currentActor() as string;
+      const conversation = await findOpsConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      const { providerId, model } = req.body ?? {};
+      const resolvedProviderId = parseId(providerId);
+      if (!resolvedProviderId) {
+        return res.status(400).json({ error: "providerId is required" });
+      }
+      const provider = await repository.findProviderWithSecret(
+        resolvedProviderId,
+        userId,
+      );
+      if (!provider) {
+        return res.status(404).json({ error: "Provider not found" });
+      }
+      const chosenModel =
+        (typeof model === "string" && model.trim()) ||
+        provider.defaultModel ||
+        "";
+      if (!chosenModel) {
+        return res.status(400).json({ error: "No model selected" });
+      }
+
+      try {
+        const contextWindow = contextWindowFor(provider, chosenModel);
+        const compacted = await compactHistory({
+          config: await configFor(provider),
+          model: chosenModel,
+          history: toChatHistory(
+            await repository.listMessages(conversation.id),
+          ),
+          contextWindow,
+          onUsage: usageRecorder(
+            userId,
+            provider,
+            chosenModel,
+            conversation.id,
+          ),
+        });
+        if (!compacted) return res.json({ compacted: false });
+        await repository.appendMessage({
+          conversationId: conversation.id,
+          ...toStoredSummary(compacted.summary, compacted.keep),
+        });
+        res.json({
+          compacted: true,
+          context: {
+            promptTokens: estimateRequest({
+              system: "",
+              messages: compacted.history,
+              tools: [],
+            }),
+            estimated: true,
+            contextWindow,
+          },
+        });
+      } catch (err) {
+        logError("Compacting a conversation failed", err);
+        res
+          .status(502)
+          .json({ error: "The conversation could not be compacted" });
+      }
+    },
+  );
+
+  /**
+   * @openapi
    * /plugin-api/ai/ops/chat:
    *   post:
    *     summary: Send a message to the assistant and stream its run
@@ -271,7 +449,12 @@ export function registerOpsRoutes(
    *       Server-sent events, like /chat/stream, plus a tool_progress frame for
    *       each host as its command finishes, a targets frame when the
    *       assistant changes the targets and a client_action frame when it asks
-   *       the browser to open a view. hostIds become the conversation's
+   *       the browser to open a view. reasoning frames carry the model's
+   *       thinking apart from its tokens, a usage frame follows every model
+   *       call with its tokens and the context window, and a compacted frame
+   *       marks where the history was summarised to fit. There is no step
+   *       limit; the run ends when the model answers, the client goes away,
+   *       or it repeats one call with one result five times. hostIds become the conversation's
    *       targets; leave them out to keep the ones it has. Targets, and the
    *       tools that run commands on them, need ai.ops.use; without it a
    *       non-empty hostIds is refused and the CLI cannot exec on hosts.
@@ -393,15 +576,8 @@ export function registerOpsRoutes(
       });
 
       const limits = await readOpsLimits(ctx.settings);
-      const config: ProviderConfig = {
-        providerType: provider.providerType as ProviderConfig["providerType"],
-        baseUrl: provider.baseUrl,
-        apiKey: provider.apiKey,
-        fetch: createProviderFetch(
-          ctx.fetch,
-          await readPrivateAllowlist(ctx.settings),
-        ),
-      };
+      const config = await configFor(provider);
+      const contextWindow = contextWindowFor(provider, chosenModel);
 
       const { send, signal, stopHeartbeat } = openEventStream(res);
       send({ type: "conversation", conversationId: conversation.id });
@@ -461,13 +637,22 @@ export function registerOpsRoutes(
           },
           tools,
           signal,
-          maxTurns: limits.maxTurns,
+          contextWindow,
+          onUsage: usageRecorder(userId, provider, chosenModel, ownId),
         })) {
           if (event.type === "message") {
             await repository.appendMessage({
               conversationId: conversation.id,
               ...toStoredMessage(event.message),
             });
+            continue;
+          }
+          if (event.type === "compacted") {
+            await repository.appendMessage({
+              conversationId: conversation.id,
+              ...toStoredSummary(event.summary, event.keep),
+            });
+            send({ type: "compacted" });
             continue;
           }
           send(event);

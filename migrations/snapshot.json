@@ -36,6 +36,9 @@
         "defaultModel": {
           "type": "text"
         },
+        "contextWindow": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean",
           "notNull": true,
@@ -137,6 +140,9 @@
           "defaultValue": ""
         },
         "toolCalls": {
+          "type": "text"
+        },
+        "reasoning": {
           "type": "text"
         },
         "createdAt": {
@@ -487,6 +493,76 @@
       "indexes": [
         {
           "name": "idx_ai_cli_runs_conversation",
+          "columns": [
+            "conversationId"
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "providerId": {
+          "type": "integer"
+        },
+        "model": {
+          "type": "text",
+          "notNull": true
+        },
+        "conversationId": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "promptTokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "completionTokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "estimated": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": false
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_usage_user",
+          "columns": [
+            "userId",
+            "createdAt"
+          ]
+        },
+        {
+          "name": "idx_ai_usage_created",
+          "columns": [
+            "createdAt"
+          ]
+        },
+        {
+          "name": "idx_ai_usage_conversation",
           "columns": [
             "conversationId"
           ]

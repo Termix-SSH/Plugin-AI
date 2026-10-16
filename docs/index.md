@@ -48,3 +48,4 @@ The plugin can also start a coding agent, like Claude Code, Codex, OpenCode or P
 | `ai.apply_proposals`  | Approve the changes the terminal assistant proposes.                   |
 | `ai.agents`           | Start coding agents on hosts. Admins only by default.                  |
 | `ai.ops.use`          | Let the assistant run shell commands on hosts. Admins only by default. |
+| `ai.usage.view_all`   | See every user's token usage. Admins only by default.                  |

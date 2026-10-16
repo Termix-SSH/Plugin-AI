@@ -134,6 +134,7 @@ export const geminiAdapter: ProviderAdapter = {
 
     let index = 0;
     let stopReason: string | undefined;
+    let usage: any = null;
 
     for await (const data of readSseLines(response)) {
       let frame: any;
@@ -143,13 +144,17 @@ export const geminiAdapter: ProviderAdapter = {
         continue;
       }
 
+      // A running total on each frame; the last one counts.
+      if (frame.usageMetadata) usage = frame.usageMetadata;
+
       const candidate = frame.candidates?.[0];
       if (!candidate) continue;
       if (candidate.finishReason) stopReason = candidate.finishReason;
 
       for (const part of candidate.content?.parts ?? []) {
         if (typeof part.text === "string" && part.text) {
-          yield { type: "text", text: part.text };
+          // A thought summary is a text part flagged thought: true.
+          yield { type: part.thought ? "reasoning" : "text", text: part.text };
         }
         if (part.functionCall?.name) {
           yield {
@@ -168,6 +173,19 @@ export const geminiAdapter: ProviderAdapter = {
           };
         }
       }
+    }
+
+    if (usage) {
+      yield {
+        type: "usage",
+        usage: {
+          promptTokens: Number(usage.promptTokenCount) || 0,
+          // Thinking is billed as output alongside the answer.
+          completionTokens:
+            (Number(usage.candidatesTokenCount) || 0) +
+            (Number(usage.thoughtsTokenCount) || 0),
+        },
+      };
     }
 
     yield { type: "done", stopReason };

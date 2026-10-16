@@ -48,7 +48,11 @@ function toAnthropicMessages(request: ChatRequest): Anthropic.MessageParam[] {
     }
 
     if (message.role === "assistant" && message.toolCalls?.length) {
-      const content: Anthropic.ContentBlockParam[] = [];
+      // The run's signed thinking goes back first, or the API refuses the
+      // tool results that follow.
+      const content: Anthropic.ContentBlockParam[] = [
+        ...((message.reasoningState ?? []) as Anthropic.ContentBlockParam[]),
+      ];
       if (message.content)
         content.push({ type: "text", text: message.content });
       for (const call of message.toolCalls) {
@@ -127,11 +131,14 @@ export const anthropicAdapter: ProviderAdapter = {
     let final: Anthropic.Message;
     try {
       for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
+        if (event.type !== "content_block_delta") continue;
+        if (event.delta.type === "text_delta") {
           yield { type: "text", text: event.delta.text };
+        } else if (
+          event.delta.type === "thinking_delta" &&
+          event.delta.thinking
+        ) {
+          yield { type: "reasoning", text: event.delta.thinking };
         }
       }
       final = await stream.finalMessage();
@@ -151,6 +158,25 @@ export const anthropicAdapter: ProviderAdapter = {
         };
       }
     }
+
+    const thinking = final.content.filter(
+      (block) =>
+        block.type === "thinking" || block.type === "redacted_thinking",
+    );
+    if (thinking.length) yield { type: "reasoning_state", blocks: thinking };
+
+    // Cached input is still input the context window holds.
+    const usage = final.usage;
+    yield {
+      type: "usage",
+      usage: {
+        promptTokens:
+          (usage?.input_tokens ?? 0) +
+          (usage?.cache_read_input_tokens ?? 0) +
+          (usage?.cache_creation_input_tokens ?? 0),
+        completionTokens: usage?.output_tokens ?? 0,
+      },
+    };
 
     yield { type: "done", stopReason: final.stop_reason ?? undefined };
   },

@@ -9,6 +9,8 @@ import { AgentPanel } from "./agents/AgentPanel";
 import { TerminalAiPanel } from "./terminal/TerminalAiPanel";
 import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
+import { UsageSetting } from "./settings/UsageSetting";
+import { UsageCard } from "./usage/UsageCard";
 import { AI_STATUS_CHANGED_EVENT, getAiStatus } from "./ai-api";
 import { setAiApp } from "./app-ref";
 import { AI_TAB_ID, AssistantOverlay } from "./assistant/AssistantOverlay";
@@ -19,6 +21,7 @@ import { assistant } from "./assistant/store";
 
 const ASSISTANT_ACTION = "ai.openWithContext";
 const SIDE_PANEL_ID = "ai.assistant";
+const USAGE_CARD_ID = "ai-usage";
 
 /** The assistant beside a terminal, in its "terminal.sidePanel" slot. */
 function TerminalSidePanel({
@@ -145,6 +148,17 @@ export function activate(app: TermixApp): void {
       }),
     );
     if (assistantAllowed) surface.push(...registerAssistant(app));
+    // Usage is behind the user's own opt-in, like every other AI route.
+    if (assistantAllowed && userEnabled) {
+      surface.push(
+        app.registerDashboardCard({
+          id: USAGE_CARD_ID,
+          titleKey: "usage.cardTitle",
+          defaultPanel: "side",
+          component: UsageCard,
+        }),
+      );
+    }
 
     surface.push(
       app.registerTab("ai-agents", AgentPanel, {
@@ -241,6 +255,7 @@ export function activate(app: TermixApp): void {
   );
 
   app.registerSettingsComponent("providers", ProvidersSetting);
+  app.registerSettingsComponent("usage", UsageSetting);
 
   applyStatus();
   refresh();

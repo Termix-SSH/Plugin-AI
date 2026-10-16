@@ -29,6 +29,25 @@ import { availableTools } from "./tools/catalog.js";
 import { applyProposal } from "./tools/executor.js";
 import type { ToolDeps } from "./tools/types.js";
 
+/** Model turns a terminal panel run may take. */
+const TERMINAL_MAX_TURNS = 8;
+
+/** The largest context window a provider may be set to, in tokens. */
+const MAX_CONTEXT_WINDOW = 10_000_000;
+
+/**
+ * A context window from a request body: undefined when absent, null to go
+ * back to the model's default, false when it is not a sensible number.
+ */
+function parseContextWindow(raw: unknown): number | null | undefined | false {
+  if (raw === undefined) return undefined;
+  if (raw === null || raw === "") return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1024 && value <= MAX_CONTEXT_WINDOW
+    ? value
+    : false;
+}
+
 function parseId(raw: unknown): number | null {
   const id = typeof raw === "string" ? parseInt(raw, 10) : Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -221,6 +240,9 @@ export function registerAiRoutes(
    *                 type: string
    *               defaultModel:
    *                 type: string
+   *               contextWindow:
+   *                 type: integer
+   *                 description: Tokens; leave out for the model's default.
    *     responses:
    *       201:
    *         description: Provider created.
@@ -235,9 +257,13 @@ export function registerAiRoutes(
       const userId = actor(ctx);
       const { providerType, label, baseUrl, apiKey, defaultModel } =
         req.body ?? {};
+      const contextWindow = parseContextWindow(req.body?.contextWindow);
 
       if (!isAiProviderType(providerType)) {
         return res.status(400).json({ error: "Unknown provider type" });
+      }
+      if (contextWindow === false) {
+        return res.status(400).json({ error: "Invalid context window" });
       }
       if (typeof label !== "string" || !label.trim()) {
         return res.status(400).json({ error: "label is required" });
@@ -261,6 +287,7 @@ export function registerAiRoutes(
           apiKey: typeof apiKey === "string" ? apiKey.trim() : null,
           defaultModel:
             typeof defaultModel === "string" ? defaultModel.trim() : null,
+          contextWindow: contextWindow ?? null,
         });
 
         await audit({
@@ -314,6 +341,10 @@ export function registerAiRoutes(
       ) {
         return res.status(400).json({ error: "Unknown provider type" });
       }
+      const contextWindow = parseContextWindow(body.contextWindow);
+      if (contextWindow === false) {
+        return res.status(400).json({ error: "Invalid context window" });
+      }
 
       const text = (value: unknown) =>
         typeof value === "string" ? value.trim() : undefined;
@@ -329,6 +360,7 @@ export function registerAiRoutes(
             body.defaultModel === null
               ? null
               : (text(body.defaultModel) ?? undefined),
+          contextWindow,
           enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
         });
         if (!updated)
@@ -770,6 +802,17 @@ export function registerAiRoutes(
             },
             tools,
             signal,
+            // The terminal panel keeps its short leash.
+            maxTurns: TERMINAL_MAX_TURNS,
+            source: "terminal",
+            onUsage: (usage) =>
+              repository.recordUsage({
+                userId,
+                providerId: provider.id,
+                model: chosenModel,
+                conversationId: conversation.id,
+                ...usage,
+              }),
           })) {
             if (event.type === "message") {
               // Every step is kept, tool results included, so the next message

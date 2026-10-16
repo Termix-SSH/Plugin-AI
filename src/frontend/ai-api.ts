@@ -49,6 +49,8 @@ export interface AiProvider {
   /** The first few characters only; the key itself never leaves the server. */
   apiKeyPrefix: string | null;
   defaultModel: string | null;
+  /** Tokens; null for the model's default. */
+  contextWindow: number | null;
   enabled: boolean;
   createdAt: string;
 }
@@ -65,9 +67,11 @@ interface AiConversation {
 export interface AiMessage {
   id: number;
   conversationId: number;
-  role: "user" | "assistant" | "tool";
+  /** summary marks where the conversation was compacted. */
+  role: "user" | "assistant" | "tool" | "summary";
   content: string;
   toolCalls: string | null;
+  reasoning?: string | null;
   createdAt: string;
 }
 
@@ -110,6 +114,7 @@ export async function createAiProvider(input: {
   baseUrl?: string | null;
   apiKey?: string | null;
   defaultModel?: string | null;
+  contextWindow?: number | null;
 }): Promise<AiProvider> {
   try {
     const provider = (await api().post("/providers", input)).data.provider;
@@ -127,6 +132,7 @@ export async function updateAiProvider(
     baseUrl: string | null;
     apiKey: string | null;
     defaultModel: string | null;
+    contextWindow: number | null;
     enabled: boolean;
   }>,
 ): Promise<AiProvider> {
@@ -278,6 +284,16 @@ export interface AssistantConversation {
   id: number;
   title: string | null;
   updatedAt: string;
+  targets: number[];
+  /** Every model call of the conversation, compaction included. */
+  totalTokens: number;
+}
+
+/** How much of the model's context the latest call took. */
+export interface ContextUse {
+  promptTokens: number;
+  contextWindow: number;
+  estimated: boolean;
 }
 
 /** The assistant's conversations, shared by the floating panel and the AI tab. */
@@ -292,7 +308,7 @@ export async function listAssistantConversations(): Promise<
 }
 
 export async function getAssistantConversation(id: number): Promise<{
-  conversation: AssistantConversation & { targets: number[] };
+  conversation: AssistantConversation & { context: ContextUse | null };
   messages: AiMessage[];
 }> {
   try {
@@ -307,5 +323,50 @@ export async function deleteAssistantConversation(id: number): Promise<void> {
     await api().delete(`/ops/conversations/${id}`);
   } catch (error) {
     throw apiError(error, "delete the conversation");
+  }
+}
+
+/** Summarises the conversation's earlier part now, as it would when full. */
+export async function compactAssistantConversation(
+  id: number,
+  providerId: number,
+): Promise<{ compacted: boolean; context?: ContextUse }> {
+  try {
+    return (
+      await api().post(`/ops/conversations/${id}/compact`, { providerId })
+    ).data;
+  } catch (error) {
+    throw apiError(error, "compact the conversation");
+  }
+}
+
+export interface UsageTotals {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  calls: number;
+  estimated: boolean;
+}
+
+export interface UsageSummary {
+  scope: "me" | "all";
+  today: UsageTotals;
+  week: UsageTotals;
+  month: UsageTotals;
+  byDay: Array<{ day: string } & UsageTotals>;
+  byModel: Array<{ model: string } & UsageTotals>;
+  bySource: Array<{ source: string } & UsageTotals>;
+  byUser?: Array<{ userId: string } & UsageTotals>;
+}
+
+/** Token usage over 30 days; "all" needs ai.usage.view_all. */
+export async function getAiUsage(
+  scope: "me" | "all" = "me",
+): Promise<UsageSummary> {
+  try {
+    const offset = new Date().getTimezoneOffset();
+    return (await api().get(`/usage?scope=${scope}&offset=${offset}`)).data;
+  } catch (error) {
+    throw apiError(error, "load usage");
   }
 }

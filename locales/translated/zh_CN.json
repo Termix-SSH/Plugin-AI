@@ -29,6 +29,12 @@
         "title": "通过 AI 助手在主机上运行命令",
         "description": "允许助手在你选择的主机上运行任意 shell 命令。默认仅管理员拥有。"
       }
+    },
+    "usage": {
+      "view_all": {
+        "title": "查看所有人的 AI 用量",
+        "description": "查看每个用户的 AI 调用所用的 token，而不只是你自己的。默认仅管理员拥有。"
+      }
     }
   },
   "settings": {
@@ -46,10 +52,6 @@
       "privateEndpoints": {
         "label": "允许的私有 AI 主机",
         "description": "您私有网络上的主机，用户可以将提供商指向这些主机，例如自托管的 Ollama。每行填写一个主机。"
-      },
-      "opsMaxTurns": {
-        "label": "AI 助手步数上限",
-        "description": "一条助手消息最多可使用多少轮模型调用，超过后停止。"
       },
       "opsConcurrency": {
         "label": "AI 助手并行主机数",
@@ -125,7 +127,10 @@
     "secrets": {
       "shareApiKey": "允许其他功能使用您的 AI 提供商 API 密钥进行其自身的请求。密钥不会被复制，您可以随时撤销此权限。"
     },
-    "removeProviderConfirm": "移除提供商 {{name}}？"
+    "removeProviderConfirm": "移除提供商 {{name}}？",
+    "contextWindow": "上下文窗口（token）",
+    "contextWindowHint": "模型能容纳的 token 数。留空则使用该模型的默认值 {{tokens}}。对话接近上限时，助手会自动压缩。",
+    "contextWindowInvalid": "上下文窗口需填写一个整数 token 数，至少 1024。"
   },
   "nav": {
     "ai": "AI 助手"
@@ -285,6 +290,47 @@
     },
     "emptyHintBasic": "助手以你的身份、按你的权限通过 Termix CLI 工作。",
     "inputPlaceholderBasic": "向助手提问。",
-    "sendHintBasic": "修改会直接执行，不再询问。"
+    "sendHintBasic": "修改会直接执行，不再询问。",
+    "thinking": "思考过程",
+    "thinkingActive": "正在思考...",
+    "compacted": "上下文已压缩：较早的消息已被总结",
+    "compact": "压缩对话",
+    "nothingToCompact": "对话还太短，暂时无需压缩。",
+    "contextMeter": "上下文：最近一次调用使用了 {{window}} 个 token 中的 {{used}} 个",
+    "todayTokens": "今日 {{tokens}}",
+    "todayTitle": "你今天使用的 token。点击查看详情。",
+    "usage": "Token 用量",
+    "conversationTokens": "{{tokens}} token"
+  },
+  "usage": {
+    "title": "Token 用量",
+    "settingDescription": "过去 30 天你的 AI 调用所用的 token。",
+    "cardTitle": "AI token 用量",
+    "today": "今日",
+    "week": "7 天",
+    "month": "30 天",
+    "mine": "我的",
+    "everyone": "所有用户",
+    "mineCaption": "你在所有 AI 功能中使用的 token。",
+    "everyoneCaption": "所有用户在所有 AI 功能中使用的 token。",
+    "byDay": "按天",
+    "byModel": "按模型",
+    "bySource": "按功能",
+    "byUser": "按用户",
+    "model": "模型",
+    "feature": "功能",
+    "user": "用户",
+    "calls": "调用次数",
+    "prompt": "输入",
+    "completion": "输出",
+    "total": "合计",
+    "empty": "过去 30 天没有 AI 用量。",
+    "loadFailed": "无法加载用量",
+    "estimatedNote": "部分数字为估算值（约每四个字符一个 token），因为提供商没有报告用量。",
+    "source": {
+      "assistant": "助手",
+      "terminal": "终端面板",
+      "compaction": "上下文压缩"
+    }
   }
 }

@@ -3,7 +3,9 @@ import type { ClientAction } from "../../backend/ops/assistant-tools";
 import type { PageContext } from "../../backend/context";
 import {
   AI_PROVIDERS_CHANGED_EVENT,
+  compactAssistantConversation,
   deleteAssistantConversation,
+  getAiUsage,
   getAiProviders,
   getAiStatus,
   getAssistantConversation,
@@ -12,22 +14,18 @@ import {
   setAiOptIn,
   type AiProvider,
   type AssistantConversation,
+  type ContextUse,
   type OpsFleet,
 } from "../ai-api";
 import { aiApp } from "../app-ref";
 import { getErrorMessage } from "../errors";
 import {
-  finishedRunEntries,
+  applyStreamEvent,
   storedHistory,
   userEntry,
-  type HistoryEntry,
+  type AssistantEntry,
 } from "../transcript";
-import {
-  readEvents,
-  withProgress,
-  withResult,
-  type ToolActivity,
-} from "../use-ai-stream";
+import { readEvents } from "../use-ai-stream";
 
 /**
  * The one assistant behind the floating panel and the AI tab. It
@@ -43,11 +41,16 @@ export interface AssistantState {
   /** The floating panel docked as a full-height drawer on the right. */
   drawer: boolean;
   conversationId: number | null;
-  history: HistoryEntry[];
+  history: AssistantEntry[];
   streaming: boolean;
-  assistantText: string;
-  tools: ToolActivity[];
+  /** The run in progress, in the order its frames arrived. */
+  live: AssistantEntry[];
   error: string | null;
+  /** How full the model's context was at the conversation's latest call. */
+  context: ContextUse | null;
+  /** The user's tokens today, null until loaded. */
+  todayTokens: number | null;
+  compacting: boolean;
   /** Host ids run_command may use; sent with every message. */
   targets: number[];
   /** Whether the user holds ai.ops.use, so the assistant has a shell on targets. */
@@ -65,9 +68,11 @@ const INITIAL: AssistantState = {
   conversationId: null,
   history: [],
   streaming: false,
-  assistantText: "",
-  tools: [],
+  live: [],
   error: null,
+  context: null,
+  todayTokens: null,
+  compacting: false,
   targets: [],
   hostShell: false,
   providers: [],
@@ -80,6 +85,7 @@ let state = INITIAL;
 const listeners = new Set<() => void>();
 let abort: AbortController | null = null;
 let runCount = 0;
+let toolCount = 0;
 let ready: Promise<void> | null = null;
 let clientActionHandler: ((action: ClientAction) => void) | null = null;
 
@@ -112,6 +118,11 @@ async function loadConversations() {
   if (conversations) set({ conversations });
 }
 
+async function loadTodayUsage() {
+  const usage = await getAiUsage().catch(() => null);
+  if (usage) set({ todayTokens: usage.today.totalTokens });
+}
+
 async function prepare() {
   // Opening the assistant is consent, as in the assistant panel; every route
   // sits behind the user's own opt-in.
@@ -124,28 +135,21 @@ async function prepare() {
   const fleets = await getOpsFleets().catch(() => null);
   set({ fleets: fleets?.available ? fleets.fleets : null });
   await loadConversations();
+  await loadTodayUsage();
 }
 
-function finish(
-  controller: AbortController,
-  reply: string,
-  tools: ToolActivity[],
-  error: string | null,
-) {
+function finish(controller: AbortController, error: string | null) {
   // Superseded by a newer conversation; this run's state is already gone.
   if (abort !== controller) return;
   abort = null;
   set({
-    history: [
-      ...state.history,
-      ...finishedRunEntries(runCount++, tools, reply),
-    ],
+    history: [...state.history, ...state.live],
     streaming: false,
-    assistantText: "",
-    tools: [],
+    live: [],
     ...(error ? { error } : {}),
   });
   void loadConversations();
+  void loadTodayUsage();
 }
 
 async function readError(response: Response): Promise<string> {
@@ -193,10 +197,11 @@ export const assistant = {
   },
 
   loadConversations,
+  loadTodayUsage,
 
   newConversation() {
     if (state.streaming) return;
-    set({ conversationId: null, history: [], error: null });
+    set({ conversationId: null, history: [], error: null, context: null });
   },
 
   async openConversation(id: number) {
@@ -207,6 +212,7 @@ export const assistant = {
         conversationId: conversation.id,
         history: storedHistory(messages),
         targets: conversation.targets,
+        context: conversation.context,
         error: null,
       });
     } catch (error) {
@@ -224,20 +230,44 @@ export const assistant = {
     abort?.abort();
   },
 
+  /**
+   * Summarises the open conversation's earlier part now. False when it was
+   * too short to gain anything.
+   */
+  async compact(): Promise<boolean> {
+    const id = state.conversationId;
+    if (!id || !state.providerId || state.streaming || state.compacting) {
+      return false;
+    }
+    set({ compacting: true, error: null });
+    try {
+      const result = await compactAssistantConversation(id, state.providerId);
+      if (!result.compacted) return false;
+      // Reloaded so the marker sits where the summary was stored.
+      await assistant.openConversation(id);
+      if (result.context) set({ context: result.context });
+      void loadConversations();
+      void loadTodayUsage();
+      return true;
+    } catch (error) {
+      set({ error: getErrorMessage(error, "Failed to compact") });
+      return false;
+    } finally {
+      set({ compacting: false });
+    }
+  },
+
   async send(message: string, page: PageContext | null) {
     const text = message.trim();
     if (!text || state.streaming || !state.providerId) return;
 
     const controller = new AbortController();
     abort = controller;
-    let reply = "";
-    let tools: ToolActivity[] = [];
-    let sequence = 0;
+    const run = runCount++;
     set({
       history: [...state.history, userEntry(text)],
       streaming: true,
-      assistantText: "",
-      tools: [],
+      live: [],
       error: null,
     });
 
@@ -267,27 +297,32 @@ export const assistant = {
             set({ conversationId: event.conversationId });
             break;
           case "token":
-            reply += event.text;
-            set({ assistantText: reply });
-            break;
+          case "reasoning":
           case "tool_call":
-            tools = [
-              ...tools,
-              {
-                id: `tool-${sequence++}`,
-                name: event.name,
-                arguments: event.arguments ?? {},
-              },
-            ];
-            set({ tools });
-            break;
           case "tool_result":
-            tools = withResult(tools, event.name, event.result);
-            set({ tools });
-            break;
           case "tool_progress":
-            tools = withProgress(tools, event.name, event.host);
-            set({ tools });
+          case "compacted":
+            set({
+              live: applyStreamEvent(
+                state.live,
+                event,
+                () => `run-${run}-tool-${toolCount++}`,
+              ),
+            });
+            break;
+          case "usage":
+            set({
+              context: {
+                promptTokens: event.usage.promptTokens,
+                contextWindow:
+                  event.contextWindow ?? state.context?.contextWindow ?? 0,
+                estimated: event.usage.estimated,
+              },
+              todayTokens:
+                (state.todayTokens ?? 0) +
+                event.usage.promptTokens +
+                event.usage.completionTokens,
+            });
             break;
           case "targets":
             set({ targets: event.hostIds });
@@ -300,12 +335,10 @@ export const assistant = {
             break;
         }
       });
-      finish(controller, reply, tools, null);
+      finish(controller, null);
     } catch (error) {
       finish(
         controller,
-        reply,
-        tools,
         controller.signal.aborted
           ? null
           : getErrorMessage(error, "The assistant stopped unexpectedly"),

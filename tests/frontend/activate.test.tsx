@@ -61,7 +61,10 @@ describe(`${manifest.id} activate`, () => {
 
   it("registers the providers list as its custom settings field", async () => {
     rendered = await renderWithApp(plugin, { manifest, locales });
-    expect(rendered.registered.settingsComponents()).toEqual(["providers"]);
+    expect(rendered.registered.settingsComponents()).toEqual([
+      "providers",
+      "usage",
+    ]);
   });
 
   it("adds the assistant tab once AI is on for the user", async () => {

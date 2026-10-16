@@ -13,6 +13,8 @@ import {
   Textarea,
 } from "@termix-ssh/plugin-sdk/ui";
 import {
+  ChartColumn,
+  FoldVertical,
   History,
   Loader2,
   Plus,
@@ -22,10 +24,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AiMessage } from "../AiMessage";
+import { AiThinking } from "../AiThinking";
 import { AiToolCall } from "../AiToolCall";
 import { aiApp } from "../app-ref";
-import { buildTimeline } from "../transcript";
+import { assistantTimeline } from "../transcript";
+import { formatTokens } from "../usage/format";
+import { UsageView } from "../usage/UsageView";
 import { activeMentionQuery } from "../mention-query";
 import { OPS_RUN_TOOLS, OpsRunCard } from "../ops/OpsRunCard";
 import {
@@ -48,14 +54,14 @@ function Transcript() {
   const { t } = useTranslation();
   const state = useAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const timeline = buildTimeline(state.history, state, []);
+  const timeline = assistantTimeline(state.history, state.live);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [state.assistantText, state.tools, state.history.length]);
+  }, [state.live, state.history.length]);
 
   return (
     <div
@@ -73,13 +79,37 @@ function Transcript() {
           )}
         />
       )}
-      {timeline.map((item) => {
+      {timeline.map((item, index) => {
         if (item.kind === "message") {
           return (
             <AiMessage key={item.key} role={item.role} content={item.content} />
           );
         }
-        if (item.kind !== "tool") return null;
+        if (item.kind === "thinking") {
+          return (
+            <AiThinking
+              key={item.key}
+              content={item.content}
+              active={
+                item.live && state.streaming && index === timeline.length - 1
+              }
+            />
+          );
+        }
+        if (item.kind === "compacted") {
+          return (
+            <div
+              key={item.key}
+              role="note"
+              className="flex items-center gap-2 text-[11px] text-muted-foreground"
+            >
+              <span className="h-px flex-1 bg-border" />
+              <FoldVertical size={11} />
+              {t("assistant.compacted")}
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          );
+        }
         const streaming = item.live && state.streaming;
         return OPS_RUN_TOOLS.has(item.tool.name) ? (
           <OpsRunCard key={item.key} tool={item.tool} streaming={streaming} />
@@ -129,7 +159,16 @@ function Conversations({ onPicked }: { onPicked: () => void }) {
           <ListRow
             key={conversation.id}
             title={conversation.title || t("assistant.untitled")}
-            meta={new Date(conversation.updatedAt).toLocaleString()}
+            meta={[
+              new Date(conversation.updatedAt).toLocaleString(),
+              conversation.totalTokens
+                ? t("assistant.conversationTokens", {
+                    tokens: formatTokens(conversation.totalTokens),
+                  })
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
             selected={conversation.id === state.conversationId}
             onClick={() => {
               void assistant.openConversation(conversation.id);
@@ -351,11 +390,55 @@ function Composer() {
   );
 }
 
+/** How full the model's context is, after the latest call. */
+function ContextMeter() {
+  const { t } = useTranslation();
+  const { context } = useAssistant();
+  if (!context?.contextWindow) return null;
+  const share = context.promptTokens / context.contextWindow;
+  const tone =
+    share >= 0.8
+      ? "text-destructive"
+      : share >= 0.6
+        ? "text-amber-500"
+        : "text-muted-foreground";
+  const label = `${context.estimated ? "~" : ""}${formatTokens(
+    context.promptTokens,
+  )} / ${formatTokens(context.contextWindow)}`;
+  return (
+    <span
+      className={`shrink-0 px-1 text-[11px] tabular-nums ${tone}`}
+      title={t("assistant.contextMeter", {
+        used: context.promptTokens.toLocaleString(),
+        window: context.contextWindow.toLocaleString(),
+      })}
+      aria-label={t("assistant.contextMeter", {
+        used: context.promptTokens.toLocaleString(),
+        window: context.contextWindow.toLocaleString(),
+      })}
+    >
+      {label}
+    </span>
+  );
+}
+
+type Pane = "chat" | "history" | "usage";
+
 /** `actions` are the hosting view's own buttons, at the end of the header. */
 export function AssistantChat({ actions }: { actions?: ReactNode }) {
   const { t } = useTranslation();
   const state = useAssistant();
-  const [showHistory, setShowHistory] = useState(false);
+  const [pane, setPane] = useState<Pane>("chat");
+  const showHistory = pane === "history";
+  const toggle = (next: Pane) =>
+    setPane((current) => (current === next ? "chat" : next));
+
+  async function compact() {
+    const compacted = await assistant.compact();
+    if (!compacted && !assistant.get().error) {
+      toast(t("assistant.nothingToCompact"));
+    }
+  }
 
   useEffect(() => {
     void assistant.ensureReady();
@@ -398,6 +481,39 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
           </Button>
         )}
         <span className="ml-auto" />
+        <ContextMeter />
+        <Button
+          size="sm"
+          variant={pane === "usage" ? "secondary" : "ghost"}
+          className="h-7 shrink-0 gap-1 px-1.5 text-[11px] tabular-nums"
+          aria-label={t("assistant.usage")}
+          title={t("assistant.todayTitle")}
+          aria-pressed={pane === "usage"}
+          onClick={() => toggle("usage")}
+        >
+          <ChartColumn size={13} />
+          {state.todayTokens !== null &&
+            t("assistant.todayTokens", {
+              tokens: formatTokens(state.todayTokens),
+            })}
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label={t("assistant.compact")}
+          title={t("assistant.compact")}
+          disabled={
+            state.streaming || state.compacting || !state.conversationId
+          }
+          onClick={() => void compact()}
+        >
+          {state.compacting ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <FoldVertical size={14} />
+          )}
+        </Button>
         <Button
           size="icon"
           variant={showHistory ? "secondary" : "ghost"}
@@ -408,7 +524,7 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
           disabled={state.streaming}
           onClick={() => {
             if (!showHistory) void assistant.loadConversations();
-            setShowHistory((value) => !value);
+            toggle("history");
           }}
         >
           <History size={14} />
@@ -424,15 +540,19 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
           }
           onClick={() => {
             assistant.newConversation();
-            setShowHistory(false);
+            setPane("chat");
           }}
         >
           <Plus size={14} />
         </Button>
         {actions}
       </div>
-      {showHistory ? (
-        <Conversations onPicked={() => setShowHistory(false)} />
+      {pane === "history" ? (
+        <Conversations onPicked={() => setPane("chat")} />
+      ) : pane === "usage" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <UsageView />
+        </div>
       ) : (
         <>
           <Transcript />

@@ -29,6 +29,14 @@ export interface ChatMessage {
   /** Set on tool turns, matching the id of the call being answered. */
   toolCallId?: string;
   toolName?: string;
+  /** What the model thought before answering, shown apart from the answer. */
+  reasoning?: string;
+  /**
+   * Provider state for the reasoning that must be echoed back within the same
+   * run: Anthropic rejects a tool result whose turn lost its signed thinking
+   * blocks. Never stored, so it only lives as long as the run.
+   */
+  reasoningState?: unknown[];
 }
 
 export interface ToolCall {
@@ -57,8 +65,19 @@ export interface ChatRequest {
   signal?: AbortSignal;
 }
 
+/** Tokens one model call used, as the provider reported them. */
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+}
+
 export type ChatChunk =
   | { type: "text"; text: string }
+  /** Thinking, kept apart from the answer. */
+  | { type: "reasoning"; text: string }
+  /** Opaque reasoning blocks to echo back on the next call of the run. */
+  | { type: "reasoning_state"; blocks: unknown[] }
+  | { type: "usage"; usage: TokenUsage }
   | { type: "tool_call"; call: ToolCall }
   | { type: "done"; stopReason?: string }
   | { type: "error"; message: string };

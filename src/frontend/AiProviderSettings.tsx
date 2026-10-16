@@ -26,6 +26,7 @@ import {
   type AiProvider,
   type AiProviderType,
 } from "./ai-api";
+import { defaultContextWindow } from "../backend/context-window";
 
 const PROVIDER_TYPES: Array<{
   value: AiProviderType;
@@ -184,6 +185,47 @@ function ModelField({
   );
 }
 
+/** The field's value as a window: null when empty, false when not valid. */
+function parseContextWindow(value: string): number | null | false {
+  if (!value.trim()) return null;
+  const tokens = Number(value);
+  return Number.isInteger(tokens) && tokens >= 1024 ? tokens : false;
+}
+
+/** Tokens the model holds; empty means the model family's default. */
+function ContextWindowField({
+  id,
+  value,
+  model,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  model: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useTranslation();
+  const fallback = defaultContextWindow(model);
+  return (
+    <div className={FIELD}>
+      <Label htmlFor={id}>{t("ai.contextWindow")}</Label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={1024}
+        step={1024}
+        value={value}
+        placeholder={String(fallback)}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <p className="text-[11px] leading-snug text-muted-foreground">
+        {t("ai.contextWindowHint", { tokens: fallback.toLocaleString() })}
+      </p>
+    </div>
+  );
+}
+
 function AiProviderEditForm({
   provider,
   onSaved,
@@ -196,6 +238,9 @@ function AiProviderEditForm({
   const { t } = useTranslation();
   const [label, setLabel] = useState(provider.label);
   const [defaultModel, setDefaultModel] = useState(provider.defaultModel ?? "");
+  const [contextWindow, setContextWindow] = useState(
+    provider.contextWindow ? String(provider.contextWindow) : "",
+  );
   const [models, setModels] = useState<string[]>([]);
   const [customModel, setCustomModel] = useState(false);
   const [detecting, setDetecting] = useState(false);
@@ -230,12 +275,18 @@ function AiProviderEditForm({
       toast.error(t("ai.labelRequired"));
       return;
     }
+    const windowTokens = parseContextWindow(contextWindow);
+    if (windowTokens === false) {
+      toast.error(t("ai.contextWindowInvalid"));
+      return;
+    }
 
     setSaving(true);
     try {
       await updateAiProvider(provider.id, {
         label: label.trim(),
         defaultModel: defaultModel.trim() || null,
+        contextWindow: windowTokens,
       });
       toast.success(t("ai.providerUpdated"));
       onSaved();
@@ -276,6 +327,13 @@ function AiProviderEditForm({
         onRefresh={() => void detectModels()}
       />
 
+      <ContextWindowField
+        id={`ai-provider-context-${provider.id}`}
+        value={contextWindow}
+        model={defaultModel}
+        onChange={setContextWindow}
+      />
+
       <FormFooter
         saving={saving}
         saveLabel={t("ai.save")}
@@ -302,6 +360,7 @@ export function AiProviderSettings({
   const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
   const [apiKey, setApiKey] = useState("");
   const [defaultModel, setDefaultModel] = useState("");
+  const [contextWindow, setContextWindow] = useState("");
 
   const [models, setModels] = useState<string[]>([]);
   const [detecting, setDetecting] = useState(false);
@@ -361,6 +420,11 @@ export function AiProviderSettings({
       toast.error(t("ai.labelRequired"));
       return;
     }
+    const windowTokens = parseContextWindow(contextWindow);
+    if (windowTokens === false) {
+      toast.error(t("ai.contextWindowInvalid"));
+      return;
+    }
     setSaving(true);
     try {
       const created = await createAiProvider({
@@ -369,11 +433,13 @@ export function AiProviderSettings({
         baseUrl: baseUrl.trim() || null,
         apiKey: apiKey.trim() || null,
         defaultModel: defaultModel.trim() || null,
+        contextWindow: windowTokens,
       });
       setAdding(false);
       setLabel("");
       setApiKey("");
       setDefaultModel("");
+      setContextWindow("");
       onChanged(created.id);
       onAdded?.();
     } catch (error) {
@@ -548,6 +614,13 @@ export function AiProviderSettings({
               setDefaultModel("");
             }}
             onRefresh={() => void detectModels()}
+          />
+
+          <ContextWindowField
+            id="ai-provider-new-context"
+            value={contextWindow}
+            model={defaultModel}
+            onChange={setContextWindow}
           />
 
           <FormFooter

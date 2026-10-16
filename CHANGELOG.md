@@ -8,17 +8,24 @@
 - The assistant manages Termix through the Termix CLI, which ships inside the plugin and runs as the signed-in user, and can open terminals, tabs, settings and sidebar views
 - With the new `ai.ops.use` permission (admins only by default), the assistant runs shell commands on target hosts in parallel, with live results per host; pick targets by fleet, folder, tag or host, type `@` to add them, or let the assistant choose
 - Every command on a host and every Termix CLI call is recorded and written to the audit log, with secret arguments masked
-- Admin settings for the assistant's step limit, parallel hosts, command timeout and output kept per host
-- Pick up past conversations from Conversations
+- Admin settings for the assistant's parallel hosts, command timeout and output kept per host
+- Pick up past conversations from Conversations, with the tokens each has used
+- The assistant shows its replies in the order they happened, text and tool calls interleaved, with the model's thinking in a collapsed Thinking block of its own
+- A context meter in the assistant's header, and a Context window setting per provider with defaults for common models
+- Automatic compaction: as a conversation nears the context window, older tool results are trimmed and then the earlier part is summarised, marked with "Context compacted"; a header button compacts on request
+- Token usage for every AI call, with a usage view in the assistant and in settings, a dashboard card, and every user's usage for those with the new `ai.usage.view_all` permission (admins only by default)
 
 ### Changed
 
 - AI in the sidebar now opens the assistant full screen, replacing the old chat; the terminal assistant still proposes changes for you to approve
 - Without `ai.ops.use`, the assistant has no target hosts and cannot run commands on hosts through the CLI, including `exec`, `fleets exec`, `snippets run` and execute routes
+- The assistant has no step limit any more and runs until it is done or stopped; it only stops itself when it repeats the same call with the same result five times
+- A tool result sent back to the model is capped at 12,000 characters, keeping its start and end
 
 ### Fixed
 
 - Change proposals showed a host id instead of the host name
+- Thinking from reasoning models, sent as `reasoning_content`, `<think>` tags, Gemini thought parts or Ollama's thinking field, no longer runs into the answer
 
 ## 1.0.1
 
