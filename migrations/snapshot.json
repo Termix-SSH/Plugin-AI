@@ -445,6 +445,53 @@
           ]
         }
       ]
+    },
+    "cli_runs": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "conversationId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "userId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "args": {
+          "type": "text",
+          "notNull": true
+        },
+        "exitCode": {
+          "type": "integer"
+        },
+        "durationMs": {
+          "type": "integer",
+          "notNull": true
+        },
+        "output": {
+          "type": "text",
+          "notNull": true,
+          "defaultValue": ""
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_cli_runs_conversation",
+          "columns": [
+            "conversationId"
+          ]
+        }
+      ]
     }
   }
 }

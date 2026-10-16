@@ -4,7 +4,7 @@
   "version": "1.0.2",
   "type": "module",
   "scripts": {
-    "build": "termix-plugin build",
+    "build": "termix-plugin build && node scripts/bundle-cli.mjs",
     "test": "termix-plugin test",
     "typecheck": "tsc -p .",
     "validate": "termix-plugin validate",
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.0",
+    "@termix-ssh/cli": "1.1.1",
     "@termix-ssh/plugin-sdk": "^1.0.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",

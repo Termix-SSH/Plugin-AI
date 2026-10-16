@@ -240,6 +240,30 @@ export const opsRuns = defineTable(
   },
 );
 
+/**
+ * Every Termix CLI call the assistant made, one row per call. Args are stored
+ * with secret flag values redacted, output cut like a host's.
+ */
+export const cliRuns = defineTable(
+  "cli_runs",
+  {
+    id: id(),
+    conversationId: integer().notNull(),
+    userId: refUser(),
+    args: text().notNull(),
+    // Null when the CLI never finished: timed out, stopped or failed to start.
+    exitCode: integer(),
+    durationMs: integer().notNull(),
+    output: text().notNull().default(""),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_cli_runs_conversation", columns: ["conversationId"] },
+    ],
+  },
+);
+
 export const tables = [
   providers,
   conversations,
@@ -249,4 +273,5 @@ export const tables = [
   agentEvents,
   agentQueue,
   opsRuns,
+  cliRuns,
 ];

@@ -251,11 +251,7 @@
     "allHosts": "所有主机",
     "noHosts": "没有主机",
     "newConversation": "新对话",
-    "emptyTitle": "选择主机，然后说明要做什么",
-    "emptyHint": "助手会在所选主机上运行 shell 命令，并按主机汇报结果。",
-    "inputPlaceholder": "要在所选主机上做什么？",
     "sendHint_other": "将在 {{count}} 台主机上运行。命令会直接运行，不会事先询问。",
-    "noTargets": "请先在左侧选择至少一台主机。",
     "runCommand": "运行命令",
     "hostFacts": "主机信息",
     "hostCount_other": "{{count}} 台主机",
@@ -268,5 +264,30 @@
     "cached": "已缓存",
     "duration": "{{seconds}} 秒",
     "noOutput": "（无输出）"
+  },
+  "assistant": {
+    "title": "Termix 助手",
+    "toggle": "打开或关闭 AI 助手",
+    "close": "关闭",
+    "dock": "停靠到右侧",
+    "float": "浮动",
+    "openTab": "打开完整视图",
+    "history": "对话",
+    "noConversations": "还没有对话",
+    "untitled": "未命名",
+    "deleteConversation": "删除对话",
+    "deleteConfirm": "删除这个对话？",
+    "emptyTitle": "询问或修改 Termix 中的任何内容",
+    "emptyHint": "助手以你的身份通过 Termix CLI 工作，并在目标主机上运行命令。输入 @ 可以把主机、主机群、文件夹或标签加为目标。",
+    "inputPlaceholder": "向助手提问。输入 @ 添加目标。",
+    "noTargets": "没有目标主机。输入 @ 添加。",
+    "sendHint": "修改和命令会直接执行，不再询问。",
+    "removeTarget": "移除 {{name}}",
+    "kind": {
+      "host": "主机",
+      "fleet": "主机群",
+      "folder": "文件夹",
+      "tag": "标签"
+    }
   }
 }

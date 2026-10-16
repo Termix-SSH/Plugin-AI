@@ -27,6 +27,7 @@ Read the [docs](https://docs.termix.site/plugins/ai) to set it up and use it.
 - Works with Ollama, Anthropic, OpenAI, Google Gemini and any OpenAI compatible endpoint
 - Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider
 - Cluster Ops: let the assistant run shell commands across the hosts, folders, tags or fleets you select
+- A floating assistant on every page (Ctrl+J) that manages Termix through the bundled Termix CLI, runs commands on hosts and opens views for you
 
 <br />
 

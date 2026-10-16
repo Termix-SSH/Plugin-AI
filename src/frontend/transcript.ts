@@ -1,5 +1,5 @@
 import type { AiProposal } from "./ai-api";
-import type { StreamState, ToolActivity } from "./use-ai-stream";
+import type { HostProgress, StreamState, ToolActivity } from "./use-ai-stream";
 
 /** A finished part of the conversation, kept after the stream resets. */
 export type HistoryEntry =
@@ -79,4 +79,84 @@ export function buildTimeline(
   }
 
   return timeline;
+}
+
+interface StoredRow {
+  id: number;
+  role: string;
+  content: string;
+  toolCalls: string | null;
+}
+
+function parseJson(raw: string | null): unknown {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+/** Per-host rows for a run card, from a run_command or get_host_facts result. */
+function progressFrom(result: unknown): HostProgress[] | undefined {
+  const hosts = (result as { hosts?: unknown } | null)?.hosts;
+  if (!Array.isArray(hosts)) return undefined;
+  return hosts.map((host) => ({
+    hostId: host.id,
+    name: host.name,
+    exitCode: host.exitCode ?? (host.error ? null : 0),
+    output: host.output ?? host.facts ?? "",
+    error: host.output || host.facts ? undefined : host.error,
+    durationMs: 0,
+    cached: host.facts !== undefined,
+  }));
+}
+
+/**
+ * A stored conversation as the transcript shows it: what the user said, each
+ * tool call with its result, and each reply.
+ */
+export function storedHistory(rows: StoredRow[]): HistoryEntry[] {
+  const entries: HistoryEntry[] = [];
+  const open = new Map<string, number>();
+
+  for (const row of rows) {
+    const calls = parseJson(row.toolCalls);
+    const list = Array.isArray(calls)
+      ? (calls as Array<{ id: string; name: string; arguments?: unknown }>)
+      : [];
+
+    if (row.role === "tool") {
+      const index = open.get(list[0]?.id);
+      if (index === undefined) continue;
+      const entry = entries[index] as Extract<HistoryEntry, { kind: "tool" }>;
+      const result = parseJson(row.content);
+      const progress = progressFrom(result);
+      entries[index] = {
+        kind: "tool",
+        tool: { ...entry.tool, result, ...(progress ? { progress } : {}) },
+      };
+      continue;
+    }
+
+    if (row.content) {
+      entries.push({
+        kind: "message",
+        role: row.role === "user" ? "user" : "assistant",
+        content: row.content,
+      });
+    }
+    for (const call of list) {
+      open.set(call.id, entries.length);
+      entries.push({
+        kind: "tool",
+        tool: {
+          id: `stored-${row.id}-${call.id}`,
+          name: call.name,
+          arguments: (call.arguments as Record<string, unknown>) ?? {},
+        },
+      });
+    }
+  }
+  return entries;
 }

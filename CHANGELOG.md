@@ -8,6 +8,11 @@
 - Every Cluster Ops command is recorded per host and written to the audit log
 - Admin settings for the Cluster Ops step limit, parallel hosts, command timeout and output kept per host
 - The `ai.ops.use` permission, for admins only by default
+- A floating assistant on every page, opened from a button or Ctrl+J, sharing its conversations with Cluster Ops
+- The assistant can manage Termix through the Termix CLI, which ships inside the plugin and runs as the signed-in user
+- The assistant can choose its own target hosts by host, fleet, folder or tag, and open terminals, tabs, settings and sidebar views
+- Add targets by typing `@` in the assistant, and pick up past conversations from Conversations
+- Every Termix CLI call is recorded and written to the audit log, with secret arguments masked
 
 ### Fixed
 

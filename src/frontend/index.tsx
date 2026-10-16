@@ -17,10 +17,13 @@ import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
 import { AI_STATUS_CHANGED_EVENT, getAiStatus } from "./ai-api";
 import { setAiApp } from "./app-ref";
+import { AssistantOverlay, OPS_TAB_ID } from "./assistant/AssistantOverlay";
+import { defaultCombo, installHotkey, TOGGLE_ACTION } from "./assistant/hotkey";
+import { performClientAction } from "./assistant/shell";
+import { assistant } from "./assistant/store";
 
 /** The rail id the assistant registers under. */
 const AI_RAIL_ID = "ai";
-const OPS_TAB_ID = "ai-ops";
 const ASSISTANT_ACTION = "ai.openWithContext";
 const SIDE_PANEL_ID = "ai.assistant";
 
@@ -60,9 +63,46 @@ function TerminalSidePanel({
   );
 }
 
+const toggleAssistant = () => assistant.toggle();
+
+/**
+ * The floating assistant, for users who may use it: the ball and panel in
+ * the shell's overlay slot, gated on the toggle action's permission, and the
+ * key that opens it.
+ */
+function registerAssistant(app: TermixApp): (() => void)[] {
+  return [
+    app.registerAction(TOGGLE_ACTION, toggleAssistant, {
+      permission: "ops.use",
+    }),
+    app.registerSlotContribution("shell.overlay", {
+      actionId: TOGGLE_ACTION,
+      titleKey: "assistant.title",
+      kind: "component",
+      component: AssistantOverlay as ComponentType<Record<string, unknown>>,
+    }),
+    app.registerKeybindingAction({
+      id: TOGGLE_ACTION,
+      titleKey: "assistant.toggle",
+      scope: "global",
+      run: toggleAssistant,
+    }),
+    app.registerKeybindingDefault({
+      id: TOGGLE_ACTION,
+      combo: defaultCombo(),
+      descriptionKey: "assistant.toggle",
+    }),
+    installHotkey(toggleAssistant),
+  ];
+}
+
 export function activate(app: TermixApp): void {
   setAiApp(app);
-  app.onDispose(() => setAiApp(null));
+  assistant.onClientAction((action) => performClientAction(app, action));
+  app.onDispose(() => {
+    assistant.reset();
+    setAiApp(null);
+  });
 
   let globallyEnabled = false;
   let userEnabled = false;
@@ -146,6 +186,7 @@ export function activate(app: TermixApp): void {
           hostless: true,
         }),
       );
+      surface.push(...registerAssistant(app));
     }
 
     surface.push(

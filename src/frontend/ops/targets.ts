@@ -111,3 +111,96 @@ export function hostMatches(host: TargetHost, query: string): boolean {
     .toLowerCase()
     .includes(query.toLowerCase());
 }
+
+/** One chip above the assistant's input: a group or a single host. */
+export interface TargetChip {
+  key: string;
+  kind: "fleet" | "folder" | "tag" | "host";
+  label: string;
+  hostIds: number[];
+}
+
+export interface TargetGroups {
+  fleets: TargetGroup[];
+  folders: TargetGroup[];
+  tags: TargetGroup[];
+}
+
+export function targetGroups(
+  hosts: TargetHost[],
+  fleets: Array<{ id: number; name: string; hostIds: number[] }> | null,
+): TargetGroups {
+  return {
+    fleets: fleets ? fleetGroups(fleets, hosts) : [],
+    folders: folderGroups(hosts),
+    tags: tagGroups(hosts),
+  };
+}
+
+const hostChip = (host: TargetHost): TargetChip => ({
+  key: `host:${host.id}`,
+  kind: "host",
+  label: host.name,
+  hostIds: [host.id],
+});
+
+/** Every fleet, folder (outer first) and tag as a chip, in that order. */
+function groupChips(groups: TargetGroups): TargetChip[] {
+  const chip = (kind: TargetChip["kind"]) => (group: TargetGroup) => ({
+    key: `${kind}:${group.key}`,
+    kind,
+    // A folder's own name repeats under different parents; its path does not.
+    label: kind === "folder" ? group.key : group.name,
+    hostIds: group.hostIds,
+  });
+  const outerFirst = [...groups.folders].sort(
+    (a, b) => (a.depth ?? 0) - (b.depth ?? 0),
+  );
+  return [
+    ...groups.fleets.map(chip("fleet")),
+    ...outerFirst.map(chip("folder")),
+    ...groups.tags.map(chip("tag")),
+  ];
+}
+
+/**
+ * The selection as few chips as possible: each group wholly selected that
+ * shows a host no earlier chip does, then the hosts left over. Hosts the
+ * picker does not know are left out.
+ */
+export function targetChips(
+  selected: Set<number>,
+  hosts: TargetHost[],
+  groups: TargetGroups,
+): TargetChip[] {
+  const chips: TargetChip[] = [];
+  const shown = new Set<number>();
+  for (const chip of groupChips(groups)) {
+    const ids = chip.hostIds;
+    if (!ids.length || !ids.every((id) => selected.has(id))) continue;
+    if (ids.every((id) => shown.has(id))) continue;
+    chips.push(chip);
+    for (const id of ids) shown.add(id);
+  }
+  for (const host of hosts) {
+    if (selected.has(host.id) && !shown.has(host.id))
+      chips.push(hostChip(host));
+  }
+  return chips;
+}
+
+/** What an @-mention can add: hosts and every group, by name. */
+export function mentionTargets(
+  hosts: TargetHost[],
+  groups: TargetGroups,
+  query: string,
+  limit = 8,
+): TargetChip[] {
+  const needle = query.trim().toLowerCase();
+  return [...hosts.map(hostChip), ...groupChips(groups)]
+    .filter(
+      (chip) =>
+        chip.hostIds.length > 0 && chip.label.toLowerCase().includes(needle),
+    )
+    .slice(0, limit);
+}

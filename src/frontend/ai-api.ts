@@ -62,7 +62,7 @@ interface AiConversation {
   updatedAt: string;
 }
 
-interface AiMessage {
+export interface AiMessage {
   id: number;
   conversationId: number;
   role: "user" | "assistant" | "tool";
@@ -271,5 +271,41 @@ export async function getOpsFleets(): Promise<{
     return (await api().get("/ops/fleets")).data;
   } catch (error) {
     throw apiError(error, "list fleets");
+  }
+}
+
+export interface AssistantConversation {
+  id: number;
+  title: string | null;
+  updatedAt: string;
+}
+
+/** The assistant's conversations, shared by the floating panel and Cluster Ops. */
+export async function listAssistantConversations(): Promise<
+  AssistantConversation[]
+> {
+  try {
+    return (await api().get("/ops/conversations")).data.conversations;
+  } catch (error) {
+    throw apiError(error, "list conversations");
+  }
+}
+
+export async function getAssistantConversation(id: number): Promise<{
+  conversation: AssistantConversation & { targets: number[] };
+  messages: AiMessage[];
+}> {
+  try {
+    return (await api().get(`/ops/conversations/${id}`)).data;
+  } catch (error) {
+    throw apiError(error, "load the conversation");
+  }
+}
+
+export async function deleteAssistantConversation(id: number): Promise<void> {
+  try {
+    await api().delete(`/ops/conversations/${id}`);
+  } catch (error) {
+    throw apiError(error, "delete the conversation");
   }
 }

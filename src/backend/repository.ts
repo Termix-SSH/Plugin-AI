@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
+  cliRuns as cliRunsDef,
   conversations as conversationsDef,
   messages as messagesDef,
   opsRuns as opsRunsDef,
@@ -46,6 +47,17 @@ export interface AiConversationRecord {
 }
 
 export type ConversationMode = "chat" | "ops";
+
+/** One Termix CLI call the assistant made. */
+export interface CliRunInput {
+  conversationId: number;
+  userId: string;
+  /** JSON args, secret flag values already redacted. */
+  args: string;
+  exitCode: number | null;
+  durationMs: number;
+  output: string;
+}
 
 /** One command on one host, as Cluster Ops records it. */
 export interface OpsRunInput {
@@ -121,6 +133,7 @@ export async function createAiRepository(
   const messages: Table = await db.define(messagesDef);
   const proposals: Table = await db.define(proposalsDef);
   const opsRuns: Table = await db.define(opsRunsDef);
+  const cliRuns: Table = await db.define(cliRunsDef);
 
   const client = () => db.client<Drizzle>();
 
@@ -340,6 +353,7 @@ export async function createAiRepository(
       await drizzle.delete(messages).where(eq(messages.conversationId, id));
       await drizzle.delete(proposals).where(eq(proposals.conversationId, id));
       await drizzle.delete(opsRuns).where(eq(opsRuns.conversationId, id));
+      await drizzle.delete(cliRuns).where(eq(cliRuns.conversationId, id));
       await drizzle
         .delete(conversations)
         .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
@@ -384,6 +398,11 @@ export async function createAiRepository(
       )
         .insert(opsRuns)
         .values(runs.map((run) => ({ ...run, createdAt })));
+      await db.persist();
+    },
+
+    async recordCliRun(run: CliRunInput): Promise<void> {
+      await insertId(cliRuns, { ...run, createdAt: now() });
       await db.persist();
     },
 

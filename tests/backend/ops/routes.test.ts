@@ -87,15 +87,10 @@ describe("ops routes", () => {
     expect((await server.request("GET", "/ops/fleets")).status).toBe(403);
   });
 
-  it("needs targets for a new conversation", async () => {
+  it("refuses host ids that are not ids", async () => {
     server = await startServer({ permissions: OPS_PERMISSIONS });
     await server.enableFor("user-1");
     const providerId = await addProvider(server);
-
-    const none = await server.request("POST", "/ops/chat", {
-      body: { providerId, message: "uptime please", hostIds: [] },
-    });
-    expect(none.status).toBe(400);
 
     const invalid = await server.request("POST", "/ops/chat", {
       body: { providerId, message: "uptime please", hostIds: ["web-1"] },

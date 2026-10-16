@@ -79,6 +79,9 @@ function resolveScope(
   raw: unknown,
   targets: number[],
 ): { hostIds: number[] } | { error: string } {
+  if (!targets.length) {
+    return { error: "No target hosts yet. Call set_targets first." };
+  }
   if (raw === undefined || raw === "all") return { hostIds: targets };
   if (!Array.isArray(raw) || !raw.length) {
     return { error: 'hostIds must be "all" or a list of host ids' };
@@ -93,7 +96,7 @@ function resolveScope(
   return { hostIds };
 }
 
-function timeoutFor(raw: unknown, fallback: number): number {
+export function timeoutFor(raw: unknown, fallback: number): number {
   const seconds = Number(raw);
   const chosen = Number.isFinite(seconds) && seconds > 0 ? seconds : fallback;
   return Math.min(Math.max(chosen, 1), MAX_TIMEOUT_SEC);

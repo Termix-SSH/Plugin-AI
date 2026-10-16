@@ -1,6 +1,7 @@
+import { existsSync } from "node:fs";
 import type { Request, Response, Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
-import { buildOpsSystemPrompt } from "../context.js";
+import { buildAssistantSystemPrompt, type PageContext } from "../context.js";
 import { runAgent } from "../engine.js";
 import {
   createAiGate,
@@ -14,6 +15,11 @@ import type { AiRepository } from "../repository.js";
 import { readService, SERVICE } from "../services.js";
 import { openEventStream } from "../sse.js";
 import type { ToolDeps } from "../tools/types.js";
+import {
+  createAssistantTools,
+  type AssistantSession,
+} from "./assistant-tools.js";
+import { bundledCliPath, CORE_URL, requestToken } from "./cli.js";
 import { createOpsTools, MAX_TIMEOUT_SEC, type OpsLimits } from "./tools.js";
 
 /** Conversations whose host facts are kept in memory at once. */
@@ -26,7 +32,6 @@ function parseId(raw: unknown): number | null {
 
 /** Deduplicated host ids, or null when anything in the list is not one. */
 function parseHostIds(raw: unknown): number[] | null {
-  if (raw === undefined) return [];
   if (!Array.isArray(raw)) return null;
   const ids = raw.map(parseId);
   if (ids.some((id) => id === null)) return null;
@@ -40,6 +45,25 @@ function storedTargets(raw: string | null | undefined): number[] {
   } catch {
     return [];
   }
+}
+
+const PAGE_TEXT_LIMIT = 120;
+
+/** What the browser says the user is looking at, trimmed to plain fields. */
+function parsePage(raw: unknown): PageContext | null {
+  if (!raw || typeof raw !== "object") return null;
+  const source = raw as Record<string, unknown>;
+  const text = (value: unknown) =>
+    typeof value === "string" && value.trim()
+      ? value.trim().slice(0, PAGE_TEXT_LIMIT)
+      : undefined;
+  const page: PageContext = {
+    tabType: text(source.tabType),
+    tabTitle: text(source.tabTitle),
+    hostId: parseId(source.hostId) ?? undefined,
+    hostName: text(source.hostName),
+  };
+  return Object.values(page).some((value) => value !== undefined) ? page : null;
 }
 
 export async function readOpsLimits(
@@ -99,6 +123,14 @@ export function registerOpsRoutes(
     return cache;
   };
 
+  const findOpsConversation = async (raw: unknown) => {
+    const id = parseId(raw);
+    const conversation = id
+      ? await repository.findConversation(id, ctx.currentActor() as string)
+      : null;
+    return conversation?.mode === "ops" ? conversation : null;
+  };
+
   const logError = (message: string, error: unknown) =>
     ctx.log.error(
       message,
@@ -139,13 +171,108 @@ export function registerOpsRoutes(
 
   /**
    * @openapi
+   * /plugin-api/ai/ops/conversations:
+   *   get:
+   *     summary: The assistant's conversations, newest first
+   *     description: >
+   *       Shared by the floating assistant and the Cluster Ops tab.
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: Conversations with their targets.
+   *       403:
+   *         description: Missing ai.ops.use, or the assistant is off.
+   */
+  router.get("/ops/conversations", async (_req: Request, res: Response) => {
+    const userId = ctx.currentActor() as string;
+    const conversations = await repository.listConversations(userId, 50, "ops");
+    res.json({
+      conversations: conversations.map((conversation) => ({
+        id: conversation.id,
+        title: conversation.title,
+        updatedAt: conversation.updatedAt,
+      })),
+    });
+  });
+
+  /**
+   * @openapi
+   * /plugin-api/ai/ops/conversations/{id}:
+   *   get:
+   *     summary: One assistant conversation with its messages and targets
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: The conversation.
+   *       404:
+   *         description: Conversation not found.
+   */
+  router.get("/ops/conversations/:id", async (req: Request, res: Response) => {
+    const conversation = await findOpsConversation(req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    res.json({
+      conversation: {
+        id: conversation.id,
+        title: conversation.title,
+        targets: storedTargets(conversation.targets),
+      },
+      messages: await repository.listMessages(conversation.id),
+    });
+  });
+
+  /**
+   * @openapi
+   * /plugin-api/ai/ops/conversations/{id}:
+   *   delete:
+   *     summary: Delete an assistant conversation and its run records
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Deleted.
+   *       404:
+   *         description: Conversation not found.
+   */
+  router.delete(
+    "/ops/conversations/:id",
+    async (req: Request, res: Response) => {
+      const conversation = await findOpsConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      await repository.deleteConversation(conversation.id, conversation.userId);
+      res.json({ success: true });
+    },
+  );
+
+  /**
+   * @openapi
    * /plugin-api/ai/ops/chat:
    *   post:
-   *     summary: Send a Cluster Ops message and stream the assistant's run
+   *     summary: Send a message to the assistant and stream its run
    *     description: >
    *       Server-sent events, like /chat/stream, plus a tool_progress frame for
-   *       each host as its command finishes. hostIds become the conversation's
-   *       targets; leave them out to keep the ones it has.
+   *       each host as its command finishes, a targets frame when the
+   *       assistant changes the targets and a client_action frame when it asks
+   *       the browser to open a view. hostIds become the conversation's
+   *       targets; leave them out to keep the ones it has. page is what the
+   *       user is looking at.
    *     tags:
    *       - AI
    *     requestBody:
@@ -167,11 +294,22 @@ export function registerOpsRoutes(
    *                 type: array
    *                 items:
    *                   type: integer
+   *               page:
+   *                 type: object
+   *                 properties:
+   *                   tabType:
+   *                     type: string
+   *                   tabTitle:
+   *                     type: string
+   *                   hostId:
+   *                     type: integer
+   *                   hostName:
+   *                     type: string
    *     responses:
    *       200:
    *         description: An event stream.
    *       400:
-   *         description: Invalid request body, or no target hosts.
+   *         description: Invalid request body.
    *       403:
    *         description: Missing ai.ops.use, or the assistant is off.
    *       404:
@@ -179,7 +317,7 @@ export function registerOpsRoutes(
    */
   router.post("/ops/chat", async (req: Request, res: Response) => {
     const userId = ctx.currentActor() as string;
-    const { conversationId, providerId, model, message, hostIds } =
+    const { conversationId, providerId, model, message, hostIds, page } =
       req.body ?? {};
 
     if (typeof message !== "string" || !message.trim()) {
@@ -189,8 +327,8 @@ export function registerOpsRoutes(
     if (!resolvedProviderId) {
       return res.status(400).json({ error: "providerId is required" });
     }
-    const requested = parseHostIds(hostIds);
-    if (!requested) {
+    const requested = hostIds === undefined ? null : parseHostIds(hostIds);
+    if (hostIds !== undefined && !requested) {
       return res
         .status(400)
         .json({ error: "hostIds must be a list of host ids" });
@@ -219,12 +357,7 @@ export function registerOpsRoutes(
         return res.status(404).json({ error: "Conversation not found" });
       }
 
-      const targets = requested.length
-        ? requested
-        : storedTargets(conversation?.targets);
-      if (!targets.length) {
-        return res.status(400).json({ error: "Select at least one host" });
-      }
+      const targets = requested ?? storedTargets(conversation?.targets);
 
       if (!conversation) {
         conversation = await repository.createConversation({
@@ -235,7 +368,7 @@ export function registerOpsRoutes(
           mode: "ops",
           targets,
         });
-      } else if (requested.length) {
+      } else if (requested) {
         await repository.setConversationTargets(conversation.id, targets);
       }
 
@@ -260,15 +393,37 @@ export function registerOpsRoutes(
       const { send, signal, stopHeartbeat } = openEventStream(res);
       send({ type: "conversation", conversationId: conversation.id });
 
-      const tools = createOpsTools({
+      const token = requestToken(req);
+      const cliPath = bundledCliPath();
+      const ownId = conversation.id;
+      const session: AssistantSession = {
         targets,
         limits,
         signal,
-        facts: factsFor(conversation.id),
+        facts: factsFor(ownId),
         onHostResult: (name, command, host) =>
           send({ type: "tool_progress", name, command, host }),
         recordRuns: (runs) => repository.recordOpsRuns(runs),
-      });
+        cli:
+          token && existsSync(cliPath)
+            ? {
+                run: ctx.process.run,
+                cliPath,
+                url: CORE_URL,
+                token,
+              }
+            : null,
+        saveTargets: async (next) => {
+          await repository.setConversationTargets(ownId, next);
+          send({ type: "targets", hostIds: next });
+        },
+        clientAction: (action) => send({ type: "client_action", action }),
+        recordCliRun: (run) => repository.recordCliRun(run),
+      };
+      const tools = [
+        ...createOpsTools(session),
+        ...createAssistantTools(session),
+      ];
 
       const chatHistory = toChatHistory(history);
       chatHistory.push({ role: "user", content: message.trim() });
@@ -277,7 +432,11 @@ export function registerOpsRoutes(
         for await (const event of runAgent({
           config,
           model: chosenModel,
-          system: buildOpsSystemPrompt({ targetCount: targets.length }),
+          system: buildAssistantSystemPrompt({
+            targetCount: targets.length,
+            page: parsePage(page),
+            cli: session.cli !== null,
+          }),
           history: chatHistory,
           context: {
             userId,

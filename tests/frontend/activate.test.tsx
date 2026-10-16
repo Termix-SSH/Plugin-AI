@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 
 vi.mock("../../src/frontend/ai-api", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -11,6 +11,7 @@ import {
 } from "@termix-ssh/plugin-sdk/testing";
 import type { PluginManifest } from "@termix-ssh/plugin-sdk/manifest";
 import * as plugin from "../../src/frontend/index";
+import { assistant } from "../../src/frontend/assistant/store";
 import manifestJson from "../../manifest.json";
 import locales from "../../locales/en.json";
 
@@ -24,6 +25,7 @@ let rendered: RenderedPluginApp | null = null;
 afterEach(async () => {
   await rendered?.deactivate();
   rendered = null;
+  assistant.reset();
 });
 
 describe(`${manifest.id} activate`, () => {
@@ -85,5 +87,48 @@ describe(`${manifest.id} activate`, () => {
     expect(
       rendered.registered.railItems().find((item) => item.id === "ai-ops"),
     ).toMatchObject({ permission: "ai.ops.use" });
+  });
+
+  it("shows the floating assistant only to users with ai.ops.use", async () => {
+    rendered = await renderWithApp(plugin, { manifest, locales });
+    await waitFor(() => expect(rendered!.registered.tabs()).toContain("ai"));
+    expect(rendered.registered.slot("shell.overlay")).toEqual([]);
+    expect(rendered.registered.keybindingActions()).toEqual([]);
+    await rendered.deactivate();
+
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["ai.ops.use"],
+    });
+    await waitFor(() =>
+      expect(rendered!.registered.slot("shell.overlay")).toEqual([
+        "ai.toggleAssistant",
+      ]),
+    );
+    expect(rendered.registered.keybindingActions()).toEqual([
+      "ai.toggleAssistant",
+    ]);
+    expect(rendered.registered.keybindingDefaults()).toEqual([
+      "ai.toggleAssistant",
+    ]);
+
+    Element.prototype.scrollTo = vi.fn();
+    const overlay = rendered.renderSlot("shell.overlay");
+    const ball = await within(overlay).findByRole("button", {
+      name: "Toggle the AI assistant",
+    });
+    fireEvent.pointerDown(ball, { clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(ball, { clientX: 10, clientY: 10 });
+    expect(assistant.get().open).toBe(true);
+    expect(
+      await within(overlay).findByRole("dialog", { name: "Termix assistant" }),
+    ).toBeTruthy();
+
+    // The default key toggles it too.
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
+    );
+    expect(assistant.get().open).toBe(false);
   });
 });

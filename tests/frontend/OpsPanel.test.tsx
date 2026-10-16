@@ -1,6 +1,7 @@
 import type { TabProps } from "@termix-ssh/plugin-sdk/frontend";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -10,7 +11,11 @@ import {
 
 const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
 vi.mock("../../src/frontend/app-ref", () => ({
-  aiApp: () => ({ fetch: mocks.fetch }),
+  aiApp: () => ({
+    fetch: mocks.fetch,
+    tabs: { getLayout: () => null },
+    confirm: async () => true,
+  }),
 }));
 vi.mock("../../src/frontend/ai-api", () => ({
   AI_PROVIDERS_CHANGED_EVENT: "termix-ai:providers-changed",
@@ -18,6 +23,9 @@ vi.mock("../../src/frontend/ai-api", () => ({
   setAiOptIn: async () => {},
   getAiProviders: async () => [{ id: 5, label: "Work", enabled: true }],
   getOpsFleets: async () => ({ available: false, fleets: [] }),
+  listAssistantConversations: async () => [],
+  getAssistantConversation: async () => ({}),
+  deleteAssistantConversation: async () => {},
 }));
 vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
   ...(await original<object>()),
@@ -25,7 +33,7 @@ vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
   useHosts: () => ({
     loaded: true,
     hosts: [
-      { id: "1", name: "web-1", ip: "10.0.0.1", port: 22 },
+      { id: "1", name: "web-1", ip: "10.0.0.1", port: 22, tags: ["prod"] },
       { id: "2", name: "web-2", ip: "10.0.0.2", port: 22 },
     ],
   }),
@@ -34,6 +42,12 @@ vi.mock("../../src/frontend/AiMessage", () => ({
   AiMessage: ({ content }: { content: string }) => <p>{content}</p>,
 }));
 import { OpsPanel } from "../../src/frontend/ops/OpsPanel";
+import { assistant } from "../../src/frontend/assistant/store";
+
+const frames = (...events: unknown[]) =>
+  new Response(
+    events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(""),
+  );
 
 beforeEach(() => {
   Element.prototype.scrollTo = vi.fn();
@@ -42,25 +56,27 @@ beforeEach(() => {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   });
-  mocks.fetch.mockResolvedValue(
-    new Response('data: {"type":"done"}\n\n', { status: 200 }),
-  );
+  mocks.fetch.mockResolvedValue(frames({ type: "done" }));
 });
 afterEach(() => {
   cleanup();
+  assistant.reset();
   vi.clearAllMocks();
 });
 
-it("sends the selected hosts with every message", async () => {
+async function ready() {
   render(<OpsPanel {...({} as TabProps)} />);
-  const input = screen.getByRole("textbox", { name: "ops.inputPlaceholder" });
+  const input = screen.getByRole("textbox", {
+    name: "assistant.inputPlaceholder",
+  });
   await waitFor(() => expect(input.hasAttribute("disabled")).toBe(false));
+  return input;
+}
 
-  fireEvent.change(input, { target: { value: "check disk space" } });
-  // Nothing to run on yet.
-  expect(screen.getByText("ai.send").closest("button")!.disabled).toBe(true);
-
+it("sends the selected hosts and the page with every message", async () => {
+  const input = await ready();
   fireEvent.click(screen.getByRole("checkbox", { name: "web-2" }));
+  fireEvent.change(input, { target: { value: "check disk space" } });
   fireEvent.keyDown(input, { key: "Enter" });
 
   await waitFor(() => expect(mocks.fetch).toHaveBeenCalledTimes(1));
@@ -72,4 +88,80 @@ it("sends the selected hosts with every message", async () => {
     hostIds: [2],
   });
   expect(await screen.findByText("check disk space")).toBeTruthy();
+});
+
+it("adds targets from an @-mention and removes them from their chip", async () => {
+  const input = await ready();
+  fireEvent.change(input, {
+    target: { value: "restart @pro", selectionStart: 12 },
+  });
+  const option = await screen.findByRole("option", { name: /prod/ });
+  fireEvent.mouseDown(option);
+
+  expect(assistant.get().targets).toEqual([1]);
+  expect((input as HTMLTextAreaElement).value).toBe("restart ");
+  const remove = screen.getByRole("button", {
+    name: "assistant.removeTarget",
+  });
+  fireEvent.click(remove);
+  expect(assistant.get().targets).toEqual([]);
+});
+
+it("follows the targets the assistant sets and hands over client actions", async () => {
+  const actions: unknown[] = [];
+  assistant.onClientAction((action) => actions.push(action));
+  mocks.fetch.mockResolvedValue(
+    frames(
+      { type: "conversation", conversationId: 8 },
+      { type: "tool_call", name: "set_targets", arguments: { tags: ["prod"] } },
+      { type: "targets", hostIds: [1, 2] },
+      { type: "tool_result", name: "set_targets", result: { targets: 2 } },
+      { type: "client_action", action: { kind: "open_view", id: "hosts" } },
+      { type: "token", text: "Done." },
+      { type: "done" },
+    ),
+  );
+  const input = await ready();
+  fireEvent.change(input, { target: { value: "target prod" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+
+  expect(await screen.findByText("Done.")).toBeTruthy();
+  expect(assistant.get()).toMatchObject({ conversationId: 8, targets: [1, 2] });
+  expect(actions).toEqual([{ kind: "open_view", id: "hosts" }]);
+  expect(
+    (screen.getByRole("checkbox", { name: "web-1" }) as HTMLButtonElement)
+      .dataset.state,
+  ).toBe("checked");
+});
+
+it("keeps a run going when the view closes, and shows it again", async () => {
+  let push: (event: unknown) => void = () => {};
+  let end: () => void = () => {};
+  mocks.fetch.mockResolvedValue(
+    new Response(
+      new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          push = (event) =>
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
+            );
+          end = () => controller.close();
+        },
+      }),
+    ),
+  );
+  const input = await ready();
+  fireEvent.change(input, { target: { value: "slow job" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+  await waitFor(() => expect(assistant.get().streaming).toBe(true));
+
+  cleanup();
+  act(() => push({ type: "token", text: "Finished while away." }));
+  act(() => end());
+  await waitFor(() => expect(assistant.get().streaming).toBe(false));
+
+  render(<OpsPanel {...({} as TabProps)} />);
+  expect(await screen.findByText("Finished while away.")).toBeTruthy();
+  expect(mocks.fetch.mock.calls[0][1].signal.aborted).toBe(false);
 });

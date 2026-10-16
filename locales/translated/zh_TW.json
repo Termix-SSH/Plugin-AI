@@ -251,11 +251,7 @@
     "allHosts": "所有主機",
     "noHosts": "沒有主機",
     "newConversation": "新對話",
-    "emptyTitle": "選擇主機，然後說明要做什麼",
-    "emptyHint": "助理會在所選主機上執行 shell 指令，並依主機回報結果。",
-    "inputPlaceholder": "要在所選主機上做什麼？",
     "sendHint_other": "將在 {{count}} 台主機上執行。指令會直接執行，不會事先詢問。",
-    "noTargets": "請先在左側選擇至少一台主機。",
     "runCommand": "執行指令",
     "hostFacts": "主機資訊",
     "hostCount_other": "{{count}} 台主機",
@@ -268,5 +264,30 @@
     "cached": "已快取",
     "duration": "{{seconds}} 秒",
     "noOutput": "（無輸出）"
+  },
+  "assistant": {
+    "title": "Termix 助理",
+    "toggle": "開啟或關閉 AI 助理",
+    "close": "關閉",
+    "dock": "停靠到右側",
+    "float": "浮動",
+    "openTab": "開啟完整檢視",
+    "history": "對話",
+    "noConversations": "還沒有對話",
+    "untitled": "未命名",
+    "deleteConversation": "刪除對話",
+    "deleteConfirm": "刪除這個對話？",
+    "emptyTitle": "詢問或修改 Termix 中的任何內容",
+    "emptyHint": "助理以你的身分透過 Termix CLI 工作，並在目標主機上執行命令。輸入 @ 可以把主機、機群、資料夾或標籤加為目標。",
+    "inputPlaceholder": "向助理提問。輸入 @ 新增目標。",
+    "noTargets": "沒有目標主機。輸入 @ 新增。",
+    "sendHint": "修改和命令會直接執行，不再詢問。",
+    "removeTarget": "移除 {{name}}",
+    "kind": {
+      "host": "主機",
+      "fleet": "機群",
+      "folder": "資料夾",
+      "tag": "標籤"
+    }
   }
 }

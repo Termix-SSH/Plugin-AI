@@ -1,0 +1,218 @@
+import { existsSync } from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  checkCliArgs,
+  redactCliArgs,
+  requestToken,
+  runCli,
+  type CliTarget,
+} from "../../../src/backend/ops/cli.js";
+import { spawnRun, writeFakeCli } from "./fake-cli";
+
+const cliPath = writeFakeCli();
+
+function target(run: CliTarget["run"] = spawnRun): CliTarget {
+  return { run, cliPath, url: "http://127.0.0.1:30001", token: "jwt-1" };
+}
+
+const limits = (overrides: Partial<Parameters<typeof runCli>[2]> = {}) => ({
+  timeoutMs: 10_000,
+  outputLimit: 20_000,
+  signal: new AbortController().signal,
+  ...overrides,
+});
+
+afterEach(() => {
+  delete process.env.FAKE_SERVER_SECRET;
+});
+
+describe("checkCliArgs", () => {
+  it.each([
+    [["ssh", "4"], "ssh"],
+    [["login"], "login"],
+    [["--json", "logout"], "logout"],
+    [["tunnel", "start", "1", "0"], "tunnel start"],
+    [["files", "get", "1", "/etc/hosts"], "files get"],
+    [["files", "put", "./a", "1:/tmp/a"], "files put"],
+    [["hosts", "import", "hosts.json"], "hosts import"],
+  ])("refuses %j", (args, named) => {
+    expect(checkCliArgs(args)).toContain(`termix ${named} `);
+  });
+
+  it.each([
+    ["--url", "http://elsewhere"],
+    ["--url=http://elsewhere"],
+    ["--api-key", "tmx_x"],
+    ["--insecure"],
+    ["--key-file", "/root/.ssh/id_rsa"],
+    ["--data-file", "/etc/shadow"],
+    ["--content-file=/etc/passwd"],
+    ["--output", "/tmp/out.json"],
+    ["--password-stdin"],
+  ])("refuses the flag in %j", (...flag) => {
+    expect(checkCliArgs(["hosts", "list", ...flag])).toMatch(/^--/);
+  });
+
+  it("lets help through for every command, and ordinary commands", () => {
+    expect(checkCliArgs(["ssh", "--help"])).toBeNull();
+    expect(checkCliArgs(["help", "tunnel"])).toBeNull();
+    expect(checkCliArgs(["tunnel", "start", "-h"])).toBeNull();
+    expect(checkCliArgs(["hosts", "list"])).toBeNull();
+    expect(checkCliArgs(["tunnel", "list"])).toBeNull();
+    expect(checkCliArgs(["files", "cat", "1", "/etc/hosts"])).toBeNull();
+    expect(checkCliArgs(["api", "GET", "/version"])).toBeNull();
+    expect(checkCliArgs([])).toContain("empty");
+  });
+
+  it("still refuses a disk flag next to --help", () => {
+    expect(
+      checkCliArgs(["snippets", "create", "--content-file", "/x", "-h"]),
+    ).toMatch(/^--content-file/);
+  });
+});
+
+describe("redactCliArgs", () => {
+  it("masks secret flag values, request bodies and secret-shaped words", () => {
+    expect(
+      redactCliArgs([
+        "credentials",
+        "create",
+        "--password",
+        "hunter2",
+        "--key-password=pp",
+        "--token",
+        "t",
+        "--secret",
+        "s",
+        "--passphrase",
+        "p",
+        "--name",
+        "web",
+        "-d",
+        '{"password":"x","name":"n"}',
+        "tmx_abcdefghijklmnopqrstuvwxyz",
+      ]),
+    ).toEqual([
+      "credentials",
+      "create",
+      "--password",
+      "[redacted]",
+      "--key-password=[redacted]",
+      "--token",
+      "[redacted]",
+      "--secret",
+      "[redacted]",
+      "--passphrase",
+      "[redacted]",
+      "--name",
+      "web",
+      "-d",
+      '{"password":"[redacted]","name":"n"}',
+      "[redacted token]",
+    ]);
+  });
+});
+
+describe("requestToken", () => {
+  it("reads the jwt cookie first, then a bearer header", () => {
+    expect(
+      requestToken({
+        headers: { authorization: "Bearer b" },
+        cookies: { jwt: "c" },
+      }),
+    ).toBe("c");
+    expect(requestToken({ headers: { authorization: "Bearer b" } })).toBe("b");
+    expect(requestToken({ headers: {} })).toBeNull();
+    expect(requestToken({ headers: { authorization: "Basic x" } })).toBeNull();
+  });
+});
+
+describe("runCli", () => {
+  it("runs the bundle with the server's node and no shell, as the user, in a throwaway home", async () => {
+    process.env.FAKE_SERVER_SECRET = "server-only";
+    const run = vi.fn(spawnRun);
+    const result = await runCli(
+      target(run),
+      ["hosts", "list", "$(touch /tmp/x); echo"],
+      limits(),
+    );
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0][0]).toBe(process.execPath);
+    expect(result.exitCode).toBe(0);
+    const seen = JSON.parse(result.output);
+    expect(seen.argv.slice(1)).toEqual([
+      cliPath,
+      "--json",
+      "--no-color",
+      "hosts",
+      "list",
+      "$(touch /tmp/x); echo",
+    ]);
+    expect(seen.env).toMatchObject({
+      TERMIX_URL: "http://127.0.0.1:30001",
+      TERMIX_TOKEN: "jwt-1",
+      TERMIX_API_KEY: null,
+      NO_COLOR: "1",
+      SECRET: null,
+    });
+    expect(seen.env.HOME).toBe(seen.env.XDG_CONFIG_HOME);
+    expect(seen.cwd).toBe(seen.env.HOME);
+    expect(seen.env.HOME).not.toBe(process.env.HOME);
+    // The home is gone once the call returns.
+    expect(existsSync(seen.env.HOME)).toBe(false);
+  });
+
+  it("returns the exit code and stderr of a failed call", async () => {
+    const result = await runCli(target(), ["fail"], limits());
+    expect(result.exitCode).toBe(3);
+    expect(result.output).toContain("boom");
+  });
+
+  it("kills the CLI when it runs past the timeout", async () => {
+    const kill = vi.fn();
+    const run: CliTarget["run"] = async (...args) => {
+      const handle = await spawnRun(...args);
+      return {
+        ...handle,
+        kill: (signal) => {
+          kill(signal);
+          handle.kill(signal);
+        },
+      };
+    };
+    const result = await runCli(
+      target(run),
+      ["sleep"],
+      limits({ timeoutMs: 300 }),
+    );
+    expect(result).toMatchObject({ exitCode: null, timedOut: true });
+    expect(result.output).toContain("started");
+    expect(kill).toHaveBeenCalledWith("SIGKILL");
+  });
+
+  it("kills the CLI when the run is stopped", async () => {
+    const abort = new AbortController();
+    setTimeout(() => abort.abort(), 200);
+    const result = await runCli(
+      target(),
+      ["sleep"],
+      limits({ signal: abort.signal }),
+    );
+    expect(result).toMatchObject({ exitCode: null, aborted: true });
+  });
+
+  it("reports a CLI that could not start", async () => {
+    const result = await runCli(
+      target(async () => {
+        throw new Error("process:spawn not granted");
+      }),
+      ["hosts"],
+      limits(),
+    );
+    expect(result).toMatchObject({
+      exitCode: null,
+      error: "process:spawn not granted",
+    });
+  });
+});

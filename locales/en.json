@@ -247,12 +247,8 @@
     "allHosts": "All hosts",
     "noHosts": "No hosts",
     "newConversation": "New conversation",
-    "emptyTitle": "Select hosts, then say what to do",
-    "emptyHint": "The assistant runs shell commands on the selected hosts and reports back per host.",
-    "inputPlaceholder": "What should happen on the selected hosts?",
     "sendHint_one": "Runs on {{count}} host. Commands run without asking first.",
     "sendHint_other": "Runs on {{count}} hosts. Commands run without asking first.",
-    "noTargets": "Select at least one host on the left.",
     "runCommand": "Run command",
     "hostFacts": "Host facts",
     "hostCount_one": "{{count}} host",
@@ -266,5 +262,30 @@
     "cached": "cached",
     "duration": "{{seconds}}s",
     "noOutput": "(no output)"
+  },
+  "assistant": {
+    "title": "Termix assistant",
+    "toggle": "Toggle the AI assistant",
+    "close": "Close",
+    "dock": "Dock to the right",
+    "float": "Float",
+    "openTab": "Open full view",
+    "history": "Conversations",
+    "noConversations": "No conversations yet",
+    "untitled": "Untitled",
+    "deleteConversation": "Delete conversation",
+    "deleteConfirm": "Delete this conversation?",
+    "emptyTitle": "Ask about or change anything in Termix",
+    "emptyHint": "The assistant works as you through the Termix CLI and runs commands on your target hosts. Type @ to add hosts, fleets, folders or tags as targets.",
+    "inputPlaceholder": "Ask the assistant. Type @ to add targets.",
+    "noTargets": "No target hosts. Type @ to add some.",
+    "sendHint": "Changes and commands run without asking first.",
+    "removeTarget": "Remove {{name}}",
+    "kind": {
+      "host": "Host",
+      "fleet": "Fleet",
+      "folder": "Folder",
+      "tag": "Tag"
+    }
   }
 }
