@@ -11,7 +11,23 @@ type Drizzle = any;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type ZoneSource = "rule" | "user" | "ai";
-export type RunTrigger = "schedule" | "manual" | "host_event";
+export type RunTrigger = "schedule" | "manual" | "host_event" | "collection";
+export type RunKind = "collect" | "annotate";
+export type EdgeSource = "collector" | "ai" | "user";
+
+/** The fields an annotation writes, each with a *Source next to it. */
+export const ANNOTATION_FIELDS = ["role", "importance", "system"] as const;
+export type AnnotationField = (typeof ANNOTATION_FIELDS)[number];
+export type Importance = "critical" | "high" | "medium" | "low";
+export const IMPORTANCES: Importance[] = ["critical", "high", "medium", "low"];
+
+/** What one annotation sets; importanceReason goes with importance. */
+export interface AnnotationWrite {
+  role?: string | null;
+  importance?: Importance | null;
+  importanceReason?: string | null;
+  system?: string | null;
+}
 
 export interface AssetRecord {
   id: number;
@@ -34,6 +50,7 @@ export interface AssetRecord {
   system: string | null;
   systemSource: string | null;
   annotatedAt: string | null;
+  annotationFingerprint: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,13 +62,14 @@ export interface EdgeRecord {
   type: EdgeType;
   detail: Record<string, unknown> | null;
   evidence: string | null;
-  source: "collector" | "ai" | "user";
+  source: EdgeSource;
   firstSeen: string;
   lastSeen: string;
 }
 
 export interface RunRecord {
   id: number;
+  kind: RunKind;
   trigger: RunTrigger;
   startedAt: string;
   finishedAt: string | null;
@@ -60,6 +78,7 @@ export interface RunRecord {
   hostsOk: number;
   hostsFailed: number;
   errorSummary: Record<string, string> | null;
+  tokens: number;
 }
 
 export interface ZoneRecord extends ZoneRule {
@@ -290,15 +309,95 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
       await db.persist();
     },
 
+    // --- annotations ---
+
+    /**
+     * Writes what an annotation found. A field whose source is "user" is
+     * left alone; the fingerprint records what this annotation saw.
+     */
+    async annotate(
+      id: number,
+      write: AnnotationWrite,
+      fingerprint: string,
+    ): Promise<void> {
+      const asset = await repo.findAsset(id);
+      if (!asset) return;
+      const at = now();
+      const values: Record<string, unknown> = {
+        annotatedAt: at,
+        annotationFingerprint: fingerprint,
+      };
+      for (const field of ANNOTATION_FIELDS) {
+        if (write[field] === undefined || asset[`${field}Source`] === "user") {
+          continue;
+        }
+        values[field] = write[field];
+        values[`${field}Source`] = "ai";
+        if (field === "importance") {
+          values.importanceReason = write.importanceReason ?? null;
+        }
+      }
+      await (
+        await client()
+      )
+        .update(assetTable)
+        .set(values)
+        .where(eq(assetTable.id, id));
+    },
+
+    /** A user's values, locked against later annotations. */
+    async setUserAnnotation(id: number, write: AnnotationWrite): Promise<void> {
+      const values: Record<string, unknown> = { updatedAt: now() };
+      for (const field of ANNOTATION_FIELDS) {
+        if (write[field] === undefined) continue;
+        values[field] = write[field];
+        values[`${field}Source`] = "user";
+        if (field === "importance") {
+          values.importanceReason = write.importanceReason ?? null;
+        }
+      }
+      await (
+        await client()
+      )
+        .update(assetTable)
+        .set(values)
+        .where(eq(assetTable.id, id));
+      await db.persist();
+    },
+
+    /**
+     * Hands a field back to the annotation. The value stays until then;
+     * clearing the fingerprint makes the next incremental run pick it up.
+     */
+    async unlockAnnotation(id: number, field: AnnotationField): Promise<void> {
+      await (
+        await client()
+      )
+        .update(assetTable)
+        .set({
+          [`${field}Source`]: null,
+          annotationFingerprint: null,
+          updatedAt: now(),
+        })
+        .where(eq(assetTable.id, id));
+      await db.persist();
+    },
+
     // --- edges ---
 
+    /**
+     * Inserts or refreshes an edge. A user's edge is never changed by the
+     * collector or an annotation.
+     */
     async upsertEdge(edge: {
       fromAsset: number;
       toAsset: number;
       type: EdgeType;
       detail: Record<string, unknown>;
       evidence: string;
+      source?: EdgeSource;
     }): Promise<void> {
+      const source = edge.source ?? "collector";
       const at = now();
       const match = and(
         eq(edgeTable.fromAsset, edge.fromAsset),
@@ -312,11 +411,12 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
       };
       const drizzle = await client();
       const existing = await drizzle
-        .select({ id: edgeTable.id })
+        .select({ id: edgeTable.id, source: edgeTable.source })
         .from(edgeTable)
         .where(match)
         .limit(1);
       if (existing[0]) {
+        if (existing[0].source === "user" && source !== "user") return;
         await drizzle.update(edgeTable).set(values).where(match);
         return;
       }
@@ -325,9 +425,44 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
         fromAsset: edge.fromAsset,
         toAsset: edge.toAsset,
         type: edge.type,
-        source: "collector",
+        source,
         firstSeen: at,
       });
+    },
+
+    /**
+     * Drops the AI's depends_on edges from these assets that its latest
+     * annotation did not suggest again; `keep` holds "from|to" pairs.
+     */
+    async pruneAiDependsOn(
+      fromIds: number[],
+      keep: Set<string>,
+    ): Promise<void> {
+      if (!fromIds.length) return;
+      const drizzle = await client();
+      const rows = await drizzle
+        .select({
+          id: edgeTable.id,
+          fromAsset: edgeTable.fromAsset,
+          toAsset: edgeTable.toAsset,
+        })
+        .from(edgeTable)
+        .where(
+          and(
+            inArray(edgeTable.fromAsset, fromIds),
+            eq(edgeTable.type, "depends_on"),
+            eq(edgeTable.source, "ai"),
+          ),
+        );
+      const stale = rows
+        .filter(
+          (row: { fromAsset: number; toAsset: number }) =>
+            !keep.has(`${row.fromAsset}|${row.toAsset}`),
+        )
+        .map((row: { id: number }) => row.id);
+      if (stale.length) {
+        await drizzle.delete(edgeTable).where(inArray(edgeTable.id, stale));
+      }
     },
 
     /** Edges touching an asset, or all of them. */
@@ -355,8 +490,13 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
 
     // --- runs ---
 
-    async startRun(trigger: RunTrigger, hostsTotal: number): Promise<number> {
+    async startRun(
+      trigger: RunTrigger,
+      hostsTotal: number,
+      kind: RunKind = "collect",
+    ): Promise<number> {
       const id = await insertId(runTable, {
+        kind,
         trigger,
         startedAt: now(),
         status: "running",
@@ -373,6 +513,7 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
         hostsOk: number;
         hostsFailed: number;
         errors: Record<string, string>;
+        tokens?: number;
       },
     ): Promise<void> {
       await (
@@ -387,17 +528,22 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
             ? JSON.stringify(result.errors)
             : null,
           finishedAt: now(),
+          ...(result.tokens !== undefined ? { tokens: result.tokens } : {}),
         })
         .where(eq(runTable.id, id));
       await db.persist();
     },
 
-    async listRuns(limit = 20): Promise<RunRecord[]> {
+    async listRuns(
+      limit = 20,
+      kind: RunKind = "collect",
+    ): Promise<RunRecord[]> {
       const rows = await (
         await client()
       )
         .select()
         .from(runTable)
+        .where(eq(runTable.kind, kind))
         .orderBy(desc(runTable.id))
         .limit(limit);
       return rows.map(toRun);
@@ -410,7 +556,11 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
         .select({ id: runTable.id })
         .from(runTable)
         .where(
-          and(eq(runTable.trigger, trigger), gte(runTable.startedAt, since)),
+          and(
+            eq(runTable.kind, "collect"),
+            eq(runTable.trigger, trigger),
+            gte(runTable.startedAt, since),
+          ),
         )
         .limit(1);
       return rows.length > 0;

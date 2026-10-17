@@ -97,6 +97,20 @@
       },
       "assetsCollector": {
         "label": "Asset collector"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "Annotate assets after each collection",
+        "description": "A model writes each changed asset's role, importance and business system, and the dependencies the facts show."
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "Token budget per asset annotation run",
+        "description": "A run stops once its model calls have used this many tokens; what it wrote stays."
+      },
+      "assetsAnnotateProvider": {
+        "label": "Asset annotation provider"
+      },
+      "assetsAnnotateModel": {
+        "label": "Asset annotation model"
       }
     },
     "host": {
@@ -384,7 +398,8 @@
     "source": {
       "assistant": "Assistant",
       "terminal": "Terminal panel",
-      "compaction": "Compaction"
+      "compaction": "Compaction",
+      "assets": "Asset annotation"
     }
   },
   "autoOps": {
@@ -607,7 +622,8 @@
       "noticeFailed": "AI task failed: {{title}}",
       "confirmationExpired": "Unconfirmed: command confirmation expired after 24 hours; the task ended.",
       "confirmationFailed": "Command confirmation failed; this command was not executed.",
-      "actionsRecorded": "See the command history for actions already executed. Stopping a run does not roll back prior changes."
+      "actionsRecorded": "See the command history for actions already executed. Stopping a run does not roll back prior changes.",
+      "noticeAssetsAnnotationFailed": "Asset annotation failed"
     },
     "noTasksHint": "Enable a preset, or add an AI task step to an automation. Its runs show up here.",
     "disable": "Disable",
@@ -643,7 +659,10 @@
       "listening": "Ports",
       "outbound": "Outbound",
       "services": "Services",
-      "collected": "Last collected"
+      "collected": "Last collected",
+      "role": "Role",
+      "importance": "Importance",
+      "system": "System"
     },
     "kind": {
       "host": "Host",
@@ -701,6 +720,54 @@
     "priority": "Priority",
     "addZone": "Add rule",
     "deleteZone": "Delete rule",
-    "cancelEdit": "Cancel"
+    "cancelEdit": "Cancel",
+    "annotating": "Annotating…",
+    "neverAnnotated": "Not annotated yet",
+    "lastAnnotation": "Last annotated {{time}}: {{ok}} of {{total}} assets, {{tokens}} tokens",
+    "annotationFailed": "failed: {{reason}}",
+    "annotateNow": "Annotate now",
+    "annotateFailed": "Could not start the annotation",
+    "modeTable": "Table",
+    "modeGraph": "Graph",
+    "importance": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "importanceUnknown": "Not rated",
+    "importanceReason": "Why",
+    "sourceAi": "AI",
+    "sourceAiHint": "Written by the annotation; the next run may change it.",
+    "sourceUser": "Locked",
+    "sourceUserHint": "Set by a person; annotation runs leave it alone until it is unlocked.",
+    "unlock": "Unlock: let the annotation fill this in again",
+    "unlockField": "Unlock {{field}}",
+    "editAnnotation": "Edit",
+    "lockHint": "Fields you change are locked against later annotation runs.",
+    "factsTitle": "Facts",
+    "closePanel": "Close",
+    "impact": "Impact",
+    "clearImpact": "Clear",
+    "impactSummary_one": "If it fails, {{count}} asset goes down with it ({{critical}} critical, {{high}} high), {{weak}} more only connect to them.",
+    "impactSummary_other": "If it fails, {{count}} assets go down with it ({{critical}} critical, {{high}} high), {{weak}} more only connect to them.",
+    "impactTruncated": "Cut off at 6 hops or 300 assets.",
+    "impactDirect": "Directly",
+    "impactTransitive": "Through others",
+    "impactWeak": "Only connect to them",
+    "expandContainers": "Show containers",
+    "showExternal": "Show external addresses",
+    "graphCounts": "{{nodes}} assets, {{edges}} relations",
+    "graphTitle": "Asset graph",
+    "noZone": "No zone",
+    "annotationTitle": "AI annotation",
+    "annotateAfterCollect": "Annotate after each collection",
+    "annotateAfterCollectHint": "Only assets that changed since their last annotation, and their neighbours, are sent to the model.",
+    "annotateProvider": "Provider",
+    "annotateProviderDefault": "The collector's auto-ops choice",
+    "annotateModel": "Model",
+    "annotateModelDefault": "The provider's default model",
+    "annotationHint": "Annotation runs as the collector, with the collector's providers. Summaries hold no environment, command lines or external addresses.",
+    "annotateAll": "Annotate everything again"
   }
 }

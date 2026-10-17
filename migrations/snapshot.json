@@ -861,6 +861,10 @@
         "annotatedAt": {
           "type": "timestamp"
         },
+        "annotationFingerprint": {
+          "type": "varchar",
+          "length": 64
+        },
         "createdAt": {
           "type": "timestamp",
           "notNull": true,
@@ -952,6 +956,12 @@
           "primaryKey": true,
           "notNull": true
         },
+        "kind": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true,
+          "defaultValue": "collect"
+        },
         "trigger": {
           "type": "varchar",
           "length": 16,
@@ -986,6 +996,11 @@
         },
         "errorSummary": {
           "type": "text"
+        },
+        "tokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
         }
       },
       "indexes": [

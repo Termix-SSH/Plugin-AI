@@ -5,6 +5,7 @@ import { createModelInfoCache } from "./model-info.js";
 import { createAiRepository } from "./repository.js";
 import { registerProviderSync } from "./sync.js";
 import { registerAgentRoutes } from "./agents/routes.js";
+import { createAnnotationService } from "./assets/annotate.js";
 import { createAssetRepository } from "./assets/repository.js";
 import { registerAssetRoutes } from "./assets/routes.js";
 import {
@@ -75,8 +76,18 @@ export async function activate(ctx: PluginContext) {
   // Asset inventory: collected daily, on host events and on request.
   const assetRepository = await createAssetRepository(ctx);
   await assetRepository.failInterrupted();
-  const assets = createAssetService(ctx, assetRepository);
-  registerAssetRoutes(router, ctx, assetRepository, assets);
+  // Annotated by a model after each collection, unless turned off.
+  const annotation = createAnnotationService({
+    ctx,
+    assets: assetRepository,
+    repository,
+    modelInfo,
+    collector: () => assets.collector(),
+  });
+  const assets = createAssetService(ctx, assetRepository, {
+    afterCollect: () => annotation.afterCollect(),
+  });
+  registerAssetRoutes(router, ctx, assetRepository, assets, annotation);
   subscribeHostEvents(ctx, assets);
   ctx.schedule.every(60_000, () =>
     assets
@@ -84,6 +95,13 @@ export async function activate(ctx: PluginContext) {
       .catch((error) => ctx.log.warn(`Asset schedule failed: ${error}`)),
   );
   ctx.disposables.add(() => assets.close());
+  ctx.disposables.add(() => annotation.close());
+  ctx.settings.onChange("autoOpsPaused", (value) => {
+    if (value === true) annotation.stop("AI auto-ops was paused");
+  });
+  ctx.settings.onChange("globallyEnabled", (value) => {
+    if (value !== true) annotation.stop("The AI assistant was turned off");
+  });
   ctx.settings.onValidate("admin", (values) => {
     const time = values[ASSET_SETTINGS.time];
     if (time !== undefined && time !== "" && !parseTime(time)) {

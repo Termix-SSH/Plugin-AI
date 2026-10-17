@@ -56,6 +56,9 @@ describe("asset routes", () => {
       ["DELETE", "/assets/zones/1", undefined],
       ["PUT", "/assets/1/zone", { zone: "dmz" }],
       ["PUT", "/assets/settings", { dailyEnabled: false }],
+      ["POST", "/assets/annotate", { all: true }],
+      ["PUT", "/assets/1/annotation", { role: "x" }],
+      ["DELETE", "/assets/1/annotation/role", undefined],
     ] as const) {
       expect((await s.request(method, path, { body })).status).toBe(403);
     }
@@ -223,6 +226,10 @@ describe("asset routes", () => {
       dailyTime: "03:00",
       collectorSet: false,
       collectorIsMe: false,
+      annotateAfterCollect: true,
+      annotateProviderId: null,
+      annotateModel: null,
+      annotateProviders: [],
     });
     for (const body of [
       { dailyTime: "25:00" },
@@ -236,7 +243,7 @@ describe("asset routes", () => {
     const saved = await s.request("PUT", "/assets/settings", {
       body: { dailyEnabled: false, dailyTime: "04:15", collector: "me" },
     });
-    expect(saved.body.settings).toEqual({
+    expect(saved.body.settings).toMatchObject({
       dailyEnabled: false,
       dailyTime: "04:15",
       collectorSet: true,
@@ -257,5 +264,131 @@ describe("asset routes", () => {
       user: "user-2",
     });
     expect(second.body.collectorIsMe).toBe(false);
+  });
+
+  it("let a manager set, lock and unlock annotations", async () => {
+    const s = await start();
+    await collect(s);
+    const web = (await s.request("GET", "/assets?q=web-1")).body.assets[0];
+    const path = `/assets/${web.id}/annotation`;
+
+    for (const body of [
+      {},
+      { importance: "huge" },
+      { role: 42 },
+      { system: "x".repeat(121) },
+    ]) {
+      expect((await s.request("PUT", path, { body })).status).toBe(400);
+    }
+    expect(
+      (
+        await s.request("PUT", "/assets/9999/annotation", {
+          body: { role: "x" },
+        })
+      ).status,
+    ).toBe(404);
+
+    const saved = await s.request("PUT", path, {
+      body: {
+        role: " Shop front end ",
+        importance: "high",
+        importanceReason: "Customers reach the shop through it.",
+        system: "shop",
+      },
+    });
+    expect(saved.body.asset).toMatchObject({
+      role: "Shop front end",
+      roleSource: "user",
+      importance: "high",
+      importanceSource: "user",
+      importanceReason: "Customers reach the shop through it.",
+      system: "shop",
+      systemSource: "user",
+    });
+    const listed = (await s.request("GET", "/assets?q=web-1")).body.assets[0];
+    expect(listed).toMatchObject({
+      role: "Shop front end",
+      roleSource: "user",
+    });
+
+    expect((await s.request("DELETE", `${path}/owner`)).status).toBe(400);
+    const unlocked = await s.request("DELETE", `${path}/importance`);
+    expect(unlocked.body.asset).toMatchObject({
+      importance: "high",
+      importanceSource: null,
+      roleSource: "user",
+    });
+  });
+
+  it("start an annotation and list annotation runs apart from collections", async () => {
+    const s = await start();
+    await collect(s);
+    const started = await s.request("POST", "/assets/annotate", {
+      body: { all: true },
+    });
+    expect(started.status).toBe(202);
+    expect(["started", "queued"]).toContain(started.body.status);
+    for (let i = 0; i < 100; i++) {
+      const runs = await s.request("GET", "/assets/annotation-runs");
+      if (!runs.body.running && runs.body.runs.length >= 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    const runs = await s.request("GET", "/assets/annotation-runs");
+    // No provider here: the runs fail and say why.
+    expect(runs.body.runs[0]).toMatchObject({
+      kind: "annotate",
+      status: "failed",
+    });
+    expect(
+      (await s.request("GET", "/assets/runs")).body.runs.every(
+        (run: { kind: string }) => run.kind === "collect",
+      ),
+    ).toBe(true);
+  });
+
+  it("serve the graph and impact to viewers", async () => {
+    const s = await start(VIEW);
+    expect((await s.request("GET", "/assets/graph")).body).toEqual({
+      nodes: [],
+      edges: [],
+    });
+    await s.close();
+
+    const m = await start();
+    await collect(m);
+    const graph = await m.request("GET", "/assets/graph");
+    expect(graph.status).toBe(200);
+    const keys = graph.body.nodes.map((node: { key: string }) => node.key);
+    expect(keys).toContain("host:1");
+    expect(keys.some((key: string) => key.startsWith("container:"))).toBe(
+      false,
+    );
+    expect(keys.some((key: string) => key.startsWith("external:"))).toBe(false);
+    const web = graph.body.nodes.find(
+      (n: { key: string }) => n.key === "host:1",
+    );
+    expect(web.containers).toBeGreaterThan(0);
+
+    const expanded = await m.request(
+      "GET",
+      "/assets/graph?containers=1&external=1&types=runs_on",
+    );
+    const expandedKeys = expanded.body.nodes.map((n: { key: string }) => n.key);
+    expect(expandedKeys).toContain("container:1/app-db");
+    expect(expandedKeys).toContain("external:93.184.216.34");
+    expect(
+      expanded.body.edges.every((e: { type: string }) => e.type === "runs_on"),
+    ).toBe(true);
+
+    const impact = await m.request("GET", `/assets/${web.id}/impact`);
+    expect(impact.status).toBe(200);
+    expect(impact.body.asset).toMatchObject({ key: "host:1" });
+    expect(
+      impact.body.direct.map(
+        (item: { asset: { key: string } }) => item.asset.key,
+      ),
+    ).toContain("container:1/app-db");
+    expect(impact.body.counts.strong.unknown).toBeGreaterThan(0);
+    expect((await m.request("GET", "/assets/9999/impact")).status).toBe(404);
   });
 });

@@ -101,6 +101,20 @@
       },
       "assetsCollector": {
         "label": "資產採集帳號"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "每次採集後標註資產",
+        "description": "由模型為每個有變動的資產寫出作用、重要程度和所屬業務系統，以及事實能證明的相依關係。"
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "每次資產標註的 token 預算",
+        "description": "模型呼叫用滿這麼多 token 後執行停止，已寫入的保留。"
+      },
+      "assetsAnnotateProvider": {
+        "label": "資產標註提供者"
+      },
+      "assetsAnnotateModel": {
+        "label": "資產標註模型"
       }
     },
     "host": {
@@ -386,7 +400,8 @@
     "source": {
       "assistant": "助理",
       "terminal": "終端機面板",
-      "compaction": "上下文壓縮"
+      "compaction": "上下文壓縮",
+      "assets": "資產標註"
     }
   },
   "autoOps": {
@@ -609,7 +624,8 @@
       "noticeFailed": "AI 任務失敗：{{title}}",
       "confirmationExpired": "未确认：命令等待超过 24 小时，任务已结束。",
       "confirmationFailed": "命令确认失败，此命令未执行。",
-      "actionsRecorded": "已执行的操作以命令记录为准。终止任务不会回滚此前的改动。"
+      "actionsRecorded": "已执行的操作以命令记录为准。终止任务不会回滚此前的改动。",
+      "noticeAssetsAnnotationFailed": "資產標註失敗"
     },
     "noTasksHint": "啟用一個預設，或在自動化裡新增 AI 任務步骤，執行記錄會顯示在這裡。",
     "disable": "停用",
@@ -644,7 +660,10 @@
       "listening": "連接埠",
       "outbound": "出站",
       "services": "服務",
-      "collected": "上次採集"
+      "collected": "上次採集",
+      "role": "作用",
+      "importance": "重要程度",
+      "system": "所屬系統"
     },
     "kind": {
       "host": "主機",
@@ -702,6 +721,54 @@
     "priority": "優先順序",
     "addZone": "新增規則",
     "deleteZone": "刪除規則",
-    "cancelEdit": "取消"
+    "cancelEdit": "取消",
+    "annotating": "正在標註…",
+    "neverAnnotated": "尚未標註",
+    "lastAnnotation": "上次標註 {{time}}：{{total}} 個資產中 {{ok}} 個，{{tokens}} tokens",
+    "annotationFailed": "失敗：{{reason}}",
+    "annotateNow": "立即標註",
+    "annotateFailed": "無法開始標註",
+    "modeTable": "表格",
+    "modeGraph": "圖譜",
+    "importance": {
+      "critical": "關鍵",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "importanceUnknown": "未評級",
+    "importanceReason": "理由",
+    "sourceAi": "AI",
+    "sourceAiHint": "由標註產生，下次執行可能會更新。",
+    "sourceUser": "已鎖定",
+    "sourceUserHint": "由人工設定，解鎖前標註執行不會改動。",
+    "unlock": "解鎖：交還給標註重新填寫",
+    "unlockField": "解鎖{{field}}",
+    "editAnnotation": "編輯",
+    "lockHint": "你修改的欄位會被鎖定，之後的標註執行不會覆蓋。",
+    "factsTitle": "事實",
+    "closePanel": "關閉",
+    "impact": "影響分析",
+    "clearImpact": "清除",
+    "impactSummary_one": "它掛了會波及 {{count}} 個資產（關鍵 {{critical}}，高 {{high}}），另有 {{weak}} 個只是連線到它們。",
+    "impactSummary_other": "它掛了會波及 {{count}} 個資產（關鍵 {{critical}}，高 {{high}}），另有 {{weak}} 個只是連線到它們。",
+    "impactTruncated": "已在 6 跳或 300 個資產處截斷。",
+    "impactDirect": "直接",
+    "impactTransitive": "間接",
+    "impactWeak": "僅連線",
+    "expandContainers": "顯示容器",
+    "showExternal": "顯示外部位址",
+    "graphCounts": "{{nodes}} 個資產，{{edges}} 條關係",
+    "graphTitle": "資產圖譜",
+    "noZone": "無區域",
+    "annotationTitle": "AI 標註",
+    "annotateAfterCollect": "每次採集後標註",
+    "annotateAfterCollectHint": "只把上次標註後有變動的資產及其相鄰資產傳給模型。",
+    "annotateProvider": "提供者",
+    "annotateProviderDefault": "採集人的自動維運選擇",
+    "annotateModel": "模型",
+    "annotateModelDefault": "提供者的預設模型",
+    "annotationHint": "標註以採集人的身分、用採集人的提供者執行。摘要不含環境變數、命令列和外部位址。",
+    "annotateAll": "全部重新標註"
   }
 }

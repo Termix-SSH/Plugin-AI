@@ -285,7 +285,7 @@ export const usage = defineTable(
     model: text().notNull(),
     // Null outside a conversation.
     conversationId: integer(),
-    // assistant | terminal | compaction | task
+    // assistant | terminal | compaction | task | assets
     source: varchar(16).notNull(),
     promptTokens: integer().notNull().default(0),
     completionTokens: integer().notNull().default(0),
@@ -425,6 +425,9 @@ export const assets = defineTable(
     system: varchar(120),
     systemSource: varchar(16),
     annotatedAt: timestamp(),
+    // Hash of the summary the last annotation saw; a new one means the asset
+    // changed and is annotated again. Null after an unlock, for the same.
+    annotationFingerprint: varchar(64),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow(),
   },
@@ -443,7 +446,7 @@ export const assetEdges = defineTable(
     id: id(),
     fromAsset: integer().notNull(),
     toAsset: integer().notNull(),
-    // runs_on | connects_to | member_of | ...
+    // runs_on | connects_to | member_of | depends_on
     type: varchar(32).notNull(),
     // JSON: ports, processes, count
     detail: text(),
@@ -465,12 +468,17 @@ export const assetEdges = defineTable(
   },
 );
 
-/** One collection run and how each host went. */
+/**
+ * One collection or annotation run and how it went. An annotation run counts
+ * assets in the hosts columns, and the tokens its model calls took.
+ */
 export const assetRuns = defineTable(
   "asset_runs",
   {
     id: id(),
-    // schedule | manual | host_event
+    // collect | annotate
+    kind: varchar(16).notNull().default("collect"),
+    // schedule | manual | host_event | collection
     trigger: varchar(16).notNull(),
     startedAt: timestamp().notNull(),
     finishedAt: timestamp(),
@@ -481,6 +489,7 @@ export const assetRuns = defineTable(
     hostsFailed: integer().notNull().default(0),
     // JSON { "<hostId>": "<error>" }
     errorSummary: text(),
+    tokens: integer().notNull().default(0),
   },
   { indexes: [{ name: "idx_ai_asset_runs_started", columns: ["startedAt"] }] },
 );

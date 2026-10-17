@@ -20,7 +20,7 @@ import {
  */
 
 export type AssetKind = "host" | "guest" | "container" | "external";
-export type EdgeType = "runs_on" | "connects_to" | "member_of";
+export type EdgeType = "runs_on" | "connects_to" | "member_of" | "depends_on";
 
 export const hostKey = (hostId: number) => `host:${hostId}`;
 export const guestKey = (guest: Pick<GuestFacts, "node" | "vmid">) =>

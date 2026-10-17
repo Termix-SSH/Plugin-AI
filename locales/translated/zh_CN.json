@@ -101,6 +101,20 @@
       },
       "assetsCollector": {
         "label": "资产采集账号"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "每次采集后标注资产",
+        "description": "由模型为每个有变动的资产写出作用、重要程度和所属业务系统，以及事实能证明的依赖关系。"
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "每次资产标注的 token 预算",
+        "description": "模型调用用满这么多 token 后运行停止，已写入的保留。"
+      },
+      "assetsAnnotateProvider": {
+        "label": "资产标注提供商"
+      },
+      "assetsAnnotateModel": {
+        "label": "资产标注模型"
       }
     },
     "host": {
@@ -386,7 +400,8 @@
     "source": {
       "assistant": "助手",
       "terminal": "终端面板",
-      "compaction": "上下文压缩"
+      "compaction": "上下文压缩",
+      "assets": "资产标注"
     }
   },
   "autoOps": {
@@ -609,7 +624,8 @@
       "noticeFailed": "AI 任务失败：{{title}}",
       "confirmationExpired": "未确认：命令等待超过 24 小时，任务已结束。",
       "confirmationFailed": "命令确认失败，此命令未执行。",
-      "actionsRecorded": "已执行的操作以命令记录为准。终止任务不会回滚此前的改动。"
+      "actionsRecorded": "已执行的操作以命令记录为准。终止任务不会回滚此前的改动。",
+      "noticeAssetsAnnotationFailed": "资产标注失败"
     },
     "noTasksHint": "启用一个预设，或在自动化里添加 AI 任务步骤，运行记录会显示在这里。",
     "disable": "停用",
@@ -644,7 +660,10 @@
       "listening": "端口",
       "outbound": "出站",
       "services": "服务",
-      "collected": "上次采集"
+      "collected": "上次采集",
+      "role": "作用",
+      "importance": "重要程度",
+      "system": "所属系统"
     },
     "kind": {
       "host": "主机",
@@ -702,6 +721,54 @@
     "priority": "优先级",
     "addZone": "添加规则",
     "deleteZone": "删除规则",
-    "cancelEdit": "取消"
+    "cancelEdit": "取消",
+    "annotating": "正在标注…",
+    "neverAnnotated": "尚未标注",
+    "lastAnnotation": "上次标注 {{time}}：{{total}} 个资产中 {{ok}} 个，{{tokens}} tokens",
+    "annotationFailed": "失败：{{reason}}",
+    "annotateNow": "立即标注",
+    "annotateFailed": "无法开始标注",
+    "modeTable": "表格",
+    "modeGraph": "图谱",
+    "importance": {
+      "critical": "关键",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "importanceUnknown": "未评级",
+    "importanceReason": "理由",
+    "sourceAi": "AI",
+    "sourceAiHint": "由标注生成，下次运行可能会更新。",
+    "sourceUser": "已锁定",
+    "sourceUserHint": "由人工设置，解锁前标注运行不会改动。",
+    "unlock": "解锁：交还给标注重新填写",
+    "unlockField": "解锁{{field}}",
+    "editAnnotation": "编辑",
+    "lockHint": "你修改的字段会被锁定，之后的标注运行不会覆盖。",
+    "factsTitle": "事实",
+    "closePanel": "关闭",
+    "impact": "影响分析",
+    "clearImpact": "清除",
+    "impactSummary_one": "它挂了会波及 {{count}} 个资产（关键 {{critical}}，高 {{high}}），另有 {{weak}} 个只是连接到它们。",
+    "impactSummary_other": "它挂了会波及 {{count}} 个资产（关键 {{critical}}，高 {{high}}），另有 {{weak}} 个只是连接到它们。",
+    "impactTruncated": "已在 6 跳或 300 个资产处截断。",
+    "impactDirect": "直接",
+    "impactTransitive": "间接",
+    "impactWeak": "仅连接",
+    "expandContainers": "显示容器",
+    "showExternal": "显示外部地址",
+    "graphCounts": "{{nodes}} 个资产，{{edges}} 条关系",
+    "graphTitle": "资产图谱",
+    "noZone": "无区域",
+    "annotationTitle": "AI 标注",
+    "annotateAfterCollect": "每次采集后标注",
+    "annotateAfterCollectHint": "只把上次标注后有变动的资产及其相邻资产发给模型。",
+    "annotateProvider": "提供商",
+    "annotateProviderDefault": "采集人的自动运维选择",
+    "annotateModel": "模型",
+    "annotateModelDefault": "提供商的默认模型",
+    "annotationHint": "标注以采集人的身份、用采集人的提供商运行。摘要不含环境变量、命令行和外部地址。",
+    "annotateAll": "全部重新标注"
   }
 }

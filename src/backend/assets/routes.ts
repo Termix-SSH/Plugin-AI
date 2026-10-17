@@ -1,6 +1,8 @@
 import type { Request, Response, Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { createAiGate } from "../gating.js";
+import { ANNOTATE_SETTINGS, type AnnotationService } from "./annotate.js";
+import { registerAnnotationRoutes } from "./annotate-routes.js";
 import { parseCidr } from "./net.js";
 import type { AssetRecord, AssetRepository, EdgeRecord } from "./repository.js";
 import {
@@ -13,7 +15,7 @@ import { ZONE_KINDS, type ZoneKind } from "./zones.js";
 
 /**
  * The asset inventory, under /plugin-api/ai/assets behind ai.assets.view and
- * the AI gate. Zones, pinning, collecting and the schedule need
+ * the AI gate. Zones, pinning, collecting, annotating and the settings need
  * ai.assets.manage.
  */
 
@@ -91,6 +93,7 @@ export function registerAssetRoutes(
   ctx: PluginContext,
   repo: AssetRepository,
   service: AssetService,
+  annotation: AnnotationService,
 ): void {
   const gate = createAiGate(ctx.settings, () => ctx.currentActor());
   router.use(
@@ -100,6 +103,8 @@ export function registerAssetRoutes(
   );
   const manage = ctx.rbac.require("assets.manage") as never;
   const actor = () => ctx.currentActor() as string;
+  // Before /assets/:id, which would take "graph" for an id.
+  registerAnnotationRoutes(router, repo, service, annotation, manage, actor);
 
   /**
    * @openapi
@@ -350,6 +355,14 @@ export function registerAssetRoutes(
       dailyTime: parseTime(time) ? String(time) : DEFAULT_TIME,
       collectorSet: !!collector,
       collectorIsMe: collector === actor(),
+      annotateAfterCollect:
+        (await ctx.settings.get<boolean>(ANNOTATE_SETTINGS.afterCollect)) !==
+        false,
+      annotateProviderId:
+        parseId(await ctx.settings.get(ANNOTATE_SETTINGS.provider)) ?? null,
+      annotateModel:
+        (await ctx.settings.get<string>(ANNOTATE_SETTINGS.model)) || null,
+      annotateProviders: await annotation.providers(),
     };
   };
 
@@ -364,11 +377,13 @@ export function registerAssetRoutes(
    *       200:
    *         description: The settings.
    *   put:
-   *     summary: Change the daily collection, or collect as yourself
+   *     summary: Change the daily collection, the annotation, or collect as yourself
    *     description: >
    *       dailyTime is HH:MM in UTC. collector "me" makes the caller the
    *       collector, so collection reaches the hosts they can connect to;
-   *       nobody can name another user.
+   *       nobody can name another user. annotateProviderId is one of the
+   *       collector's providers, null for the one their auto-ops tasks use;
+   *       annotateModel null for that provider's default model.
    *     tags:
    *       - AI
    *     requestBody:
@@ -385,6 +400,14 @@ export function registerAssetRoutes(
    *               collector:
    *                 type: string
    *                 enum: [me]
+   *               annotateAfterCollect:
+   *                 type: boolean
+   *               annotateProviderId:
+   *                 type: integer
+   *                 nullable: true
+   *               annotateModel:
+   *                 type: string
+   *                 nullable: true
    *     responses:
    *       200:
    *         description: The settings.
@@ -416,6 +439,33 @@ export function registerAssetRoutes(
       if (body.collector !== undefined && body.collector !== "me") {
         return res.status(400).json({ error: 'collector can only be "me"' });
       }
+      if (
+        body.annotateAfterCollect !== undefined &&
+        typeof body.annotateAfterCollect !== "boolean"
+      ) {
+        return res
+          .status(400)
+          .json({ error: "annotateAfterCollect must be a boolean" });
+      }
+      if (
+        body.annotateProviderId !== undefined &&
+        body.annotateProviderId !== null &&
+        !(await annotation.providers()).some(
+          (provider) => provider.id === body.annotateProviderId,
+        )
+      ) {
+        return res.status(400).json({
+          error: "annotateProviderId must be one of the collector's providers",
+        });
+      }
+      if (
+        body.annotateModel !== undefined &&
+        body.annotateModel !== null &&
+        (typeof body.annotateModel !== "string" ||
+          body.annotateModel.length > 200)
+      ) {
+        return res.status(400).json({ error: "annotateModel must be text" });
+      }
       if (body.dailyEnabled !== undefined) {
         await ctx.settings.set(SETTINGS.daily, body.dailyEnabled);
       }
@@ -424,6 +474,24 @@ export function registerAssetRoutes(
       }
       if (body.collector === "me") {
         await ctx.settings.set(SETTINGS.collector, actor());
+      }
+      if (body.annotateAfterCollect !== undefined) {
+        await ctx.settings.set(
+          ANNOTATE_SETTINGS.afterCollect,
+          body.annotateAfterCollect,
+        );
+      }
+      if (body.annotateProviderId !== undefined) {
+        await ctx.settings.set(
+          ANNOTATE_SETTINGS.provider,
+          body.annotateProviderId ?? 0,
+        );
+      }
+      if (body.annotateModel !== undefined) {
+        await ctx.settings.set(
+          ANNOTATE_SETTINGS.model,
+          (body.annotateModel ?? "").trim(),
+        );
       }
       res.json({ settings: await readSettings() });
     },

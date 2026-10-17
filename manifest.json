@@ -22,7 +22,9 @@
     "One AI assistant, floating on every page or full screen in the AI tab, that manages Termix as you through the bundled Termix CLI and opens views for you",
     "With the ai.ops.use permission, it also runs shell commands across the hosts, folders, tags or fleets you select",
     "Auto-ops: automations start the assistant to investigate and report, or propose a plan you approve, with ready-made presets",
-    "Asset inventory: a read-only collector maps hosts, Proxmox guests, containers, listening ports and connections into zones, daily and on host changes"
+    "Asset inventory: a read-only collector maps hosts, Proxmox guests, containers, listening ports and connections into zones, daily and on host changes",
+    "Asset inventory: a read-only collector maps hosts, Proxmox guests, containers, listening ports and connections into zones, daily and on host changes",
+    "Asset graph: a model annotates each asset's role, importance and business system, with your edits locked, and a graph view shows what fails when an asset does"
   ],
   "engine": {
     "termix": ">=26.10.0",
@@ -309,6 +311,38 @@
           "key": "assetsCollector",
           "type": "string",
           "labelKey": "settings.admin.assetsCollector.label",
+          "default": "",
+          "hidden": true
+        },
+        {
+          "key": "assetsAnnotateAfterCollect",
+          "type": "boolean",
+          "labelKey": "settings.admin.assetsAnnotateAfterCollect.label",
+          "descriptionKey": "settings.admin.assetsAnnotateAfterCollect.description",
+          "requires": "globallyEnabled",
+          "default": true
+        },
+        {
+          "key": "assetsAnnotateRunTokens",
+          "type": "number",
+          "labelKey": "settings.admin.assetsAnnotateRunTokens.label",
+          "descriptionKey": "settings.admin.assetsAnnotateRunTokens.description",
+          "requires": "globallyEnabled",
+          "default": 200000,
+          "min": 10000,
+          "max": 5000000
+        },
+        {
+          "key": "assetsAnnotateProvider",
+          "type": "number",
+          "labelKey": "settings.admin.assetsAnnotateProvider.label",
+          "default": 0,
+          "hidden": true
+        },
+        {
+          "key": "assetsAnnotateModel",
+          "type": "string",
+          "labelKey": "settings.admin.assetsAnnotateModel.label",
           "default": "",
           "hidden": true
         }

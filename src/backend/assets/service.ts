@@ -50,7 +50,11 @@ export function dailySlot(time: unknown, at: number): Date {
 
 export type AssetService = ReturnType<typeof createAssetService>;
 
-export function createAssetService(ctx: PluginContext, repo: AssetRepository) {
+export function createAssetService(
+  ctx: PluginContext,
+  repo: AssetRepository,
+  hooks: { afterCollect?: () => Promise<void> } = {},
+) {
   let pendingFull: RunTrigger | null = null;
   const pendingHosts = new Set<number>();
   const pendingRemovals = new Set<number>();
@@ -147,6 +151,7 @@ export function createAssetService(ctx: PluginContext, repo: AssetRepository) {
           success: true,
         })
         .catch(() => undefined);
+      await hooks.afterCollect?.();
     } catch (error) {
       ctx.log.warn(`Asset collection failed: ${error}`);
       await repo.finishRun(runId, {
