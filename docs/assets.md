@@ -1,6 +1,6 @@
 # Asset inventory
 
-Assets, in the AI tab next to Auto-ops, is an inventory of what runs where. It collects facts from your hosts with one read-only script, works out zones and relations from them, and shows the result as a table. Nothing here uses a model yet: every fact comes from a command, so a collection can be repeated and checked.
+Assets, in the AI tab next to Auto-ops, is an inventory of what runs where. It collects facts from your hosts with one read-only script, works out zones and relations from them, and shows the result as a table and as a graph. Every fact comes from a command, so a collection can be repeated and checked. A model only reads those facts afterwards, to say what each asset is for, how much depends on it and which business system it belongs to.
 
 ## What it collects
 
@@ -72,15 +72,77 @@ One collection runs at a time. What arrives during one waits: a host change beco
 
 Collection runs as one user, the collector, so it reaches exactly the hosts that user can connect to. The first manager to press Collect now becomes the collector; another manager can take over with Collect as me. Nobody can name another user. Automatic runs stop while the collector does not hold `ai.assets.manage`, and the run list says so.
 
+## AI annotations
+
+After each collection, a model annotates the assets that changed. For each host, Proxmox guest and container it writes:
+
+| Field      | What it is                                                                                           |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| Role       | What it does, in a short phrase: "k3s control plane + etcd", "DNS (AdGuard)".                        |
+| Importance | Critical, high, medium or low, by blast radius, with one sentence on who or what depends on it.      |
+| System     | The business system or product it belongs to, or nothing when it serves the infrastructure at large. |
+
+Role and the reason are written in the collector's Termix language, falling back like auto-ops reports do: the language the AI tab saved, then English.
+
+### What the model sees
+
+One compact summary per asset, built the same way every time: Termix name, folder and tags; OS; listening ports with the process (marked when only on loopback); running systemd services without the units every machine has; containers with image, state and published ports; the Kubernetes agent; the Proxmox node and its guests, or the node a host runs on; zone; and its `connects_to` neighbours with ports and processes. A container or guest is listed after the host it runs on and annotated in that host's call, never on its own. External addresses are never sent, only how many a host talks to and on which ports, and there is no environment, command line, uptime or connection count in a summary.
+
+Several hosts go in one call, as many as fit in 40% of what the model's context window leaves for a prompt (at most 24,000 tokens) and as many assets as the reply can hold (at most 40). The window is the one the assistant uses for that model.
+
+### Only what changed
+
+Each asset keeps a fingerprint, a hash of the summary its last annotation saw. A run sends the assets whose summary hash differs, the ones never annotated, and their neighbours one edge away, each with the rest of its host's unit. A collection where nothing changed sends nothing. Annotate everything again, under Zones and schedule, sends every asset.
+
+### Relations the model suggests
+
+The model may suggest `depends_on` between assets it knows, from an asset of the call. Each suggestion has to cite something the collector saw, and it is checked before anything is written:
+
+| Evidence       | Holds when                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `connects_to`  | The dependent asset, or the host it runs on, has a `connects_to` to the other one or its host, on the port given. |
+| `port_mapping` | The other asset is a container publishing that port, and the dependent one connects to it on its host.            |
+| `runs_on`      | The dependent asset runs on the other one.                                                                        |
+
+A suggestion with an unknown key, an external address, no evidence or evidence that does not hold is rejected, and the model is told why. Accepted ones become `depends_on` edges with source AI. An asset annotated again loses the AI edges the model did not suggest again; edges a user made are never touched.
+
+### Your edits win
+
+Editing role, importance or system in the asset's panel locks that field: it shows Locked, and annotation runs leave it alone. Unlock hands it back; the value stays until the next run, which picks the asset up and fills it in. Fields the model wrote show AI.
+
+### When and with what
+
+- After each collection, unless Annotate after each collection is off (Zones and schedule, or Settings, AI Assistant). It is on by default.
+- On Annotate now.
+
+One run at a time; one asked for during a run waits. A run uses the collector, and needs the AI assistant on for the server, auto-ops not paused, the collector to hold `ai.assets.manage` and to have turned the assistant on. The model is the provider and model picked under Zones and schedule, by default the one the collector's auto-ops tasks use (their saved choice, else their first enabled provider with a default model). Without one, the run fails and says so.
+
+Every call is counted in the usage view as Asset annotation. A run stops at its token budget (Settings, AI Assistant, 200,000 by default), when auto-ops is paused or when the assistant is turned off; what it wrote by then stays. A failed run tells the collector in Alerts. The run list shows each run's assets, errors and tokens.
+
+## Graph
+
+Graph, next to Table, draws the inventory as a force-directed graph. Each zone is a labelled area; a node's size and shade show its importance, grey when it has none. Containers are folded into their host, which shows how many it holds, until Show containers; external addresses appear with Show external addresses. Edge types can be turned off one by one: `runs_on` solid, `depends_on` with an arrow, `connects_to` dashed. Drag to pan, scroll to zoom.
+
+Click a node for its panel: the annotations (editable for managers, with AI and Locked marks), a summary of its facts, and its edges, each peer one click away.
+
+## Impact
+
+Impact, in a node's panel, shows what fails when that asset does, worked out from the edges alone:
+
+- **Directly** and **Through others**: whatever runs on it or depends on it, and on, transitively. A Proxmox node takes its guests, a guest the containers on it, and each of those what depends on them.
+- **Only connect to them**: assets with just a `connects_to` to one of those, one hop. A connection is a hint, not proof.
+
+Each comes with the chain of edges down to the failing asset, and the counts by importance. The graph dims everything else. The search stops at 6 hops and 300 assets per class and says when it did. `GET /plugin-api/ai/assets/{id}/impact` returns the same.
+
 ## Permissions
 
-| Permission         | What it allows                                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `ai.assets.view`   | See the inventory, zones, relations and runs. Admins only by default.                                          |
-| `ai.assets.manage` | Collect now, edit zone rules, pin zones, change the schedule and become the collector. Admins only by default. |
+| Permission         | What it allows                                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai.assets.view`   | See the inventory, zones, relations, annotations, the graph, impact and runs. Admins only by default.                                                                              |
+| `ai.assets.manage` | Collect now, Annotate now, edit and unlock annotations, edit zone rules, pin zones, change the schedule and annotation settings, and become the collector. Admins only by default. |
 
 Both also need the AI assistant turned on for the server and the user, like the rest of the AI tab.
 
 ## Not yet
 
-AI annotations (role, importance, owning system), the graph view and impact analysis come next; the inventory already has room for them. Attack surface (exposed entry points, DNAT and reverse proxies, cross-zone paths) and cloud APIs come after.
+Attack surface (exposed entry points, DNAT and reverse proxies, cross-zone paths) comes next, then cloud APIs. Adding or removing `depends_on` edges by hand is not in the UI yet.
