@@ -9,6 +9,7 @@ import { toStoredMessage, toStoredSummary } from "../history.js";
 import { contextPlanFor, type ModelInfoCache } from "../model-info.js";
 import { bundledCliPath, CORE_URL, type CliTarget } from "../ops/cli.js";
 import { readOpsLimits } from "../ops/routes.js";
+import { summaryBudgetFor } from "../ops/tools.js";
 import { createProviderFetch } from "../providers/http.js";
 import type { ProviderConfig } from "../providers/types.js";
 import type { AiProviderWithSecret, AiRepository } from "../repository.js";
@@ -361,6 +362,10 @@ export async function runTask(
       config,
       model,
     ).catch(() => planContext({ model, overrides: {}, info: {}, adapter: {} }));
+    session.limits = {
+      ...opsLimits,
+      summaryBudget: summaryBudgetFor(plan.contextWindow),
+    };
     for await (const event of runAgent({
       config,
       model,
