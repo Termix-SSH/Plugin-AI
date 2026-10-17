@@ -25,6 +25,11 @@ export interface OpsLimits {
   timeoutSec: number;
   /** Characters of output kept per host. */
   outputLimit: number;
+  /**
+   * Characters handed back to the model across every host of one call.
+   * Defaults to a size that suits small windows: see summaryBudgetFor.
+   */
+  summaryBudget?: number;
 }
 
 export const MAX_TIMEOUT_SEC = 600;
@@ -65,6 +70,15 @@ const FACTS_TIMEOUT_SEC = 30;
 /** Output handed back to the model across every host of one call. */
 const SUMMARY_BUDGET = 24000;
 const MIN_SUMMARY_PER_HOST = 200;
+
+/**
+ * The output budget for a model with `contextWindow` tokens: about 5% of the
+ * window at four characters a token, so a fleet-wide call on a large window
+ * is not cut to a few hundred characters a host.
+ */
+export function summaryBudgetFor(contextWindow: number): number {
+  return Math.min(Math.max(Math.floor(contextWindow * 0.2), 8000), 160000);
+}
 
 // A plain array keeps the schema inside what every provider accepts; "all"
 // is still understood when a model sends it.
@@ -181,9 +195,10 @@ async function fanOut(
  * Output as the model gets it. Already cut to the per-host limit, it is cut
  * further only when many hosts share the budget.
  */
-function forModel(output: string, hostCount: number, outputLimit: number) {
-  const share = Math.floor(SUMMARY_BUDGET / Math.max(hostCount, 1));
-  if (share >= outputLimit) return output;
+function forModel(output: string, hostCount: number, limits: OpsLimits) {
+  const budget = limits.summaryBudget ?? SUMMARY_BUDGET;
+  const share = Math.floor(budget / Math.max(hostCount, 1));
+  if (share >= limits.outputLimit) return output;
   return truncateMiddle(output, Math.max(share, MIN_SUMMARY_PER_HOST));
 }
 
@@ -191,7 +206,7 @@ function summarize(
   command: string,
   results: HostResult[],
   requested: number,
-  outputLimit: number,
+  limits: OpsLimits,
 ) {
   const succeeded = results.filter((result) => !describeFailure(result));
   return {
@@ -206,7 +221,7 @@ function summarize(
       name: result.name,
       exitCode: result.exitCode,
       ...(describeFailure(result) ? { error: describeFailure(result) } : {}),
-      output: forModel(result.output, results.length, outputLimit),
+      output: forModel(result.output, results.length, limits),
     })),
   };
 }
@@ -269,7 +284,7 @@ export function createOpsTools(session: OpsSession): AiTool[] {
           command,
           results,
           scope.hostIds.length,
-          session.limits.outputLimit,
+          session.limits,
         );
       },
     },
@@ -328,7 +343,7 @@ export function createOpsTools(session: OpsSession): AiTool[] {
                     facts: forModel(
                       facts,
                       scope.hostIds.length,
-                      session.limits.outputLimit,
+                      session.limits,
                     ),
                   }
                 : { error: failures.get(hostId) ?? "Not probed" }),

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createOpsTools,
+  summaryBudgetFor,
   type HostResult,
   type OpsSession,
 } from "../../../src/backend/ops/tools.js";
@@ -25,6 +26,7 @@ function setup(
     targets?: number[];
     concurrency?: number;
     outputLimit?: number;
+    summaryBudget?: number;
     plan?: (command: string, hostId: number) => FakePlan;
     denied?: number[];
   } = {},
@@ -65,6 +67,7 @@ function setup(
       concurrency: options.concurrency ?? 8,
       timeoutSec: 120,
       outputLimit: options.outputLimit ?? 4000,
+      summaryBudget: options.summaryBudget,
     },
     signal: abort.signal,
     facts: new Map(),
@@ -160,6 +163,28 @@ describe("run_command", () => {
       error: "Exited with code 4",
       output: "no unit",
     });
+  });
+
+  it("shares the summary budget between hosts", async () => {
+    const plan = () => ({ stdout: "x".repeat(3000) });
+    const small = await setup({ plan }).call("run_command", {
+      hostIds: [1, 2, 3, 4, 5],
+      command: "df -h",
+    });
+    expect(small.hosts[0].output).toBe("x".repeat(3000));
+
+    const tight = await setup({ plan, summaryBudget: 5000 }).call(
+      "run_command",
+      { hostIds: [1, 2, 3, 4, 5], command: "df -h" },
+    );
+    expect(tight.hosts[0].output.length).toBeLessThan(1100);
+  });
+
+  it("sizes the summary budget from the context window", () => {
+    expect(summaryBudgetFor(8192)).toBe(8000);
+    expect(summaryBudgetFor(128000)).toBe(25600);
+    expect(summaryBudgetFor(524288)).toBe(104857);
+    expect(summaryBudgetFor(2_000_000)).toBe(160000);
   });
 
   it("records every run and audits each host", async () => {
