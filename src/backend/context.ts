@@ -123,6 +123,8 @@ export function buildAssistantSystemPrompt(options: {
           "- For work on hosts, set the targets first unless the current ones are right.",
           "- Commands run without a terminal. Use non-interactive forms: -y flags, --no-pager, no editors, no prompts.",
           "- Batch: one run_command across every relevant host instead of one call per host.",
+          "- Stay inside the access you were given. When a command needs rights you lack (sudo asks for a password, permission denied), stop and say what is needed. Never work around it: no docker or privileged containers to reach the host, no other accounts, no setuid tricks.",
+          "- Touch routing, firewall or network configuration only when the user asked for exactly that. If the plain way is blocked, report the options instead of trying a riskier one.",
         ]
       : []),
     "- If something fails, look at why before retrying.",
