@@ -1,6 +1,12 @@
+import certExpiryWeekly from "../../../presets/cert-expiry-weekly.json";
+import containerAnomaly from "../../../presets/container-anomaly.json";
 import dailyPatrol from "../../../presets/daily-patrol.json";
 import diskCleanup from "../../../presets/disk-cleanup.json";
 import hostDownTriage from "../../../presets/host-down-triage.json";
+import resourceOverloadCpu from "../../../presets/resource-overload-cpu.json";
+import resourceOverloadMemory from "../../../presets/resource-overload-memory.json";
+import securityUpdatesWeekly from "../../../presets/security-updates-weekly.json";
+import serviceFailure from "../../../presets/service-failure.json";
 import type { Autonomy } from "./types.js";
 
 /**
@@ -29,6 +35,12 @@ export const PRESETS = [
   dailyPatrol,
   diskCleanup,
   hostDownTriage,
+  serviceFailure,
+  containerAnomaly,
+  resourceOverloadCpu,
+  resourceOverloadMemory,
+  securityUpdatesWeekly,
+  certExpiryWeekly,
 ] as PresetDefinition[];
 
 export function findPreset(id: string): PresetDefinition | undefined {

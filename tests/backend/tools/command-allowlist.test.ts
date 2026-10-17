@@ -96,6 +96,103 @@ describe("isReadOnlyCommand", () => {
     expect(isReadOnlyCommand("systemctl show nginx").allowed).toBe(false);
   });
 
+  it("allows docker inspect only for state, limits and restart policy", () => {
+    for (const command of [
+      "docker inspect --format '{{json .State}}' web",
+      "docker inspect -f '{{.State.Status}} {{.RestartCount}}' web db",
+      "docker inspect --format='{{.State.OOMKilled}}' web",
+      "docker inspect --format '{{.Name}} restarts={{.RestartCount}} memory={{.HostConfig.Memory}} {{json .State.Health}}' web",
+      "docker inspect --format '{{.HostConfig.RestartPolicy.Name}}' web",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
+    for (const command of [
+      "docker inspect web",
+      "docker inspect --format '{{json .}}' web",
+      "docker inspect --format '{{.Config.Env}}' web",
+      "docker inspect --format '{{json .Config}}' web",
+      "docker inspect --format '{{.HostConfig.Binds}}' web",
+      "docker inspect --format '{{.HostConfig.MemoryX}}' web",
+      "docker inspect --format '{{index .Config.Env 0}}' web",
+      "docker inspect --format '{{range .Config.Env}}{{.}}{{end}}' web",
+      "docker inspect --format '{{.State}}' web '{{.Config.Env}}'",
+      "docker inspect --format '{{.State}}' --format '{{.Config.Env}}' web",
+      "docker inspect --format '{{.State}}'",
+      "docker inspect --type image --format '{{.State}}' web",
+      "docker inspect --format '{{.State}} {' web",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
+
+  it("allows docker logs and stats only when they end on their own", () => {
+    for (const command of [
+      "docker logs --tail 200 web",
+      "docker logs --tail=50 --timestamps web",
+      "docker logs -n 100 --since 1h web",
+      "docker stats --no-stream",
+      "docker stats --no-stream --format '{{.Name}} {{.MemPerc}}' web",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
+    for (const command of [
+      "docker logs web",
+      "docker logs 5",
+      "docker logs -f --tail 10 web",
+      "docker logs --follow --tail 10 web",
+      "docker logs --tail 5000 web",
+      "docker logs --tail all web",
+      "docker logs --tail 10 web db",
+      "docker stats",
+      "docker stats web",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
+
+  it("allows the dnf and yum advisory and reboot queries", () => {
+    for (const command of [
+      "dnf updateinfo summary",
+      "yum updateinfo summary",
+      "dnf updateinfo list security",
+      "dnf updateinfo list --security --sec-severity Critical",
+      "dnf -q updateinfo list --security",
+      "dnf needs-restarting -r",
+      "yum needs-restarting -r",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
+    for (const command of [
+      "dnf updateinfo",
+      "dnf updateinfo info",
+      "dnf updateinfo list --security --sec-severity",
+      "dnf needs-restarting",
+      "dnf needs-restarting -s",
+      "dnf check-update -r",
+      "dnf upgrade --security",
+      "dnf upgrade-minimal --security -y",
+      "yum update --security",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
+
+  it("lets cat read which packages want a reboot, and nothing next to it", () => {
+    expect(isReadOnlyCommand("cat /var/run/reboot-required.pkgs").allowed).toBe(
+      true,
+    );
+    expect(isReadOnlyCommand("cat /run/reboot-required.pkgs").allowed).toBe(
+      true,
+    );
+    for (const command of [
+      "cat /var/run/reboot-required.pkgs.bak",
+      "cat /var/run/secrets",
+      "cat /run/reboot-required.pkgs/../../etc/shadow",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
+
   it("rejects an empty command", () => {
     expect(isReadOnlyCommand("").allowed).toBe(false);
     expect(isReadOnlyCommand("   ").allowed).toBe(false);

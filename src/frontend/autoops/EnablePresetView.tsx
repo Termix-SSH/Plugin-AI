@@ -36,6 +36,7 @@ const HOST_TRIGGERS = new Set([
   "container_event",
 ]);
 const DAILY_CRON = /^(\d{1,2}) (\d{1,2}) \* \* \*$/;
+const DOCKER_EVENTS = ["exited", "unhealthy", "restarting"];
 
 /** "0 9 * * *" as "09:00", or null for any other schedule. */
 export function cronToTime(cron: unknown): string | null {
@@ -95,6 +96,7 @@ export function EnablePresetView({
   const [forSeconds, setForSeconds] = useState(Number(trigger.forSeconds ?? 0));
   const [time, setTime] = useState(cronToTime(trigger.cron) ?? "");
   const [cron, setCron] = useState(String(trigger.cron ?? ""));
+  const [dockerEvent, setDockerEvent] = useState(String(trigger.event ?? ""));
   const [autonomy, setAutonomy] = useState<Autonomy>(preset.autonomy);
   const [maxRunSeconds, setMaxRunSeconds] = useState(preset.maxRunSeconds);
   const [runbook, setRunbook] = useState(preset.runbook);
@@ -115,6 +117,8 @@ export function EnablePresetView({
     let nextTrigger: Record<string, unknown> = { ...trigger };
     if (trigger.kind === "metric_threshold") {
       nextTrigger = { ...nextTrigger, value: threshold, forSeconds };
+    } else if (trigger.kind === "docker_event") {
+      nextTrigger = { ...nextTrigger, event: dockerEvent };
     } else if (trigger.kind === "schedule") {
       const nextCron =
         cronToTime(trigger.cron) !== null ? timeToCron(time) : cron;
@@ -247,6 +251,17 @@ export function EnablePresetView({
               max={86400}
             />
           </div>
+        )}
+        {trigger.kind === "docker_event" && (
+          <SelectField
+            label={t("autoOps.enable.dockerEvent")}
+            value={dockerEvent}
+            onChange={setDockerEvent}
+            options={DOCKER_EVENTS.map((event) => ({
+              value: event,
+              label: t(`autoOps.enable.dockerEvents.${event}`),
+            }))}
+          />
         )}
         {trigger.kind === "schedule" &&
           (cronToTime(trigger.cron) !== null ? (

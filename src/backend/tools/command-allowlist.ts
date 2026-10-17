@@ -61,8 +61,10 @@ const SUBCOMMAND_ALLOWLIST: Record<string, Set<string>> = {
     "is-active",
     "is-enabled",
   ]),
-  // inspect is left out: it prints container environment variables.
+  // inspect only with a --format limited to state fields, since its full
+  // output holds container environment variables.
   docker: new Set([
+    "inspect",
     "ps",
     "stats",
     "images",
@@ -77,7 +79,13 @@ const SUBCOMMAND_ALLOWLIST: Record<string, Set<string>> = {
 };
 
 /** Paths `cat` may read. Anything else could disclose credentials. */
-const CAT_ALLOWED_PREFIXES = ["/proc/", "/sys/", "/etc/os-release"];
+const CAT_ALLOWED_PREFIXES = [
+  "/proc/",
+  "/sys/",
+  "/etc/os-release",
+  "/run/reboot-required.pkgs",
+  "/var/run/reboot-required.pkgs",
+];
 
 /** Wildcards the shell would expand into paths nobody checked. */
 const GLOB_CHARACTERS = /[*?[\]{}~]/;
@@ -183,6 +191,10 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
       if (subcommand === "system" && (rest[0] !== "df" || rest.length > 1)) {
         return "Only docker system df is allowed";
       }
+      const after = splitEquals(args.slice(args.indexOf(subcommand) + 1));
+      if (subcommand === "inspect") return dockerInspect(after);
+      if (subcommand === "logs") return dockerLogs(after);
+      if (subcommand === "stats") return dockerStats(after);
     },
     ip: (args) => {
       // ip a, ip route and friends show; any verb but show/list/get changes.
@@ -272,8 +284,8 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
         return "Only apt list --upgradable is allowed";
       }
     },
-    dnf: (args) => checkUpdate("dnf", args),
-    yum: (args) => checkUpdate("yum", args),
+    dnf: (args) => packageQuery("dnf", args),
+    yum: (args) => packageQuery("yum", args),
     needrestart: (args) => {
       if (args.length !== 1 || args[0] !== "-b") {
         return "Only needrestart -b is allowed";
@@ -284,18 +296,155 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
       args.at(-1) === "]" ? fileTest(args.slice(0, -1)) : "[ needs a closing ]",
   };
 
-function checkUpdate(binary: string, args: string[]): string | undefined {
+/** The dnf and yum queries that report and install nothing. */
+const PACKAGE_QUERIES = new Set([
+  "check-update",
+  "updateinfo summary",
+  "updateinfo list",
+  "updateinfo list security",
+  "needs-restarting",
+]);
+
+function packageQuery(binary: string, args: string[]): string | undefined {
   const flags = onlyFlags(args, {
     "-q": false,
     "--quiet": false,
     "--security": false,
+    "--sec-severity": true,
     "-C": false,
     "--cacheonly": false,
+    "-r": false,
   });
   if ("error" in flags) return `${binary} ${flags.error}`;
-  if (flags.rest.join(" ") !== "check-update") {
-    return `Only ${binary} check-update is allowed`;
+  const query = flags.rest.join(" ");
+  if (!PACKAGE_QUERIES.has(query)) {
+    return `Only ${binary} check-update, updateinfo summary or list, and needs-restarting -r are allowed`;
   }
+  if ((query === "needs-restarting") !== args.includes("-r")) {
+    return `-r is only for ${binary} needs-restarting -r`;
+  }
+}
+
+/** --flag=value as two words, so flag checks see the flag. */
+const splitEquals = (args: string[]) =>
+  args.flatMap((arg) =>
+    arg.startsWith("--") && arg.includes("=")
+      ? [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)]
+      : [arg],
+  );
+
+const CONTAINER_NAME = /^[A-Za-z0-9][\w.-]*$/;
+
+const containerNames = (names: string[], required: boolean) =>
+  (!required || names.length > 0) &&
+  names.every((name) => CONTAINER_NAME.test(name));
+
+/** Fields docker inspect may print: state, limits and restart policy. */
+const INSPECT_FIELDS = [
+  ".State",
+  ".RestartCount",
+  ".Name",
+  ".Id",
+  ".Created",
+  ".Image",
+  ".Config.Image",
+  ".HostConfig.Memory",
+  ".HostConfig.MemoryReservation",
+  ".HostConfig.MemorySwap",
+  ".HostConfig.NanoCpus",
+  ".HostConfig.OomKillDisable",
+  ".HostConfig.RestartPolicy",
+];
+
+const inspectField = (field: string) =>
+  INSPECT_FIELDS.some(
+    (allowed) => field === allowed || field.startsWith(`${allowed}.`),
+  );
+
+/** One {{...}} action: a field, or json of a field, and nothing else. */
+function inspectAction(action: string): boolean {
+  const tokens = action.trim().split(/\s+/);
+  const fields = tokens[0] === "json" ? tokens.slice(1) : tokens;
+  return fields.length === 1 && /^(\.\w+)+$/.test(fields[0])
+    ? inspectField(fields[0])
+    : false;
+}
+
+/** A template of allowed actions joined by plain text. */
+function inspectTemplate(template: string): boolean {
+  let valid = true;
+  const literal = template.replace(/\{\{([^{}]*)\}\}/g, (_, action) => {
+    valid &&= inspectAction(action);
+    return "";
+  });
+  return valid && /^[\w\s=:,./-]*$/.test(literal);
+}
+
+const braces = (word: string, pair: string) => word.split(pair).length - 1;
+
+/**
+ * docker inspect --format <template> <container>... The template is the
+ * words from the one after --format until its braces close, and as long as
+ * the next word holds another action; the rest must be container names.
+ */
+function dockerInspect(args: string[]): string | undefined {
+  const names: string[] = [];
+  const template: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== "--format" && args[index] !== "-f") {
+      names.push(args[index]);
+      continue;
+    }
+    if (template.length) return "docker inspect takes one --format";
+    let open = 0;
+    while (
+      index + 1 < args.length &&
+      (open > 0 || !template.length || args[index + 1].includes("{{"))
+    ) {
+      index += 1;
+      template.push(args[index]);
+      open += braces(args[index], "{{") - braces(args[index], "}}");
+    }
+  }
+  if (!template.length || !inspectTemplate(template.join(" "))) {
+    return `docker inspect needs --format with only ${INSPECT_FIELDS.join(", ")}`;
+  }
+  if (!containerNames(names, true)) {
+    return "docker inspect takes container names after --format";
+  }
+}
+
+/** docker logs with a bounded --tail, never following. */
+function dockerLogs(args: string[]): string | undefined {
+  const flags = onlyFlags(args, {
+    "--tail": true,
+    "-n": true,
+    "--since": true,
+    "--until": true,
+    "-t": false,
+    "--timestamps": false,
+  });
+  if ("error" in flags) return `docker logs ${flags.error}`;
+  const tail = Math.max(args.indexOf("--tail"), args.indexOf("-n"));
+  if (tail < 0 || !isCount(args[tail + 1], 1000)) {
+    return "docker logs needs --tail with 1 to 1000 lines";
+  }
+  if (flags.rest.length !== 1 || !containerNames(flags.rest, true)) {
+    return "docker logs takes one container";
+  }
+}
+
+/** docker stats as one sample, never streaming. */
+function dockerStats(args: string[]): string | undefined {
+  const flags = onlyFlags(args, {
+    "--no-stream": false,
+    "--no-trunc": false,
+    "-a": false,
+    "--all": false,
+    "--format": true,
+  });
+  if ("error" in flags) return `docker stats ${flags.error}`;
+  if (!args.includes("--no-stream")) return "docker stats needs --no-stream";
 }
 
 /** test -f /path and its -e, -d, -s forms: an exit code and nothing else. */

@@ -13,7 +13,123 @@ afterEach(async () => {
   server = null;
 });
 
-const AUTOMATION_TRIGGERS = ["schedule", "metric_threshold", "host_status"];
+/**
+ * The trigger shapes of Automations' src/types.ts (Trigger, HostSelector,
+ * MetricPath, Operator), so a preset cannot ship a trigger it would refuse
+ * or misread. Every key must be one the shape knows.
+ */
+const METRIC_PATHS = [
+  "cpu.percent",
+  "cpu.load1",
+  "cpu.load5",
+  "cpu.load15",
+  "memory.percent",
+  "memory.usedGiB",
+  "disk.percent",
+  "disk.availableBytes",
+  "temperature.highestCelsius",
+  "uptime.seconds",
+  "processes.total",
+  "network.rxBytes",
+  "network.txBytes",
+  "network.rxRateBps",
+  "network.txRateBps",
+];
+const OPERATORS = [
+  ">",
+  "<",
+  ">=",
+  "<=",
+  "==",
+  "!=",
+  "contains",
+  "not_contains",
+  "changed",
+];
+
+type Shape = Record<string, (value: unknown) => boolean>;
+const optional = (check: (value: unknown) => boolean) => (value: unknown) =>
+  value === undefined || check(value);
+const oneOf = (values: string[]) => (value: unknown) =>
+  values.includes(value as string);
+const number = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0;
+const text = (value: unknown) => typeof value === "string" && value !== "";
+const watched = (value: unknown) => {
+  const selector = value as Record<string, unknown>;
+  return ["all", "host", "hosts", "fleet"].includes(selector?.kind as string);
+};
+
+const TRIGGER_SHAPES: Record<string, Shape> = {
+  metric_threshold: {
+    hostSelector: watched,
+    metric: (value) =>
+      METRIC_PATHS.includes((value as { path?: string })?.path ?? ""),
+    operator: oneOf(OPERATORS),
+    value: (value) => typeof value === "number" && Number.isFinite(value),
+    forSeconds: optional(number),
+    cooldownMinutes: number,
+    severity: optional(oneOf(["info", "warning", "critical"])),
+  },
+  host_status: {
+    hostSelector: watched,
+    to: oneOf(["online", "offline"]),
+    cooldownMinutes: number,
+  },
+  health_check: {
+    hostSelector: watched,
+    checkId: optional(text),
+    to: oneOf(["failing", "recovered"]),
+    cooldownMinutes: number,
+  },
+  schedule: {
+    cron: optional((value) => /^(\S+ ){4}\S+$/.test(String(value))),
+    intervalSeconds: optional((value) => number(value) && Number(value) >= 60),
+    timezone: optional(text),
+  },
+  docker_event: {
+    hostSelector: watched,
+    container: optional(text),
+    event: oneOf(["exited", "started", "unhealthy", "restarting"]),
+    cooldownMinutes: number,
+  },
+};
+
+function triggerErrors(trigger: Record<string, unknown>): string[] {
+  const shape = TRIGGER_SHAPES[trigger.kind as string];
+  if (!shape) return [`unknown kind ${String(trigger.kind)}`];
+  const errors = Object.keys(trigger)
+    .filter((key) => key !== "kind" && !(key in shape))
+    .map((key) => `unknown key ${key}`);
+  for (const [key, check] of Object.entries(shape)) {
+    if (!check(trigger[key])) errors.push(`bad ${key}`);
+  }
+  if (
+    trigger.kind === "schedule" &&
+    !trigger.cron &&
+    !trigger.intervalSeconds
+  ) {
+    errors.push("schedule needs a cron or an interval");
+  }
+  return errors;
+}
+
+/** The runbook's commands with sample values for its placeholders. */
+const sample = (command: string) =>
+  command
+    .replace(/<unit>/g, "nginx.service")
+    .replace(/<name>/g, "web")
+    .replace(/<pid>/g, "1234")
+    .replace(/<port>/g, "443")
+    .replace(/<path>/g, "/srv/app/data")
+    .replace(/<directory>/g, "/srv/app")
+    .replace(/<file>/g, "/etc/nginx/ssl/site.crt");
+
+const preset = (id: string) => {
+  const found = PRESETS.find((entry) => entry.id === id);
+  if (!found) throw new Error(`No preset ${id}`);
+  return found;
+};
 
 function automationsMock() {
   const created: Array<Record<string, unknown>> = [];
@@ -48,15 +164,31 @@ async function start(
 }
 
 describe("shipped presets", () => {
-  it("are the three presets, in the Automations shapes, with time limits", () => {
+  it("are the shipped presets, in the Automations shapes, with time limits", () => {
     expect(PRESETS.map((preset) => preset.id)).toEqual([
       "daily-patrol",
       "disk-cleanup",
       "host-down-triage",
+      "service-failure",
+      "container-anomaly",
+      "resource-overload-cpu",
+      "resource-overload-memory",
+      "security-updates-weekly",
+      "cert-expiry-weekly",
     ]);
     for (const preset of PRESETS) {
       expect(preset.version).toBeGreaterThanOrEqual(1);
-      expect(AUTOMATION_TRIGGERS).toContain(preset.trigger.kind);
+      expect(triggerErrors(preset.trigger), preset.id).toEqual([]);
+      expect(applyOverrides(preset, {}), preset.id).toEqual({
+        config: {
+          autonomy: preset.autonomy,
+          trigger: preset.trigger,
+          hostSelector: preset.hostSelector,
+          concurrencyPolicy: "skip",
+          maxRunSeconds: preset.maxRunSeconds,
+          runbook: preset.runbook,
+        },
+      });
       expect(preset.concurrencyPolicy).toBe("skip");
       expect(preset.maxRunSeconds).toBeGreaterThan(300);
       expect(preset.runbook.length).toBeGreaterThan(200);
@@ -135,6 +267,204 @@ describe("shipped presets", () => {
     expect(runbook).toContain("journalctl --vacuum-time=7d");
     expect(runbook).toMatch(/Never propose: docker system prune/);
     expect(runbook).toMatch(/\/home/);
+  });
+
+  it("set the triggers, targets and levels of the newer presets", () => {
+    expect(preset("service-failure")).toMatchObject({
+      autonomy: "propose",
+      trigger: { kind: "health_check", to: "failing" },
+      hostSelector: { kind: "trigger" },
+    });
+    expect(preset("container-anomaly")).toMatchObject({
+      autonomy: "propose",
+      trigger: { kind: "docker_event", event: "exited" },
+      hostSelector: { kind: "trigger" },
+    });
+    expect(preset("resource-overload-cpu")).toMatchObject({
+      autonomy: "report",
+      trigger: {
+        metric: { path: "cpu.percent" },
+        operator: ">=",
+        value: 95,
+        forSeconds: 900,
+      },
+      hostSelector: { kind: "trigger" },
+    });
+    expect(preset("resource-overload-memory")).toMatchObject({
+      autonomy: "report",
+      trigger: {
+        metric: { path: "memory.percent" },
+        operator: ">=",
+        value: 95,
+        forSeconds: 600,
+      },
+      hostSelector: { kind: "trigger" },
+    });
+    expect(preset("resource-overload-memory").runbook).toBe(
+      preset("resource-overload-cpu").runbook,
+    );
+    expect(preset("security-updates-weekly")).toMatchObject({
+      autonomy: "report",
+      trigger: { kind: "schedule", cron: "30 9 * * 1" },
+      hostSelector: { kind: "all" },
+    });
+    expect(preset("cert-expiry-weekly")).toMatchObject({
+      autonomy: "report",
+      trigger: { kind: "schedule", cron: "45 9 * * 1" },
+      hostSelector: { kind: "all" },
+    });
+    // A container event can be picked in the enable form.
+    expect(
+      applyOverrides(preset("container-anomaly"), {
+        trigger: { event: "unhealthy" },
+      }),
+    ).toMatchObject({
+      config: { trigger: { kind: "docker_event", event: "unhealthy" } },
+    });
+  });
+
+  it("only name read-only commands for the newer investigations", () => {
+    const investigations: Record<string, string[]> = {
+      "service-failure": [
+        "systemctl list-units --type=service --state=failed,activating --no-pager --plain",
+        "ss -tlnp",
+        "systemctl status <pid> --no-pager -n 0",
+        "systemctl status <unit> --no-pager -n 20",
+        "journalctl -u <unit> -n 100 --no-pager",
+        "systemctl list-units --state=failed --no-pager --plain",
+        "df -hP",
+        "df -iP",
+        "stat <path>",
+        "ls -ld <directory>",
+        "journalctl -k --since -2h -g oom --no-pager -n 20",
+        "journalctl -k --since -2h -p warning --no-pager -n 50",
+        "systemctl is-active <unit>",
+        "nc -z -w 3 127.0.0.1 <port>",
+        "id -u",
+      ],
+      "container-anomaly": [
+        "docker inspect --format '{{.Name}} restarts={{.RestartCount}} memory={{.HostConfig.Memory}} policy={{.HostConfig.RestartPolicy.Name}} {{json .State}}' <name>",
+        "docker ps -a --format '{{.Names}} {{.Status}}'",
+        "docker logs --tail 200 --timestamps <name>",
+        "docker stats --no-stream --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}} {{.MemPerc}}' <name>",
+        "journalctl -k --since -24h -g oom --no-pager -n 20",
+        "journalctl -k --since -24h -p warning --no-pager -n 50",
+        "df -hP",
+        "free -m",
+        "docker ps -a --filter name=<name> --format '{{.Names}} {{.Status}}'",
+        "docker inspect --format '{{.State.Status}} {{json .State.Health}}' <name>",
+        "id -u",
+      ],
+      "resource-overload-cpu": [
+        "uptime",
+        "free -m",
+        "vmstat 1 5",
+        "cat /proc/pressure/cpu",
+        "cat /proc/pressure/memory",
+        "cat /proc/pressure/io",
+        "top -b -n 1 -o %CPU",
+        "ps -eo pid,user,%mem,rss,etime,comm --sort=-rss",
+        "ps -o pid,args -p <pid>,<pid>,<pid>",
+        "systemctl status <pid> --no-pager -n 0",
+        "docker stats --no-stream --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}} {{.MemPerc}}'",
+        "journalctl -k --since -24h -g oom --no-pager -n 20",
+        "journalctl -k --since -24h -p warning --no-pager -n 50",
+        "iostat -x 1 2",
+      ],
+      "security-updates-weekly": [
+        "dnf updateinfo summary",
+        "yum updateinfo summary",
+        "dnf updateinfo list --security --sec-severity Critical",
+        "dnf updateinfo list --security --sec-severity Important",
+        "apt list --upgradable",
+        "cat /var/run/reboot-required.pkgs",
+        "test -f /var/run/reboot-required",
+        "dnf needs-restarting -r",
+        "uname -r",
+        "find /boot -maxdepth 1 -name 'vmlinuz-*'",
+        "stat -L -c '%y %n' /var/lib/dpkg/status /var/cache/apt/pkgcache.bin /var/lib/rpm/rpmdb.sqlite /var/lib/rpm/Packages /usr/lib/sysimage/rpm/rpmdb.sqlite",
+      ],
+      "cert-expiry-weekly": [
+        "find /etc/letsencrypt/live -mindepth 2 -maxdepth 2 -name cert.pem",
+        "find /etc/nginx /etc/caddy /etc/apache2 /etc/httpd -maxdepth 3 -name '*.crt' -o -name '*.pem'",
+        "find /etc/traefik /opt /srv /var/lib/docker/volumes -maxdepth 4 -name acme.json",
+        "openssl x509 -noout -enddate -subject -checkend 2592000 -in <file>",
+        "openssl x509 -noout -enddate -subject -checkend 2592000 -in /etc/kubernetes/pki/apiserver.crt",
+        "openssl x509 -noout -enddate -subject -checkend 2592000 -in /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.crt",
+      ],
+    };
+    for (const [id, commands] of Object.entries(investigations)) {
+      const runbook = preset(id).runbook;
+      for (const command of commands) {
+        // The fixed certificate paths and the Important listing are filled in.
+        if (!/kubernetes|k3s|Important/.test(command)) {
+          expect(runbook, `${id}: ${command}`).toContain(`\`${command}\``);
+        }
+        expect(
+          isReadOnlyCommand(sample(command)).allowed,
+          `${id}: ${command}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("keep the newer runbooks to their limits", () => {
+    const service = preset("service-failure").runbook;
+    expect(service).toContain("`systemctl restart <unit>`, exactly once");
+    expect(service).toContain("`systemctl reset-failed <unit>`");
+    expect(service).toMatch(
+      /Never propose: editing, moving or deleting any file; systemctl edit, daemon-reload, stop, kill, disable, mask/,
+    );
+    expect(service).toMatch(/reboot, shutdown or poweroff/);
+    expect(isReadOnlyCommand(sample("systemctl restart <unit>")).allowed).toBe(
+      false,
+    );
+
+    const container = preset("container-anomaly").runbook;
+    expect(container).toContain("with exactly one of these");
+    expect(container).toContain("`docker start <name>`");
+    expect(container).toContain("`docker restart <name>`");
+    expect(container).toMatch(
+      /Never propose: docker rm, rmi, kill, stop, update, rename, prune, volume/,
+    );
+    expect(container).toMatch(
+      /docker compose in any form; editing compose files/,
+    );
+    for (const command of ["docker start <name>", "docker restart <name>"]) {
+      expect(isReadOnlyCommand(sample(command)).allowed).toBe(false);
+    }
+
+    for (const id of [
+      "resource-overload-cpu",
+      "security-updates-weekly",
+      "cert-expiry-weekly",
+    ]) {
+      expect(preset(id).runbook, id).toMatch(
+        /Investigate only and change nothing/,
+      );
+      expect(preset(id).runbook, id).not.toContain("propose_plan");
+    }
+    expect(preset("resource-overload-cpu").runbook).toMatch(
+      /never kill, renice, restart or stop anything/,
+    );
+    expect(preset("security-updates-weekly").runbook).toMatch(
+      /never install, upgrade, refresh package lists or reboot/,
+    );
+    expect(preset("security-updates-weekly").runbook).toMatch(
+      /at most 10 hosts per call/,
+    );
+
+    const certs = preset("cert-expiry-weekly").runbook;
+    expect(certs).toMatch(/Never read private keys or acme.json/);
+    expect(certs).toMatch(/never inspect the system CA store/);
+    expect(certs).toMatch(/Live TLS ports are not checked/);
+    expect(certs).toMatch(/Critical: under 7 days/);
+    expect(certs).toMatch(/Warning: under 30 days/);
+    expect(
+      isReadOnlyCommand(
+        "openssl s_client -connect 127.0.0.1:443 -servername example.com",
+      ).allowed,
+    ).toBe(false);
   });
 
   it("applies the enable form's changes, keeping the trigger kind", () => {

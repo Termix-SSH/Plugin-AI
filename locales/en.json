@@ -438,6 +438,12 @@
       "forSeconds": "For at least (seconds)",
       "time": "Time of day",
       "cron": "Schedule (cron)",
+      "dockerEvent": "Container event",
+      "dockerEvents": {
+        "exited": "Exited",
+        "unhealthy": "Unhealthy",
+        "restarting": "Restarting"
+      },
       "badTime": "Enter the time as HH:MM.",
       "autonomy": "What the assistant may do",
       "maxRunSeconds": "Time limit (seconds)",
@@ -462,6 +468,30 @@
       "host-down-triage": {
         "title": "Host down triage",
         "description": "When a host goes offline, probes it from other hosts and Proxmox, and reports whether it is the network, a stopped machine or SSH."
+      },
+      "service-failure": {
+        "title": "Service failure",
+        "description": "When a health check starts failing, finds the systemd unit behind it, reads its status and log, and proposes a single restart for you to approve when that can help. Configuration is never changed."
+      },
+      "container-anomaly": {
+        "title": "Container anomaly",
+        "description": "When a container exits, turns unhealthy or keeps restarting, reads its state, exit code, logs and memory, and proposes starting or restarting it once for you to approve. Nothing is removed."
+      },
+      "resource-overload-cpu": {
+        "title": "CPU overload",
+        "description": "When CPU stays at 95% or more for 15 minutes, finds the processes, services and containers behind it and reports what to do. Nothing is changed."
+      },
+      "resource-overload-memory": {
+        "title": "Memory overload",
+        "description": "When memory stays at 95% or more for 10 minutes, finds what uses it, swapping and out-of-memory kills, and reports what to do. Nothing is changed."
+      },
+      "security-updates-weekly": {
+        "title": "Weekly security updates",
+        "description": "Every Monday at 09:30, lists pending security updates by severity, pending reboots and the packages behind them, running and installed kernels and days since the last update, in one table for all hosts."
+      },
+      "cert-expiry-weekly": {
+        "title": "Weekly certificate expiry",
+        "description": "Every Monday at 09:45, reads the expiry of Let's Encrypt, web server and Kubernetes certificates on every host and flags those under 30 days, critical under 7."
       }
     },
     "report": {

@@ -440,6 +440,12 @@
       "forSeconds": "持续至少（秒）",
       "time": "每天时间",
       "cron": "计划（cron）",
+      "dockerEvent": "容器事件",
+      "dockerEvents": {
+        "exited": "已退出",
+        "unhealthy": "不健康",
+        "restarting": "重启中"
+      },
       "badTime": "请按 HH:MM 输入时间。",
       "autonomy": "助手可以做什么",
       "maxRunSeconds": "时间上限（秒）",
@@ -464,6 +470,30 @@
       "host-down-triage": {
         "title": "主机掉线排查",
         "description": "主机下线时，从其他主机和 Proxmox 探测它，判断是网络、机器停止还是 SSH 的问题。"
+      },
+      "service-failure": {
+        "title": "服务故障处理",
+        "description": "健康检查开始失败时，找出背后的 systemd 单元，查看状态和日志，在重启有用时提出一次重启，由你批准后执行。配置一律不改。"
+      },
+      "container-anomaly": {
+        "title": "容器异常处理",
+        "description": "容器退出、变为不健康或反复重启时，查看其状态、退出码、日志和内存，提出一次启动或重启，由你批准后执行。不删除任何东西。"
+      },
+      "resource-overload-cpu": {
+        "title": "CPU 过载",
+        "description": "CPU 持续 15 分钟不低于 95% 时，找出背后的进程、服务和容器，并报告处理建议。不做任何改动。"
+      },
+      "resource-overload-memory": {
+        "title": "内存过载",
+        "description": "内存持续 10 分钟不低于 95% 时，找出占用、交换和 OOM 终止情况，并报告处理建议。不做任何改动。"
+      },
+      "security-updates-weekly": {
+        "title": "每周安全更新",
+        "description": "每周一 09:30 汇总待装安全更新（按严重程度）、待重启及其相关软件包、运行与已安装内核、距上次更新天数，所有主机一张表。"
+      },
+      "cert-expiry-weekly": {
+        "title": "每周证书到期",
+        "description": "每周一 09:45 读取每台主机上 Let's Encrypt、Web 服务器和 Kubernetes 证书的到期时间，30 天内到期标为警告，7 天内为严重。"
       }
     },
     "report": {
