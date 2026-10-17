@@ -106,23 +106,26 @@ export const anthropicAdapter: ProviderAdapter = {
   ): AsyncIterable<ChatChunk> {
     const client = createClient(config);
 
-    const stream = client.messages.stream({
-      model: request.model,
-      max_tokens: 16000,
-      system: request.system,
-      messages: toAnthropicMessages(request),
-      thinking: { type: "adaptive" },
-      ...(request.tools.length
-        ? {
-            tools: request.tools.map((tool) => ({
-              name: tool.name,
-              description: tool.description,
-              input_schema: tool.parameters as Anthropic.Tool.InputSchema,
-            })),
-          }
-        : {}),
-      ...(request.signal ? { signal: request.signal } : {}),
-    });
+    const stream = client.messages.stream(
+      {
+        model: request.model,
+        max_tokens: 16000,
+        system: request.system,
+        messages: toAnthropicMessages(request),
+        thinking: { type: "adaptive" },
+        ...(request.tools.length
+          ? {
+              tools: request.tools.map((tool) => ({
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.parameters as Anthropic.Tool.InputSchema,
+              })),
+            }
+          : {}),
+      },
+      // A request option, not a body field: the API rejects unknown fields.
+      request.signal ? { signal: request.signal } : undefined,
+    );
 
     let final: Anthropic.Message;
     try {

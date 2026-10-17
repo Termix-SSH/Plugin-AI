@@ -9,6 +9,7 @@
 ### Fixed
 
 - Change proposals showed a host id instead of the host name
+- Anthropic providers failed every chat with "signal: Extra inputs are not permitted"
 
 ## 1.0.1
 
