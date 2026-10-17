@@ -211,6 +211,7 @@
     "emptyTranscript": "Send a message to get the agent started."
   },
   "plugin": {
-    "name": "AI Assistant"
+    "name": "AI Assistant",
+    "description": "An AI assistant that reads your setup and proposes changes for you to approve."
   }
 }

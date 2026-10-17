@@ -215,6 +215,7 @@
     "emptyTranscript": "發送訊息以啟動代理程式。"
   },
   "plugin": {
-    "name": "AI 助手"
+    "name": "AI 助手",
+    "description": "讀取你的設定並提出修改建議供你核准的 AI 助理。"
   }
 }
