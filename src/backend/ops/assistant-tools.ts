@@ -39,7 +39,11 @@ export interface AssistantSession extends OpsSession {
 }
 
 const CLI_TIMEOUT_SEC = 120;
-/** JSON is only useful whole, so the CLI gets more room than a host. */
+/**
+ * JSON is only useful whole, so the CLI gets more room than a host, and all
+ * of a large window's summary budget: a hosts list cut in the middle leaves
+ * the model guessing ids.
+ */
 const CLI_OUTPUT_LIMIT = 16000;
 
 function termixDescription(hostShell: boolean): string {
@@ -92,7 +96,10 @@ function termixTool(session: AssistantSession, cli: CliTarget): AiTool {
       if (problem) return { error: problem };
       const result = await runCli(cli, args, {
         timeoutMs: timeoutFor(raw.timeoutSec, CLI_TIMEOUT_SEC) * 1000,
-        outputLimit: CLI_OUTPUT_LIMIT,
+        outputLimit: Math.max(
+          CLI_OUTPUT_LIMIT,
+          session.limits.summaryBudget ?? 0,
+        ),
         signal: session.signal,
       });
       const failure = cliFailure(result);

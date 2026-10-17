@@ -186,6 +186,24 @@ describe("termix", () => {
     expect(mock.audits.at(-1)).toMatchObject({ success: false });
   });
 
+  it("gives the CLI a large window's summary budget", async () => {
+    const { session, call } = setup({
+      run: spawnRun,
+      cliPath,
+      url: "u",
+      token: "t",
+    });
+    const long = "h".repeat(30000);
+    const cut = (await call("termix", { args: [long] })) as { output: string };
+    expect(cut.output.length).toBeLessThan(17000);
+
+    session.limits.summaryBudget = 100000;
+    const whole = (await call("termix", { args: [long] })) as {
+      output: string;
+    };
+    expect(whole.output).toContain(long);
+  });
+
   it("refuses blocked commands without starting anything", async () => {
     const run = vi.fn(spawnRun);
     const { cliRuns, call } = setup({ run, cliPath, url: "u", token: "t" });
