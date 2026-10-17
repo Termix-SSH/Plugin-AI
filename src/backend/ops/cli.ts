@@ -86,10 +86,11 @@ const HOST_SHELL_REFUSED =
  * Routes that return decrypted credentials, tokens or user data, which would
  * be sent to the model provider: exports, a credential by id (credentials get
  * prints it without the secrets), a host's password, a shared host's resolved
- * auth, the session token and the sync feed.
+ * auth, the session token and the sync feed. The CLI takes paths with or
+ * without the leading slash.
  */
 const SECRET_PATH =
-  /\/(export|password|local-connection-auth|me\/token|sync\/v2\/changes)([/?]|$)|\/credentials\/(?!folders\b)[^/?]+\/?(\?|$)/i;
+  /(^|\/)(export|password|local-connection-auth|me\/token|sync\/v2\/changes)([/?]|$)|(^|\/)credentials\/(?!folders\b)[^/?]+\/?(\?|$)/i;
 
 /** Set by the tool itself, or reach the Termix server's own disk. */
 function blockedFlag(arg: string): string | null {
