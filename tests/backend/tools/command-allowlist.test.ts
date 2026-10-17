@@ -517,6 +517,23 @@ describe("isReadOnlyCommand", () => {
     }
   });
 
+  it("allows systemd-detect-virt queries only", () => {
+    for (const command of [
+      "systemd-detect-virt",
+      "systemd-detect-virt --container",
+      "systemd-detect-virt -v",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
+    for (const command of [
+      "systemd-detect-virt --list",
+      "systemd-detect-virt -c -v",
+      "systemd-detect-virt --private-users",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
+
   it("allows Proxmox status reads and a listed set of API paths", () => {
     for (const command of [
       "pvesm status",

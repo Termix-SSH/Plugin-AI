@@ -57,6 +57,7 @@ const READ_ONLY_COMMANDS = new Set([
   "pvecm",
   "pveversion",
   "pvesh",
+  "systemd-detect-virt",
 ]);
 
 /** Characters that let one command become several. */
@@ -329,6 +330,14 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
       }
     },
     pvesh: (args) => pvesh(args),
+    "systemd-detect-virt": (args) => {
+      if (
+        args.length > 1 ||
+        (args.length && !["-c", "--container", "-v", "--vm"].includes(args[0]))
+      ) {
+        return "Only systemd-detect-virt with no option, --container or --vm is allowed";
+      }
+    },
     test: (args) => fileTest(args),
     "[": (args) =>
       args.at(-1) === "]" ? fileTest(args.slice(0, -1)) : "[ needs a closing ]",
