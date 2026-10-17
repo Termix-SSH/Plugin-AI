@@ -30,6 +30,7 @@
 - Assistant runs go on on the server: closing the panel, switching pages, reloading, closing the browser or losing the connection no longer stops them, and coming back shows the conversation with the run continuing live; only Stop ends a run early
 - Manage models at the bottom of the assistant's provider list opens the provider settings
 - With Termix 26.10.2+ the assistant docked on the right moves the page over instead of covering it
+- Asset inventory: an Assets view in the AI tab lists hosts, Proxmox guests, containers and the external addresses they talk to, collected daily, on host changes or on request by one read-only script per host; zones come from built-in and your own CIDR rules, hosts in more than one zone are marked, and the new `ai.assets.view` and `ai.assets.manage` permissions are admins only by default
 
 ### Changed
 
