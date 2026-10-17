@@ -362,10 +362,8 @@ export async function runTask(
       config,
       model,
     ).catch(() => planContext({ model, overrides: {}, info: {}, adapter: {} }));
-    session.limits = {
-      ...opsLimits,
-      summaryBudget: summaryBudgetFor(plan.contextWindow),
-    };
+    // Set in place: the termix tool holds a copy of the session.
+    opsLimits.summaryBudget = summaryBudgetFor(plan.contextWindow);
     for await (const event of runAgent({
       config,
       model,

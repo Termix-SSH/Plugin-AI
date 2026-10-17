@@ -191,7 +191,7 @@ describe("termix", () => {
       run: spawnRun,
       cliPath,
       url: "u",
-      token: "t",
+      token: async () => "t",
     });
     const long = "h".repeat(30000);
     const cut = (await call("termix", { args: [long] })) as { output: string };
