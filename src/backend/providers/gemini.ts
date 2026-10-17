@@ -115,6 +115,9 @@ export const geminiAdapter: ProviderAdapter = {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: request.system }] },
         contents: toGeminiContents(request),
+        ...(request.maxTokens
+          ? { generationConfig: { maxOutputTokens: request.maxTokens } }
+          : {}),
         ...(request.tools.length
           ? {
               tools: [

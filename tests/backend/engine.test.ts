@@ -8,7 +8,8 @@ vi.mock("../../src/backend/providers/registry.js", () => ({
   getAdapter: () => ({ streamChat, listModels: async () => [] }),
 }));
 
-const { REPEAT_LIMIT, runAgent } = await import("../../src/backend/engine.js");
+const { MAX_REPLY_TOKENS, REPEAT_LIMIT, runAgent } =
+  await import("../../src/backend/engine.js");
 
 function chunks(...values: ChatChunk[]) {
   return (async function* () {
@@ -60,6 +61,23 @@ describe("runAgent", () => {
 
     expect(events.filter((e) => e.type === "token")).toHaveLength(1);
     expect(events.at(-1).type).toBe("done");
+  });
+
+  it("caps every reply, so a looping model cannot stream forever", async () => {
+    // In real use one call streamed 1.9 MB over 40 minutes.
+    streamChat.mockReturnValueOnce(chunks({ type: "done" }));
+    await collect();
+    expect(streamChat.mock.calls[0][1].maxTokens).toBe(MAX_REPLY_TOKENS);
+
+    streamChat.mockReturnValueOnce(chunks({ type: "done" }));
+    for await (const _ of runAgent({
+      ...BASE,
+      history: [],
+      maxReplyTokens: 2048,
+    })) {
+      // drain
+    }
+    expect(streamChat.mock.calls[1][1].maxTokens).toBe(2048);
   });
 
   it("runs a known tool and feeds the result back", async () => {
