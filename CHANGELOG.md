@@ -2,6 +2,10 @@
 
 ## 1.0.2
 
+### Changed
+
+- The plugin name and description show in your language
+
 ### Fixed
 
 - Change proposals showed a host id instead of the host name
