@@ -22,7 +22,12 @@ import {
   type AssistantSession,
 } from "./assistant-tools.js";
 import { bundledCliPath, CORE_URL, requestToken } from "./cli.js";
-import { createOpsTools, MAX_TIMEOUT_SEC, type OpsLimits } from "./tools.js";
+import {
+  createOpsTools,
+  MAX_TIMEOUT_SEC,
+  summaryBudgetFor,
+  type OpsLimits,
+} from "./tools.js";
 
 /**
  * What the assistant opens and continues: its own conversations and those of
@@ -603,9 +608,12 @@ export function registerOpsRoutes(
         content: message.trim(),
       });
 
-      const limits = await readOpsLimits(ctx.settings);
       const config = await configFor(provider);
       const plan = await planFor(provider, chosenModel);
+      const limits = {
+        ...(await readOpsLimits(ctx.settings)),
+        summaryBudget: summaryBudgetFor(plan.contextWindow),
+      };
 
       const { send, signal, stopHeartbeat } = openEventStream(res);
       send({ type: "conversation", conversationId: conversation.id });
