@@ -389,15 +389,19 @@ function Panel({ userKey }: { userKey: string }) {
 
 export function AssistantOverlay() {
   const user = useCurrentUser();
+  const userKey = user?.userId ?? "anonymous";
   const { open } = useAssistant();
+  // Mounted with the shell, so after a reload the ball already shows a run
+  // still going on server-side.
+  useEffect(() => assistant.resume(userKey), [userKey]);
   // The panel mounts on first open and then stays, hidden while closed, so
   // the composer keeps its draft between opens.
   const opened = useRef(false);
   if (open) opened.current = true;
   return (
     <>
-      <Ball userKey={user?.userId ?? "anonymous"} />
-      {opened.current && <Panel userKey={user?.userId ?? "anonymous"} />}
+      <Ball userKey={userKey} />
+      {opened.current && <Panel userKey={userKey} />}
     </>
   );
 }

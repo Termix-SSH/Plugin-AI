@@ -27,6 +27,7 @@
 - The daily patrol and overload presets (version 2) no longer take an LXC container's load for its own when lxcfs passes through the hypervisor's, and `systemd-detect-virt` is on the read-only list
 - With Termix 26.10.2+ auto-ops tasks can read Termix through the Termix CLI as the task's owner, limited to read-only commands, with a five-minute session per call that is never stored; plans still hold only shell commands
 - With Termix 26.10.2+ auto-ops reports are written in the owner's Termix language, falling back to the language the AI tab saved, then English; the plugin now asks for `users:read` for this, which an admin approves on update
+- Assistant runs go on on the server: closing the panel, switching pages, reloading, closing the browser or losing the connection no longer stops them, and coming back shows the conversation with the run continuing live; only Stop ends a run early
 
 ### Changed
 

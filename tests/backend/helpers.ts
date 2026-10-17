@@ -24,6 +24,8 @@ export const ALL_PERMISSIONS = [
 export interface TestServer {
   db: TestDb;
   mock: MockPluginContext;
+  /** Where the server listens, for a test that reads a stream itself. */
+  url: string;
   request: (
     method: string,
     path: string,
@@ -118,6 +120,7 @@ export async function startServer(
   return {
     db,
     mock,
+    url: `http://127.0.0.1:${port}`,
     async request(
       method,
       path,

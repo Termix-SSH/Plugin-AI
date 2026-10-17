@@ -17,7 +17,7 @@ Changes run without asking you first. Only use it for requests you would trust a
 - Click the button, or press Ctrl+J. Change the key under Settings, Keybindings, Toggle the AI assistant.
 - Drag the button to move it. It stays where you put it.
 - Drag the panel's header to move it and its edges to resize it. The dock button makes it a full-height drawer on the right, and the expand button opens the AI tab.
-- Closing the panel does not stop the assistant. The button spins while it works; open the panel again to see how it went.
+- The assistant works on the server. Closing the panel, switching pages, reloading or closing the browser does not stop it, and neither does a dropped connection. The button spins while it works; come back to see how it went, or to watch it carry on. One message at a time per conversation.
 
 Pick a provider at the top. With none set up yet, Add provider takes you to Settings, AI Assistant, Providers.
 
