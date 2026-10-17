@@ -60,10 +60,24 @@ describe("checkCliArgs", () => {
     ["/database/export"],
     ["/admin/export/user-1"],
     ["/plugin-api/x/export?all=1"],
-  ])("refuses the export route %s through api", (route) => {
-    expect(checkCliArgs(["api", "POST", route], true)).toContain(
-      "export routes",
+    ["/credentials/5"],
+    ["/credentials/5/?x=1"],
+    ["/host/db/host/3/password"],
+    ["/host/db/host/3/local-connection-auth"],
+    ["/users/me/token"],
+    ["/sync/v2/changes?cursor=0"],
+  ])("refuses the secret route %s through api", (route) => {
+    expect(checkCliArgs(["api", "GET", route], true)).toContain(
+      "return secrets",
     );
+  });
+
+  it.each([
+    ["/credentials"],
+    ["/credentials/folders"],
+    ["/credentials/5/hosts"],
+  ])("lets the credential route %s through api", (route) => {
+    expect(checkCliArgs(["api", "GET", route], true)).toBeNull();
   });
 
   it("lets help through for every command, and ordinary commands", () => {

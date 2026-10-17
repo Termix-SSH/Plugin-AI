@@ -83,10 +83,13 @@ const HOST_SHELL_REFUSED =
   "You may not run commands on hosts: that needs the ai.ops.use permission, which an admin can grant.";
 
 /**
- * Export routes return decrypted credentials and user data, which would be
- * sent to the model provider.
+ * Routes that return decrypted credentials, tokens or user data, which would
+ * be sent to the model provider: exports, a credential by id (credentials get
+ * prints it without the secrets), a host's password, a shared host's resolved
+ * auth, the session token and the sync feed.
  */
-const EXPORT_PATH = /\/export(\/|\?|$)/i;
+const SECRET_PATH =
+  /\/(export|password|local-connection-auth|me\/token|sync\/v2\/changes)([/?]|$)|\/credentials\/(?!folders\b)[^/?]+\/?(\?|$)/i;
 
 /** Set by the tool itself, or reach the Termix server's own disk. */
 function blockedFlag(arg: string): string | null {
@@ -122,8 +125,8 @@ export function checkCliArgs(
   const [group, sub] = args.filter((arg) => !arg.startsWith("-"));
   const help =
     group === "help" || args.includes("--help") || args.includes("-h");
-  if (group === "api" && !help && args.some((arg) => EXPORT_PATH.test(arg))) {
-    return "termix api cannot call export routes: they return decrypted credentials and user data.";
+  if (group === "api" && !help && args.some((arg) => SECRET_PATH.test(arg))) {
+    return "termix api cannot call routes that return secrets (exports, a credential by id, passwords, tokens, the sync feed). Use credentials get or hosts get instead.";
   }
   if (help) return null;
   const matches = (rule?: { all?: true; sub?: string[] }) =>
