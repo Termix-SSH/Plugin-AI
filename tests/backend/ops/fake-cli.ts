@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { PluginProcess } from "@termix-ssh/plugin-sdk/backend";
+import { afterAll } from "vitest";
 
 /**
  * A stand-in for the Termix CLI: prints what it was started with as JSON.
@@ -37,8 +38,10 @@ if (args.includes("sleep")) {
 }
 `;
 
+/** Call while tests are collected: the file is removed after them. */
 export function writeFakeCli(): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), "fake-termix-cli-"));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
   const file = path.join(dir, "termix-cli.mjs");
   writeFileSync(file, SCRIPT);
   return file;
