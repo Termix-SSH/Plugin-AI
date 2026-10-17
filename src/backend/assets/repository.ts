@@ -506,6 +506,20 @@ export async function createAssetRepository(ctx: Pick<PluginContext, "db">) {
       return id;
     },
 
+    /** How far a running run got, so a long one shows progress. */
+    async progressRun(
+      id: number,
+      progress: { hostsOk: number; tokens: number },
+    ): Promise<void> {
+      await (
+        await client()
+      )
+        .update(runTable)
+        .set(progress)
+        .where(eq(runTable.id, id));
+      await db.persist();
+    },
+
     async finishRun(
       id: number,
       result: {

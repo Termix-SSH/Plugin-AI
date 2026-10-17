@@ -406,6 +406,9 @@ export function createAnnotationService(deps: AnnotationDeps) {
         if (controller.signal.aborted) break;
         const result = await annotateBatch(state, batch);
         ok += result.annotated;
+        // A full run takes half an hour on a self-hosted model; without
+        // this the run read 0 of 348 and 0 tokens until the very end.
+        await repo.progressRun(runId, { hostsOk: ok, tokens: state.tokens });
         const first = batch.members[0].asset.key;
         if (result.error) {
           errors[first] = result.error;

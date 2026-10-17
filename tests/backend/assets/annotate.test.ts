@@ -1,5 +1,5 @@
 import express from "express";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import {
   createMockCtx,
@@ -268,6 +268,18 @@ describe("asset annotation", () => {
     await annotate(s, true);
     expect(await lastRun(s)).toMatchObject({ status: "done" });
     expect((await lastRun(s)).hostsTotal).toBeGreaterThan(5);
+  });
+
+  it("records progress after every batch, not only at the end", async () => {
+    const model = fakeAnnotator();
+    const s = await setup(model);
+    await collect(s);
+    const progress = vi.spyOn(s.repo, "progressRun");
+    await annotate(s, true);
+    expect(progress).toHaveBeenCalled();
+    const [, last] = progress.mock.calls.at(-1)!;
+    expect(last.hostsOk).toBeGreaterThan(0);
+    expect(last.tokens).toBeGreaterThan(0);
   });
 
   it("tells later runs which system names exist", async () => {
