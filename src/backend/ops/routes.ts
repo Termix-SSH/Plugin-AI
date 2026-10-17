@@ -15,13 +15,13 @@ import { createProviderFetch } from "../providers/http.js";
 import type { ProviderConfig } from "../providers/types.js";
 import type { AiProviderWithSecret, AiRepository } from "../repository.js";
 import { readService, SERVICE } from "../services.js";
-import { openEventStream } from "../sse.js";
 import type { ToolDeps } from "../tools/types.js";
 import {
   createAssistantTools,
   type AssistantSession,
 } from "./assistant-tools.js";
 import { bundledCliPath, CORE_URL, requestToken } from "./cli.js";
+import { createRunRegistry, type Frame, type Run } from "./runs.js";
 import {
   createOpsTools,
   MAX_TIMEOUT_SEC,
@@ -131,6 +131,9 @@ export function registerOpsRoutes(
     return cache;
   };
 
+  const runs = createRunRegistry();
+  ctx.disposables.add(() => runs.stopAll());
+
   const findOpsConversation = async (raw: unknown) => {
     const id = parseId(raw);
     const conversation = id
@@ -234,7 +237,8 @@ export function registerOpsRoutes(
    *     responses:
    *       200:
    *         description: >
-   *           Conversations with their targets and the tokens each has used.
+   *           Conversations with their targets, the tokens each has used
+   *           and whether a run is going on in it.
    *       403:
    *         description: Missing ai.use, or the assistant is off.
    */
@@ -251,6 +255,7 @@ export function registerOpsRoutes(
         updatedAt: conversation.updatedAt,
         targets: storedTargets(conversation.targets),
         totalTokens: tokens.get(conversation.id) ?? 0,
+        running: runs.running(conversation.id),
       })),
     });
   });
@@ -271,8 +276,9 @@ export function registerOpsRoutes(
    *     responses:
    *       200:
    *         description: >
-   *           The conversation, with the tokens it has used and how much of
-   *           the model's context its latest call took.
+   *           The conversation, with the tokens it has used, how much of
+   *           the model's context its latest call took and whether a run is
+   *           going on in it.
    *       404:
    *         description: Conversation not found.
    */
@@ -312,6 +318,7 @@ export function registerOpsRoutes(
         title: conversation.title,
         targets: storedTargets(conversation.targets),
         totalTokens: tokens.get(conversation.id) ?? 0,
+        running: runs.running(conversation.id),
         context: context
           ? { ...context, ...meterOf(await planFor(provider, model)) }
           : null,
@@ -325,6 +332,8 @@ export function registerOpsRoutes(
    * /plugin-api/ai/ops/conversations/{id}:
    *   delete:
    *     summary: Delete an assistant conversation and its run records
+   *     description: >
+   *       A run going on in it is stopped first.
    *     tags:
    *       - AI
    *     parameters:
@@ -346,8 +355,80 @@ export function registerOpsRoutes(
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
       }
+      await runs.stop(conversation.id);
       await repository.deleteConversation(conversation.id, conversation.userId);
       res.json({ success: true });
+    },
+  );
+
+  /**
+   * @openapi
+   * /plugin-api/ai/ops/conversations/{id}/stream:
+   *   get:
+   *     summary: Watch the run going on in an assistant conversation
+   *     description: >
+   *       The frames /ops/chat streams. Joining part way, the run's frames so
+   *       far come first, then it continues live until done. With no run
+   *       going on the stream is a single done frame, and the stored messages
+   *       are all there is. Closing it never stops the run.
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: An event stream.
+   *       404:
+   *         description: Conversation not found.
+   */
+  router.get(
+    "/ops/conversations/:id/stream",
+    async (req: Request, res: Response) => {
+      const conversation = await findOpsConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      runs.watch(conversation.id, res);
+    },
+  );
+
+  /**
+   * @openapi
+   * /plugin-api/ai/ops/conversations/{id}/stop:
+   *   post:
+   *     summary: Stop the run going on in an assistant conversation
+   *     description: >
+   *       Ends the model call and any command or CLI call it has running, and
+   *       answers once the run has ended. stopped is false when there was
+   *       none.
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Whether a run was stopped.
+   *       404:
+   *         description: Conversation not found.
+   */
+  router.post(
+    "/ops/conversations/:id/stop",
+    async (req: Request, res: Response) => {
+      const conversation = await findOpsConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      const stopped = runs.running(conversation.id);
+      await runs.stop(conversation.id);
+      res.json({ stopped });
     },
   );
 
@@ -474,9 +555,12 @@ export function registerOpsRoutes(
    *       thinking apart from its tokens, a usage frame follows every model
    *       call with its tokens, the context window, its source (override,
    *       provider, guess or default) and the tokens kept for the reply, and
-   *       a compacted frame marks where the history was summarised to fit. There is no step
-   *       limit; the run ends when the model answers, the client goes away,
-   *       or it repeats one call with one result five times. hostIds become the conversation's
+   *       a compacted frame marks where the history was summarised to fit.
+   *       The run goes on in the background: closing the stream only stops
+   *       watching it, and /ops/conversations/{id}/stream picks it up again.
+   *       There is no step limit; the run ends when the model answers, it is
+   *       stopped, or it repeats one call with one result five times. One
+   *       run at a time per conversation. hostIds become the conversation's
    *       targets; leave them out to keep the ones it has. Targets, and the
    *       tools that run commands on them, need ai.ops.use; without it a
    *       non-empty hostIds is refused and the CLI cannot exec on hosts.
@@ -524,6 +608,8 @@ export function registerOpsRoutes(
    *           assistant is off.
    *       404:
    *         description: Provider or conversation not found.
+   *       409:
+   *         description: The conversation already has a run going on.
    */
   router.post("/ops/chat", async (req: Request, res: Response) => {
     const userId = ctx.currentActor() as string;
@@ -550,6 +636,7 @@ export function registerOpsRoutes(
       });
     }
 
+    let run: Run | null = null;
     try {
       const provider = await repository.findProviderWithSecret(
         resolvedProviderId,
@@ -572,6 +659,15 @@ export function registerOpsRoutes(
       if (conversationId && conversation?.mode !== "ops") {
         return res.status(404).json({ error: "Conversation not found" });
       }
+      // Claimed before anything is written, so two messages cannot race.
+      if (conversation) {
+        run = runs.start(conversation.id);
+        if (!run) {
+          return res
+            .status(409)
+            .json({ error: "The assistant is still working on this" });
+        }
+      }
 
       const targets = hostShell
         ? (requested ?? storedTargets(conversation?.targets))
@@ -586,6 +682,7 @@ export function registerOpsRoutes(
           mode: "ops",
           targets,
         });
+        run = runs.start(conversation.id) as Run;
       } else if (requested && hostShell) {
         await repository.setConversationTargets(conversation.id, targets);
       }
@@ -604,9 +701,12 @@ export function registerOpsRoutes(
         summaryBudget: summaryBudgetFor(plan.contextWindow),
       };
 
-      const { send, signal, stopHeartbeat } = openEventStream(res);
+      const current = run;
+      const send = (frame: Frame) => runs.send(current, frame);
+      runs.subscribe(current, res);
       send({ type: "conversation", conversationId: conversation.id });
 
+      // Taken now: the run outlives the request, the token stays valid.
       const token = requestToken(req);
       const cliPath = bundledCliPath();
       const ownId = conversation.id;
@@ -614,7 +714,7 @@ export function registerOpsRoutes(
         hostShell,
         targets,
         limits,
-        signal,
+        signal: current.signal,
         facts: factsFor(ownId),
         onHostResult: (name, command, host) =>
           send({ type: "tool_progress", name, command, host }),
@@ -643,65 +743,83 @@ export function registerOpsRoutes(
       const chatHistory = toChatHistory(history);
       chatHistory.push({ role: "user", content: message.trim() });
 
-      try {
-        for await (const event of runAgent({
-          config,
-          model: chosenModel,
-          system: buildAssistantSystemPrompt({
-            targetCount: targets.length,
-            page: parsePage(page),
-            cli: session.cli !== null,
-            hostShell,
-          }),
-          history: chatHistory,
-          context: {
-            userId,
-            conversationId: conversation.id,
-            allowReadOnlyCommands: false,
-            deps: toolDeps,
-          },
-          tools,
-          signal,
-          contextWindow: plan.contextWindow,
-          contextBudget: plan.budget,
-          compactAt: plan.compactAt,
-          onUsage: usageRecorder(userId, provider, chosenModel, ownId),
-        })) {
-          if (event.type === "message") {
-            await repository.appendMessage({
-              conversationId: conversation.id,
-              ...toStoredMessage(event.message),
-            });
-            continue;
-          }
-          if (event.type === "compacted") {
-            await repository.appendMessage({
-              conversationId: conversation.id,
-              ...toStoredSummary(event.summary, event.keep),
-            });
-            send({ type: "compacted" });
-            continue;
-          }
-          send(event.type === "usage" ? { ...event, ...meterOf(plan) } : event);
-        }
-      } finally {
-        stopHeartbeat();
-      }
-      await repository.touchConversation(conversation.id);
+      const agent = runAgent({
+        config,
+        model: chosenModel,
+        system: buildAssistantSystemPrompt({
+          targetCount: targets.length,
+          page: parsePage(page),
+          cli: session.cli !== null,
+          hostShell,
+        }),
+        history: chatHistory,
+        context: {
+          userId,
+          conversationId: ownId,
+          allowReadOnlyCommands: false,
+          deps: toolDeps,
+        },
+        tools,
+        signal: current.signal,
+        contextWindow: plan.contextWindow,
+        contextBudget: plan.budget,
+        compactAt: plan.compactAt,
+        onUsage: usageRecorder(userId, provider, chosenModel, ownId),
+      });
 
-      send({ type: "done" });
-      res.end();
+      // Not awaited: the response is only one of the run's watchers.
+      void ctx
+        .asUser(userId, async () => {
+          try {
+            for await (const event of agent) {
+              if (event.type === "message") {
+                await repository.appendMessage({
+                  conversationId: ownId,
+                  ...toStoredMessage(event.message),
+                });
+                continue;
+              }
+              if (event.type === "compacted") {
+                await repository.appendMessage({
+                  conversationId: ownId,
+                  ...toStoredSummary(event.summary, event.keep),
+                });
+                send({ type: "compacted" });
+                continue;
+              }
+              send(
+                event.type === "usage" ? { ...event, ...meterOf(plan) } : event,
+              );
+            }
+          } finally {
+            await repository.touchConversation(ownId);
+          }
+        })
+        .catch((err) => {
+          logError("Assistant run failed", err);
+          send({
+            type: "error",
+            message: "The assistant stopped unexpectedly",
+          });
+        })
+        .finally(() => {
+          send({ type: "done" });
+          runs.finish(current);
+        });
     } catch (err) {
       logError("Assistant stream failed", err);
-      if (res.writableEnded || res.destroyed) return;
+      if (!run) {
+        return res.status(500).json({ error: "Failed to start the assistant" });
+      }
       if (res.headersSent) {
-        res.write(
-          `data: ${JSON.stringify({ type: "error", message: "The assistant stopped unexpectedly" })}\n\n`,
-        );
-        res.end();
+        runs.send(run, {
+          type: "error",
+          message: "The assistant stopped unexpectedly",
+        });
       } else {
         res.status(500).json({ error: "Failed to start the assistant" });
       }
+      runs.finish(run);
     }
   });
 }

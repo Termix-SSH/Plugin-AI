@@ -329,6 +329,8 @@ export interface AssistantConversation {
   targets: number[];
   /** Every model call of the conversation, compaction included. */
   totalTokens: number;
+  /** A run is going on in it on the server. */
+  running: boolean;
 }
 
 /** How much of the model's context the latest call took. */
@@ -368,6 +370,15 @@ export async function deleteAssistantConversation(id: number): Promise<void> {
     await api().delete(`/ops/conversations/${id}`);
   } catch (error) {
     throw apiError(error, "delete the conversation");
+  }
+}
+
+/** Stops the run going on in the conversation; resolves once it has ended. */
+export async function stopAssistantConversation(id: number): Promise<void> {
+  try {
+    await api().post(`/ops/conversations/${id}/stop`);
+  } catch (error) {
+    throw apiError(error, "stop the assistant");
   }
 }
 
