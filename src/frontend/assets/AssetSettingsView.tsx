@@ -15,6 +15,7 @@ import {
 import { Settings2, Trash2 } from "lucide-react";
 import { apiMessage } from "../autoops/api";
 import {
+  annotateNow,
   deleteZone,
   getSettings,
   saveSettings,
@@ -34,6 +35,7 @@ function ScheduleSection() {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<AssetSettings | null>(null);
   const [time, setTime] = useState("");
+  const [model, setModel] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ function ScheduleSection() {
       .then((value) => {
         setSettings(value);
         setTime(value.dailyTime);
+        setModel(value.annotateModel ?? "");
       })
       .catch((err) => setError(apiMessage(err, t("assets.loadFailed"))));
   }, [t]);
@@ -50,6 +53,7 @@ function ScheduleSection() {
       const next = await saveSettings(changes);
       setSettings(next);
       setTime(next.dailyTime);
+      setModel(next.annotateModel ?? "");
       setError(null);
     } catch (err) {
       setError(apiMessage(err, t("assets.saveFailed")));
@@ -101,6 +105,65 @@ function ScheduleSection() {
           </Button>
         )}
       </div>
+      <GroupHeading title={t("assets.annotationTitle")} />
+      <SwitchRow
+        label={t("assets.annotateAfterCollect")}
+        description={t("assets.annotateAfterCollectHint")}
+        checked={settings.annotateAfterCollect}
+        onChange={(annotateAfterCollect) => void save({ annotateAfterCollect })}
+      />
+      <SelectField
+        label={t("assets.annotateProvider")}
+        value={String(settings.annotateProviderId ?? "")}
+        onChange={(value) =>
+          void save({ annotateProviderId: value ? Number(value) : null })
+        }
+        options={[
+          { value: "", label: t("assets.annotateProviderDefault") },
+          ...settings.annotateProviders.map((provider) => ({
+            value: String(provider.id),
+            label: provider.label,
+          })),
+        ]}
+      />
+      <div className="flex items-end gap-2">
+        <TextField
+          label={t("assets.annotateModel")}
+          value={model}
+          onChange={setModel}
+          placeholder={
+            settings.annotateProviders.find(
+              (provider) => provider.id === settings.annotateProviderId,
+            )?.defaultModel ?? t("assets.annotateModelDefault")
+          }
+          mono
+          className="flex-1"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={model === (settings.annotateModel ?? "")}
+          onClick={() => void save({ annotateModel: model.trim() || null })}
+        >
+          {t("assets.save")}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {t("assets.annotationHint")}
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          void annotateNow(true)
+            .then(() => setError(null))
+            .catch((err) =>
+              setError(apiMessage(err, t("assets.annotateFailed"))),
+            )
+        }
+      >
+        {t("assets.annotateAll")}
+      </Button>
       {error && (
         <p role="alert" className="text-xs text-destructive">
           {error}

@@ -8,6 +8,7 @@ import {
 } from "@termix-ssh/plugin-sdk/ui";
 import { Network } from "lucide-react";
 import { apiMessage } from "../autoops/api";
+import { AnnotationFields } from "./AnnotationFields";
 import { useZoneLabel, ZoneBadge } from "./ZoneBadge";
 import {
   getAsset,
@@ -202,6 +203,14 @@ export function AssetDetailView({
                 </>
               )}
             </dl>
+            <AnnotationFields
+              asset={asset}
+              canManage={canManage}
+              onSaved={() => {
+                void load();
+                onChanged();
+              }}
+            />
             {canManage && (
               <SelectField
                 label={t("assets.pinZone")}

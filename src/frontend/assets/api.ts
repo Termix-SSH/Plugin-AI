@@ -4,8 +4,23 @@ import { aiApp } from "../app-ref";
 
 export type AssetKind = "host" | "guest" | "container" | "external";
 export type ZoneKind = "internal" | "dmz" | "external" | "cloud" | "overlay";
+export type Importance = "critical" | "high" | "medium" | "low";
+export type AnnotationField = "role" | "importance" | "system";
+export type FieldSource = "ai" | "user" | null;
 
-export interface AssetItem {
+/** An asset's annotation, each field with where it came from. */
+export interface Annotation {
+  role: string | null;
+  roleSource: FieldSource;
+  importance: Importance | null;
+  importanceSource: FieldSource;
+  importanceReason: string | null;
+  system: string | null;
+  systemSource: FieldSource;
+  annotatedAt: string | null;
+}
+
+export interface AssetItem extends Annotation {
   id: number;
   key: string;
   kind: AssetKind;
@@ -57,7 +72,8 @@ export interface ZoneRule {
 
 export interface CollectionRun {
   id: number;
-  trigger: "schedule" | "manual" | "host_event";
+  kind: "collect" | "annotate";
+  trigger: "schedule" | "manual" | "host_event" | "collection";
   startedAt: string;
   finishedAt: string | null;
   status: "running" | "done" | "failed";
@@ -65,13 +81,74 @@ export interface CollectionRun {
   hostsOk: number;
   hostsFailed: number;
   errorSummary: Record<string, string> | null;
+  tokens: number;
 }
+
+/** An annotation run counts assets in the hosts fields. */
+export type AnnotationRun = CollectionRun;
 
 export interface AssetSettings {
   dailyEnabled: boolean;
   dailyTime: string;
   collectorSet: boolean;
   collectorIsMe: boolean;
+  annotateAfterCollect: boolean;
+  annotateProviderId: number | null;
+  annotateModel: string | null;
+  annotateProviders: Array<{
+    id: number;
+    label: string;
+    defaultModel: string | null;
+  }>;
+}
+
+export type EdgeType = "runs_on" | "depends_on" | "connects_to";
+
+export interface GraphNode {
+  id: number;
+  key: string;
+  kind: AssetKind;
+  name: string;
+  zone: string | null;
+  multiZone: boolean;
+  role: string | null;
+  importance: Importance | null;
+  system: string | null;
+  containers: number;
+}
+
+export interface GraphEdge {
+  key: string;
+  from: number;
+  to: number;
+  type: EdgeType;
+  source: string;
+  stale: boolean;
+}
+
+export interface GraphOptions {
+  types: EdgeType[];
+  containers: boolean;
+  external: boolean;
+}
+
+export interface ImpactItem {
+  asset: Pick<GraphNode, "id" | "key" | "kind" | "name" | "zone" | "role"> & {
+    importance: Importance | null;
+  };
+  depth: number;
+  path: Array<{ from: number; to: number; type: EdgeType; source: string }>;
+}
+
+export type ImportanceCounts = Record<Importance | "unknown", number>;
+
+export interface Impact {
+  asset: { id: number; key: string; name: string };
+  direct: ImpactItem[];
+  transitive: ImpactItem[];
+  weak: ImpactItem[];
+  counts: { strong: ImportanceCounts; weak: ImportanceCounts };
+  truncated: boolean;
 }
 
 export interface AssetFilters {
@@ -145,9 +222,59 @@ export async function getSettings(): Promise<AssetSettings> {
 }
 
 export async function saveSettings(
-  changes: Partial<Pick<AssetSettings, "dailyEnabled" | "dailyTime">> & {
+  changes: Partial<
+    Pick<
+      AssetSettings,
+      | "dailyEnabled"
+      | "dailyTime"
+      | "annotateAfterCollect"
+      | "annotateProviderId"
+      | "annotateModel"
+    >
+  > & {
     collector?: "me";
   },
 ): Promise<AssetSettings> {
   return (await api().put("assets/settings", changes)).data.settings;
+}
+
+export async function getGraph(
+  options: GraphOptions,
+): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> {
+  const query = new URLSearchParams({ types: options.types.join(",") });
+  if (options.containers) query.set("containers", "1");
+  if (options.external) query.set("external", "1");
+  return (await api().get(`assets/graph?${query}`)).data;
+}
+
+export async function getImpact(id: number): Promise<Impact> {
+  return (await api().get(`assets/${id}/impact`)).data;
+}
+
+/** Sets fields as the user's own, locked against annotation runs. */
+export async function saveAnnotation(
+  id: number,
+  changes: Partial<
+    Pick<Annotation, "role" | "importance" | "importanceReason" | "system">
+  >,
+): Promise<void> {
+  await api().put(`assets/${id}/annotation`, changes);
+}
+
+export async function unlockAnnotation(
+  id: number,
+  field: AnnotationField,
+): Promise<void> {
+  await api().delete(`assets/${id}/annotation/${field}`);
+}
+
+export async function annotateNow(all: boolean): Promise<"started" | "queued"> {
+  return (await api().post("assets/annotate", { all })).data.status;
+}
+
+export async function listAnnotationRuns(): Promise<{
+  runs: AnnotationRun[];
+  running: boolean;
+}> {
+  return (await api().get("assets/annotation-runs")).data;
 }

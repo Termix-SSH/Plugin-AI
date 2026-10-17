@@ -19,6 +19,12 @@ const mocks = vi.hoisted(() => ({
   listRuns: vi.fn(),
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
+  listAnnotationRuns: vi.fn(),
+  annotateNow: vi.fn(),
+  getGraph: vi.fn(),
+  getImpact: vi.fn(),
+  saveAnnotation: vi.fn(),
+  unlockAnnotation: vi.fn(),
 }));
 vi.mock("../../src/frontend/app-ref", () => ({
   aiApp: () => ({ hasPermission: mocks.hasPermission }),
@@ -34,6 +40,12 @@ vi.mock("../../src/frontend/assets/api", () => ({
   listRuns: mocks.listRuns,
   getSettings: mocks.getSettings,
   saveSettings: mocks.saveSettings,
+  listAnnotationRuns: mocks.listAnnotationRuns,
+  annotateNow: mocks.annotateNow,
+  getGraph: mocks.getGraph,
+  getImpact: mocks.getImpact,
+  saveAnnotation: mocks.saveAnnotation,
+  unlockAnnotation: mocks.unlockAnnotation,
 }));
 vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
   ...(await original<object>()),
@@ -104,11 +116,16 @@ beforeEach(() => {
     ],
   });
   mocks.collectNow.mockResolvedValue("started");
+  mocks.listAnnotationRuns.mockResolvedValue({ running: false, runs: [] });
   mocks.getSettings.mockResolvedValue({
     dailyEnabled: true,
     dailyTime: "03:00",
     collectorSet: true,
     collectorIsMe: false,
+    annotateAfterCollect: true,
+    annotateProviderId: null,
+    annotateModel: null,
+    annotateProviders: [{ id: 4, label: "Work", defaultModel: "gpt-5" }],
   });
 });
 afterEach(() => {
@@ -226,4 +243,49 @@ it("adds a zone rule from the settings", async () => {
       priority: 0,
     }),
   );
+});
+
+it("shows annotation columns with their source, and annotates on request", async () => {
+  mocks.listAssets.mockResolvedValue([
+    asset({
+      role: "Shop front end",
+      roleSource: "user",
+      importance: "high",
+      importanceSource: "ai",
+      importanceReason: "Customers reach the shop through it.",
+      system: "shop",
+      systemSource: "ai",
+    }),
+  ]);
+  mocks.annotateNow.mockResolvedValue("started");
+  mocks.listAnnotationRuns.mockResolvedValue({
+    running: false,
+    runs: [
+      {
+        id: 3,
+        kind: "annotate",
+        trigger: "collection",
+        startedAt: "2026-10-17T03:01:00.000Z",
+        finishedAt: "2026-10-17T03:02:00.000Z",
+        status: "failed",
+        hostsTotal: 4,
+        hostsOk: 2,
+        hostsFailed: 2,
+        errorSummary: { run: "Stopped at the token budget of 1000" },
+        tokens: 1200,
+      },
+    ],
+  });
+  render(<AssetsView />);
+  expect(await screen.findByText("Shop front end")).toBeTruthy();
+  expect(screen.getByText("assets.importance.high")).toBeTruthy();
+  expect(screen.getByText("assets.sourceUser")).toBeTruthy();
+  expect(screen.getAllByText("assets.sourceAi")).toHaveLength(2);
+  expect(screen.getByText("assets.annotationFailed")).toBeTruthy();
+
+  fireEvent.click(screen.getByText("assets.annotateNow"));
+  await waitFor(() => expect(mocks.annotateNow).toHaveBeenCalledWith(false));
+
+  fireEvent.click(screen.getByText("assets.settingsTitle"));
+  expect(await screen.findByText("assets.annotationTitle")).toBeTruthy();
 });

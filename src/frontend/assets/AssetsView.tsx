@@ -6,20 +6,26 @@ import {
   EmptyState,
   ListBadge,
   PanelSearch,
+  Segmented,
   SelectField,
   type DataColumn,
 } from "@termix-ssh/plugin-sdk/ui";
-import { Network, RefreshCw, Settings2 } from "lucide-react";
+import { Network, RefreshCw, Settings2, Sparkles } from "lucide-react";
 import { aiApp } from "../app-ref";
 import { useZoneLabel, ZoneBadge } from "./ZoneBadge";
 import { apiMessage } from "../autoops/api";
+import { ImportanceBadge, SourceBadge } from "./AnnotationFields";
 import { AssetDetailView } from "./AssetDetailView";
 import { AssetSettingsView } from "./AssetSettingsView";
+import { GraphView } from "./GraphView";
 import {
+  annotateNow,
   collectNow,
+  listAnnotationRuns,
   listAssets,
   listRuns,
   listZones,
+  type AnnotationRun,
   type AssetItem,
   type CollectionRun,
   type ZoneKind,
@@ -71,6 +77,36 @@ function RunStatus({
   );
 }
 
+/** The latest annotation run in a line: assets, tokens, or why it failed. */
+function AnnotationStatus({
+  run,
+  running,
+}: {
+  run: AnnotationRun | undefined;
+  running: boolean;
+}) {
+  const { t } = useTranslation();
+  if (running) return <span>{t("assets.annotating")}</span>;
+  if (!run) return <span>{t("assets.neverAnnotated")}</span>;
+  const errors = Object.values(run.errorSummary ?? {});
+  return (
+    <span title={errors.join("\n")}>
+      {t("assets.lastAnnotation", {
+        time: when(run.finishedAt ?? run.startedAt),
+        ok: run.hostsOk,
+        total: run.hostsTotal,
+        tokens: run.tokens.toLocaleString(),
+      })}
+      {run.status === "failed" && (
+        <span className="text-destructive">
+          {" "}
+          {t("assets.annotationFailed", { reason: errors[0] ?? "" })}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function useManage(): boolean {
   const [allowed, setAllowed] = useState(false);
   useEffect(() => {
@@ -99,6 +135,10 @@ export function AssetsView() {
   const [builtin, setBuiltin] = useState<ZoneKind[]>([]);
   const [runs, setRuns] = useState<CollectionRun[]>([]);
   const [running, setRunning] = useState(false);
+  const [annotationRuns, setAnnotationRuns] = useState<AnnotationRun[]>([]);
+  const [annotating, setAnnotating] = useState(false);
+  const [mode, setMode] = useState<"table" | "graph">("table");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [query, setQuery] = useState("");
   const [zone, setZone] = useState("");
   const [includeRemoved, setIncludeRemoved] = useState(false);
@@ -108,16 +148,19 @@ export function AssetsView() {
 
   const load = useCallback(async () => {
     try {
-      const [list, zones, history] = await Promise.all([
+      const [list, zones, history, annotations] = await Promise.all([
         listAssets({ q: query.trim(), zone, includeRemoved }),
         listZones(),
         listRuns(),
+        listAnnotationRuns(),
       ]);
       setAssets(list);
       setRules(zones.zones);
       setBuiltin(zones.builtin);
       setRuns(history.runs);
       setRunning(history.running);
+      setAnnotationRuns(annotations.runs);
+      setAnnotating(annotations.running);
       setError(null);
     } catch (err) {
       setError(apiMessage(err, t("assets.loadFailed")));
@@ -128,10 +171,23 @@ export function AssetsView() {
     void load();
     const timer = setInterval(
       () => void load(),
-      running ? RUNNING_MS : REFRESH_MS,
+      running || annotating ? RUNNING_MS : REFRESH_MS,
     );
     return () => clearInterval(timer);
-  }, [load, running]);
+  }, [load, running, annotating]);
+
+  // A run that just finished changed what the graph shows.
+  const latestRun = `${runs[0]?.id}-${runs[0]?.status}-${annotationRuns[0]?.id}-${annotationRuns[0]?.status}`;
+  useEffect(() => setRefreshKey((key) => key + 1), [latestRun]);
+
+  const annotate = async () => {
+    try {
+      await annotateNow(false);
+      setAnnotating(true);
+    } catch (err) {
+      setError(apiMessage(err, t("assets.annotateFailed")));
+    }
+  };
 
   const collect = async () => {
     try {
@@ -178,6 +234,46 @@ export function AssetsView() {
       header: t("assets.columns.zone"),
       width: "minmax(0,1.5fr)",
       cell: (asset) => <ZoneBadge asset={asset} rules={rules} />,
+    },
+    {
+      key: "role",
+      header: t("assets.columns.role"),
+      width: "minmax(0,2fr)",
+      cell: (asset) => (
+        <span
+          className="flex min-w-0 items-center gap-1"
+          title={asset.role ?? undefined}
+        >
+          <span className="truncate">{asset.role ?? "-"}</span>
+          <SourceBadge source={asset.roleSource} />
+        </span>
+      ),
+    },
+    {
+      key: "importance",
+      header: t("assets.columns.importance"),
+      width: "minmax(0,1.2fr)",
+      cell: (asset) => (
+        <span
+          className="flex min-w-0 items-center gap-1"
+          title={asset.importanceReason ?? undefined}
+        >
+          <ImportanceBadge importance={asset.importance} />
+          <SourceBadge source={asset.importanceSource} />
+        </span>
+      ),
+    },
+    {
+      key: "system",
+      header: t("assets.columns.system"),
+      width: "minmax(0,1.2fr)",
+      hideBelow: "md",
+      cell: (asset) => (
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="truncate">{asset.system ?? "-"}</span>
+          <SourceBadge source={asset.systemSource} />
+        </span>
+      ),
     },
     {
       key: "ips",
@@ -232,27 +328,42 @@ export function AssetsView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-end gap-2 border-b border-border px-3 py-2">
-        <PanelSearch
-          value={query}
-          onChange={setQuery}
-          placeholder={t("assets.search")}
-          className="min-w-48 flex-1"
+        <Segmented<"table" | "graph">
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "table", label: t("assets.modeTable") },
+            { value: "graph", label: t("assets.modeGraph") },
+          ]}
+          className="mb-1"
         />
-        <SelectField
-          label={t("assets.columns.zone")}
-          value={zone}
-          onChange={setZone}
-          options={zoneOptions}
-          className="w-44"
-        />
-        <label className="flex items-center gap-1.5 pb-2 text-xs">
-          <input
-            type="checkbox"
-            checked={includeRemoved}
-            onChange={(event) => setIncludeRemoved(event.target.checked)}
-          />
-          {t("assets.showRemoved")}
-        </label>
+        {mode === "table" ? (
+          <>
+            <PanelSearch
+              value={query}
+              onChange={setQuery}
+              placeholder={t("assets.search")}
+              className="min-w-48 flex-1"
+            />
+            <SelectField
+              label={t("assets.columns.zone")}
+              value={zone}
+              onChange={setZone}
+              options={zoneOptions}
+              className="w-44"
+            />
+            <label className="flex items-center gap-1.5 pb-2 text-xs">
+              <input
+                type="checkbox"
+                checked={includeRemoved}
+                onChange={(event) => setIncludeRemoved(event.target.checked)}
+              />
+              {t("assets.showRemoved")}
+            </label>
+          </>
+        ) : (
+          <span className="flex-1" />
+        )}
         {canManage && (
           <>
             <Button
@@ -263,6 +374,15 @@ export function AssetsView() {
               <Settings2 className="size-3.5" />
               {t("assets.settingsTitle")}
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={annotating}
+              onClick={() => void annotate()}
+            >
+              <Sparkles className="size-3.5" />
+              {t("assets.annotateNow")}
+            </Button>
             <Button size="sm" disabled={running} onClick={() => void collect()}>
               <RefreshCw className="size-3.5" />
               {t("assets.collectNow")}
@@ -270,15 +390,28 @@ export function AssetsView() {
           </>
         )}
       </div>
-      <div className="border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-x-4 border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
         <RunStatus run={runs[0]} running={running} />
+        <AnnotationStatus run={annotationRuns[0]} running={annotating} />
       </div>
       {error && (
         <p role="alert" className="px-3 py-2 text-xs text-destructive">
           {error}
         </p>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {mode === "graph" && (
+        <GraphView
+          rules={rules}
+          canManage={canManage}
+          refreshKey={refreshKey}
+          onChanged={() => void load()}
+        />
+      )}
+      <div
+        className={
+          mode === "graph" ? "hidden" : "min-h-0 flex-1 overflow-y-auto"
+        }
+      >
         <DataView
           items={assets}
           view="list"
