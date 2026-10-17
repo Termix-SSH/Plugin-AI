@@ -24,6 +24,8 @@
 - The read-only command list also allows `docker system df`, `find` without writing actions, `ping -c`, `nc -z`, `qm` and `pct` status and list, `timedatectl`, `openssl x509 -noout`, update checks and reboot checks
 - The read-only command list also allows `docker inspect` with a `--format` limited to a container's state, memory limits and restart policy, `dnf` and `yum` `updateinfo summary` and `list`, `needs-restarting -r`, and reading `/var/run/reboot-required.pkgs`
 - The read-only command list also allows `kubectl` and `k3s kubectl` `get`, `describe`, `top`, `logs --tail`, `events`, `version`, `cluster-info`, `api-resources` and `auth can-i`, without secrets and with full objects only for kinds that hold no pod template or data; `crictl` `ps`, `pods`, `images`, `stats`, `version` and `logs --tail`; `nvidia-smi` queries and `topo -m`; `zpool status`, `list` and `iostat` with a count, `zfs list` and `zfs get` of native properties; `pvesm status` and `list`, `pvecm status` and `nodes`, `pveversion`, `pvesh get` of listed status, task, storage and log paths; and `systemctl list-timers`
+- With Termix 26.10.2+ auto-ops tasks can read Termix through the Termix CLI as the task's owner, limited to read-only commands, with a five-minute session per call that is never stored; plans still hold only shell commands
+- With Termix 26.10.2+ auto-ops reports are written in the owner's Termix language, falling back to the language the AI tab saved, then English; the plugin now asks for `users:read` for this, which an admin approves on update
 
 ### Changed
 

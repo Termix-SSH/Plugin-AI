@@ -5,7 +5,7 @@ import { readOpsLimits } from "../ops/routes.js";
 import type { AiRepository } from "../repository.js";
 import { readService, requireService, SERVICE } from "../services.js";
 import { executePlan } from "./execute.js";
-import { automationName, presetTitle } from "./language.js";
+import { automationName, ownerLanguage, presetTitle } from "./language.js";
 import { PREFERENCES_KEY, readPreferences, readTaskLimits } from "./limits.js";
 import {
   applyOverrides,
@@ -303,7 +303,7 @@ export function registerTaskRoutes(
     }
     const preset = findPreset(presetId);
     if (!preset) return null;
-    const { language } = await readPreferences(ctx.settings, userId);
+    const language = await ownerLanguage(ctx, userId);
     return {
       config: preset,
       version: preset.version,
@@ -646,7 +646,7 @@ export function registerTaskRoutes(
     await tasks.transition(task.id, ["approved"], { status: "executing" });
     const current = (await tasks.findRun(task.id)) as TaskRunRecord;
     const limits = await readOpsLimits(ctx.settings);
-    const { language } = await readPreferences(ctx.settings, task.userId);
+    const language = await ownerLanguage(ctx, task.userId);
     void ctx
       .asUser(task.userId, () =>
         executePlan(

@@ -1,6 +1,9 @@
 import en from "../../../locales/en.json";
 import zhCN from "../../../locales/translated/zh_CN.json";
 import zhTW from "../../../locales/translated/zh_TW.json";
+import { userLocale } from "../core-api.js";
+import type { SettingsReader } from "../gating.js";
+import { readPreferences } from "./limits.js";
 
 /**
  * The owner's language, for what the server writes without a model: a
@@ -21,6 +24,20 @@ const STRINGS: Record<string, AutoOpsStrings> = {
   zh_CN: zhCN.autoOps ?? {},
   zh_TW: zhTW.autoOps ?? {},
 };
+
+/**
+ * The language the owner reads: their Termix UI language when core can say
+ * (Termix 26.10.2+), else the one the AI tab saved for them, else English.
+ */
+export async function ownerLanguage(
+  ctx: { settings: SettingsReader },
+  userId: string,
+): Promise<string> {
+  return (
+    (await userLocale(ctx, userId)) ??
+    (await readPreferences(ctx.settings, userId)).language
+  );
+}
 
 /** "zh-CN", "zh_cn" and "zh" all read as zh_CN. */
 export function normalizeLanguage(raw: string): string {

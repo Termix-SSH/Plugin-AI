@@ -1,5 +1,5 @@
 import { resolveAiAccess } from "../gating.js";
-import { reportText } from "./language.js";
+import { ownerLanguage, reportText } from "./language.js";
 import { readPreferences, readTaskLimits, startOfUtcDay } from "./limits.js";
 import {
   resolveProvider,
@@ -142,10 +142,8 @@ export function createTaskService(deps: TaskRunnerDeps): TaskService {
       return taskResult("failed", null, parsed.error, "warning");
     }
     const { input } = parsed;
-    const { language, ...preferred } = await readPreferences(
-      ctx.settings,
-      userId,
-    );
+    const preferred = await readPreferences(ctx.settings, userId);
+    const language = await ownerLanguage(ctx, userId);
 
     if (!(await ctx.rbac.has("ops.use"))) {
       return taskResult(

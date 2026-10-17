@@ -39,6 +39,7 @@
     "network:serve",
     "ui:surface",
     "users:impersonate",
+    "users:read",
     "events:core",
     "process:spawn"
   ],

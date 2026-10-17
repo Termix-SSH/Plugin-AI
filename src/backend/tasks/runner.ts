@@ -1,10 +1,13 @@
+import { existsSync } from "node:fs";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
+import { userTokenIssuer } from "../core-api.js";
 import { planContext } from "../context-window.js";
 import { runAgent, type ModelUsage } from "../engine.js";
 import { getErrorMessage } from "../errors.js";
 import { readPrivateAllowlist } from "../gating.js";
 import { toStoredMessage, toStoredSummary } from "../history.js";
 import { contextPlanFor, type ModelInfoCache } from "../model-info.js";
+import { bundledCliPath, CORE_URL, type CliTarget } from "../ops/cli.js";
 import { readOpsLimits } from "../ops/routes.js";
 import { createProviderFetch } from "../providers/http.js";
 import type { ProviderConfig } from "../providers/types.js";
@@ -15,7 +18,11 @@ import { APPROVAL_TTL_MS, type TaskLimits } from "./limits.js";
 import { notifyOwner } from "./notify.js";
 import { buildTaskSystemPrompt, taskUserMessage } from "./prompt.js";
 import type { TaskRepository, TaskRunRecord } from "./repository.js";
-import { createTaskTools, type TaskToolSession } from "./tools.js";
+import {
+  CLI_TOKEN_TTL_SEC,
+  createTaskTools,
+  type TaskToolSession,
+} from "./tools.js";
 import type {
   AiTaskInput,
   AiTaskResult,
@@ -166,6 +173,33 @@ function firstLine(text: string): string {
     : line;
 }
 
+/**
+ * The Termix CLI as the task's owner, on a core that can mint them a token
+ * (Termix 26.10.2+), else null. Every call gets its own short-lived token,
+ * passed only in the CLI's environment and never stored.
+ */
+export function ownerCli(
+  ctx: PluginContext,
+  userId: string,
+  taskRunId: number,
+): CliTarget | null {
+  const issue = userTokenIssuer(ctx);
+  const cliPath = bundledCliPath();
+  if (!issue || !existsSync(cliPath)) return null;
+  return {
+    run: ctx.process.run,
+    cliPath,
+    url: CORE_URL,
+    token: async () =>
+      (
+        await issue(userId, {
+          purpose: `auto-ops task ${taskRunId}`,
+          ttlSeconds: CLI_TOKEN_TTL_SEC,
+        })
+      ).token,
+  };
+}
+
 export interface RunTaskOptions {
   input: AiTaskInput;
   userId: string;
@@ -267,6 +301,7 @@ export async function runTask(
   };
 
   const opsLimits = await readOpsLimits(ctx.settings);
+  const cli = ownerCli(ctx, userId, task.id);
   const session: TaskToolSession = {
     targets: allowed,
     limits: opsLimits,
@@ -283,6 +318,8 @@ export async function runTask(
     plan: null,
     report: null,
     onReport: () => stop("done"),
+    cli,
+    recordCliRun: (run) => repository.recordCliRun(run),
     secondsLeft: () => (wrapUpAt - Date.now()) / 1000,
     wrapUp: () => {
       if (Date.now() >= wrapUpAt) return "Time is nearly up.";
@@ -304,6 +341,7 @@ export async function runTask(
     hosts: allowed.map((id) => ({ id, name: names.get(id) ?? `#${id}` })),
     refused,
     language: languageName(language),
+    cli: cli !== null,
     deadline: new Date(wrapUpAt).toISOString(),
   };
   const opening = taskUserMessage(prompt);

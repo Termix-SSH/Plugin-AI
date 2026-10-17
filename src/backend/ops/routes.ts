@@ -628,7 +628,7 @@ export function registerOpsRoutes(
                 run: ctx.process.run,
                 cliPath,
                 url: CORE_URL,
-                token,
+                token: async () => token,
               }
             : null,
         saveTargets: async (next) => {

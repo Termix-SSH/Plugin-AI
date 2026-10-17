@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   checkCliArgs,
+  checkReadOnlyCliArgs,
   redactCliArgs,
   requestToken,
   runCli,
@@ -12,7 +13,12 @@ import { spawnRun, writeFakeCli } from "./fake-cli";
 const cliPath = writeFakeCli();
 
 function target(run: CliTarget["run"] = spawnRun): CliTarget {
-  return { run, cliPath, url: "http://127.0.0.1:30001", token: "jwt-1" };
+  return {
+    run,
+    cliPath,
+    url: "http://127.0.0.1:30001",
+    token: async () => "jwt-1",
+  };
 }
 
 const limits = (overrides: Partial<Parameters<typeof runCli>[2]> = {}) => ({
@@ -109,6 +115,54 @@ describe("checkCliArgs", () => {
     expect(
       checkCliArgs(["snippets", "create", "--content-file", "/x", "-h"], true),
     ).toMatch(/^--content-file/);
+  });
+});
+
+describe("checkReadOnlyCliArgs", () => {
+  it.each([
+    ["hosts", "list"],
+    ["hosts", "list", "--folder", "prod"],
+    ["hosts", "get", "4"],
+    ["credentials", "list"],
+    ["fleets", "members", "2"],
+    ["alerts", "list", "--unread"],
+    ["sessions", "list"],
+    ["plugins", "list"],
+    ["audit-logs", "--limit", "20"],
+    ["status"],
+    ["status", "3"],
+    ["version"],
+    ["whoami"],
+    ["api", "GET", "/host/db/host"],
+    ["api", "get", "/plugin-api/automations/runs"],
+    ["hosts", "delete", "--help"],
+    ["help", "hosts"],
+  ])("allows %j", (...args) => {
+    expect(checkReadOnlyCliArgs(args)).toBeNull();
+  });
+
+  it.each([
+    ["hosts", "delete", "4"],
+    ["hosts", "create", "--ip", "10.0.0.9"],
+    ["hosts", "update", "4", "--name", "x"],
+    ["hosts"],
+    ["hosts", "--folder", "list", "delete", "4"],
+    ["--quiet", "hosts", "list"],
+    ["alerts", "dismiss", "3"],
+    ["alerts", "delete", "3"],
+    ["sessions", "revoke-all"],
+    ["fleets", "exec", "1", "uptime"],
+    ["snippets", "run", "1"],
+    ["exec", "1", "uptime"],
+    ["files", "cat", "1", "/etc/shadow"],
+    ["tunnel", "stop", "x"],
+    ["api", "POST", "/host/db/host"],
+    ["api", "DELETE", "/host/db/host/1"],
+    ["api", "/host/db/host"],
+    ["constructor", "list"],
+    [],
+  ])("refuses %j", (...args) => {
+    expect(checkReadOnlyCliArgs(args)).toEqual(expect.any(String));
   });
 });
 

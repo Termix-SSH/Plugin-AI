@@ -1,4 +1,11 @@
+import { termixTool } from "../ops/assistant-tools.js";
+import {
+  checkReadOnlyCliArgs,
+  READ_ONLY_CLI_SUMMARY,
+  type CliTarget,
+} from "../ops/cli.js";
 import { createOpsTools, type OpsSession } from "../ops/tools.js";
+import type { CliRunInput } from "../repository.js";
 import { isReadOnlyCommand } from "../tools/command-allowlist.js";
 import { objectSchema, str, type AiTool } from "../tools/types.js";
 import { REPORT_SECTIONS } from "./prompt.js";
@@ -12,8 +19,9 @@ import {
 /**
  * The tools of an unattended run: the assistant's list_targets,
  * get_host_facts and run_command, with run_command held to the read-only
- * allowlist, then propose_plan (L1 only) and submit_report. Nothing here
- * changes a host; an approved plan runs later, outside the model.
+ * allowlist, termix held to read-only CLI commands when core can mint the
+ * owner a token, then propose_plan (L1 only) and submit_report. Nothing here
+ * changes a host or Termix; an approved plan runs later, outside the model.
  */
 
 export interface TaskReport {
@@ -32,7 +40,17 @@ export interface TaskToolSession extends OpsSession {
   report: TaskReport | null;
   /** Called once the report is in, to end the run. */
   onReport: () => void;
+  /** The Termix CLI as the owner, or null when core cannot mint a token. */
+  cli: CliTarget | null;
+  recordCliRun: (run: CliRunInput) => Promise<void>;
 }
+
+/**
+ * The longest a CLI call in a task may take. Each call mints its own token,
+ * which must outlive the call: see CLI_TOKEN_TTL_SEC.
+ */
+export const TASK_CLI_TIMEOUT_SEC = 120;
+export const CLI_TOKEN_TTL_SEC = 300;
 
 const MAX_PLAN_COMMANDS = 20;
 const MAX_COMMAND_LENGTH = 2000;
@@ -130,6 +148,15 @@ export function createTaskTools(session: TaskToolSession): AiTool[] {
     const reason = session.wrapUp();
     return reason ? { error: `${reason} Call submit_report now.` } : null;
   };
+  /** The asked timeout, else `fallback`, never past wrap-up. */
+  const timeoutSec = (args: Record<string, unknown>, fallback: number) => {
+    const limit = Math.max(1, Math.floor(session.secondsLeft()));
+    const asked = Number(args.timeoutSec);
+    return Math.min(
+      Number.isFinite(asked) && asked > 0 ? asked : fallback,
+      limit,
+    );
+  };
 
   const opsTools = createOpsTools(session).map((tool): AiTool => {
     if (tool.name === "list_targets") return tool;
@@ -152,18 +179,50 @@ export function createTaskTools(session: TaskToolSession): AiTool[] {
             error: `Refused: ${check.reason}. This task may only run read-only diagnostics.`,
           };
         }
-        const limit = Math.max(1, Math.floor(session.secondsLeft()));
-        const asked = Number(args.timeoutSec);
-        const timeoutSec = Math.min(
-          Number.isFinite(asked) && asked > 0
-            ? asked
-            : session.limits.timeoutSec,
-          limit,
+        return tool.handler(
+          {
+            ...args,
+            timeoutSec: timeoutSec(args, session.limits.timeoutSec),
+          },
+          context,
         );
-        return tool.handler({ ...args, timeoutSec }, context);
       },
     };
   });
+
+  const readOnlyTermix = (tool: AiTool): AiTool => ({
+    ...tool,
+    description: `${tool.description} In this task only read-only commands run: ${READ_ONLY_CLI_SUMMARY}.`,
+    handler: async (args, context) => {
+      const stop = refusal();
+      if (stop) return stop;
+      const problem = Array.isArray(args.args)
+        ? checkReadOnlyCliArgs(args.args.map(String))
+        : null;
+      if (problem) {
+        return {
+          error: `Refused: ${problem}. This task may only read Termix.`,
+        };
+      }
+      return tool.handler(
+        {
+          ...args,
+          timeoutSec: Math.min(
+            timeoutSec(args, TASK_CLI_TIMEOUT_SEC),
+            TASK_CLI_TIMEOUT_SEC,
+          ),
+        },
+        context,
+      );
+    },
+  });
+  const cliTools = session.cli
+    ? [
+        readOnlyTermix(
+          termixTool({ ...session, hostShell: false }, session.cli),
+        ),
+      ]
+    : [];
 
   const proposePlan: AiTool = {
     name: "propose_plan",
@@ -229,6 +288,7 @@ export function createTaskTools(session: TaskToolSession): AiTool[] {
 
   return [
     ...opsTools,
+    ...cliTools,
     ...(session.autonomy === "propose" ? [proposePlan] : []),
     submitReport,
   ];

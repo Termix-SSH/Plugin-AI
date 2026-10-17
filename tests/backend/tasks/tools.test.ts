@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { CliTarget } from "../../../src/backend/ops/cli.js";
 import {
   createTaskTools,
   parsePlan,
@@ -6,6 +7,7 @@ import {
 } from "../../../src/backend/tasks/tools.js";
 import type { ToolContext } from "../../../src/backend/tools/types.js";
 import { REPORT } from "./fixtures";
+import { spawnRun, writeFakeCli } from "../ops/fake-cli";
 
 function session(overrides: Partial<TaskToolSession> = {}): TaskToolSession {
   return {
@@ -21,6 +23,8 @@ function session(overrides: Partial<TaskToolSession> = {}): TaskToolSession {
     plan: null,
     report: null,
     onReport: () => undefined,
+    cli: null,
+    recordCliRun: async () => undefined,
     ...overrides,
   };
 }
@@ -29,8 +33,16 @@ const context = {
   userId: "user-1",
   conversationId: 1,
   allowReadOnlyCommands: false,
-  deps: {},
+  deps: { audit: { record: async () => undefined } },
 } as unknown as ToolContext;
+
+const cliPath = writeFakeCli();
+const cli = (run: CliTarget["run"] = spawnRun): CliTarget => ({
+  run,
+  cliPath,
+  url: "http://127.0.0.1:30001",
+  token: async () => "task-token",
+});
 
 const tool = (tools: ReturnType<typeof createTaskTools>, name: string) =>
   tools.find((entry) => entry.name === name)!;
@@ -71,9 +83,9 @@ describe("task tools", () => {
 
   it("makes the model report once time or budget is nearly gone", async () => {
     const tools = createTaskTools(
-      session({ wrapUp: () => "Time is nearly up." }),
+      session({ wrapUp: () => "Time is nearly up.", cli: cli() }),
     );
-    for (const name of ["run_command", "get_host_facts"]) {
+    for (const name of ["run_command", "get_host_facts", "termix"]) {
       const result = (await tool(tools, name).handler(
         { command: "uptime" },
         context,
@@ -129,5 +141,49 @@ describe("task tools", () => {
       report: REPORT,
     });
     expect(onReport).toHaveBeenCalledOnce();
+  });
+
+  it("offers termix only with a CLI, at either level", () => {
+    const names = (autonomy: "report" | "propose") =>
+      createTaskTools(session({ autonomy, cli: cli() })).map(
+        (entry) => entry.name,
+      );
+    expect(names("report")).toContain("termix");
+    expect(names("propose")).toContain("termix");
+  });
+
+  it("runs read-only CLI commands and refuses the rest before starting it", async () => {
+    const run = vi.fn(spawnRun);
+    const tools = createTaskTools(
+      session({ autonomy: "report", cli: cli(run) }),
+    );
+    const termix = tool(tools, "termix");
+    for (const args of [
+      ["hosts", "delete", "1"],
+      ["alerts", "dismiss", "3"],
+      ["api", "POST", "/host/db/host"],
+      ["exec", "1", "uptime"],
+      ["hosts", "--folder", "list", "delete", "1"],
+    ]) {
+      const result = (await termix.handler({ args }, context)) as {
+        error?: string;
+      };
+      expect(result.error, args.join(" ")).toMatch(/^Refused/);
+    }
+    // Read-only, but still held to the assistant's own blocks.
+    const exported = (await termix.handler(
+      { args: ["api", "GET", "/host/db/host/export"] },
+      context,
+    )) as { error?: string };
+    expect(exported.error).toMatch(/export routes/);
+    expect(run).not.toHaveBeenCalled();
+
+    const listed = (await termix.handler(
+      { args: ["hosts", "list"] },
+      context,
+    )) as { exitCode: number; output: string };
+    expect(listed.exitCode).toBe(0);
+    expect(JSON.parse(listed.output).argv.slice(-2)).toEqual(["hosts", "list"]);
+    expect(run).toHaveBeenCalledOnce();
   });
 });

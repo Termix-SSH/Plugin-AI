@@ -138,6 +138,56 @@ export function checkCliArgs(
   return matches(HOST_SHELL[group]) || shellApi ? HOST_SHELL_REFUSED : null;
 }
 
+/**
+ * The subcommands that only read, for work nobody watches. The command
+ * words must come first, before any flag, so no flag can take one of them
+ * as its value and leave the CLI running a different command.
+ */
+const READ_ONLY = new Map<string, true | string[]>([
+  ["status", true],
+  ["version", true],
+  ["whoami", true],
+  ["audit-logs", true],
+  ["hosts", ["list", "get"]],
+  ["credentials", ["list", "get"]],
+  ["fleets", ["list", "members"]],
+  ["snippets", ["list"]],
+  ["alerts", ["list"]],
+  ["sessions", ["list"]],
+  ["users", ["list"]],
+  ["api-keys", ["list"]],
+  ["plugins", ["list"]],
+  ["tunnel", ["list", "show"]],
+  ["docker", ["ps"]],
+]);
+
+/** The read-only commands, for a tool description. */
+export const READ_ONLY_CLI_SUMMARY = [
+  ...[...READ_ONLY].map(([group, subs]) =>
+    subs === true ? group : subs.map((sub) => `${group} ${sub}`).join(", "),
+  ),
+  "api GET <path>",
+].join(", ");
+
+/**
+ * Why `args` are not a read-only command, or null when they are. Help is
+ * read-only. checkCliArgs still applies on top.
+ */
+export function checkReadOnlyCliArgs(args: string[]): string | null {
+  if (args[0] === "help" || args.includes("--help") || args.includes("-h")) {
+    return null;
+  }
+  const [group = "", sub = ""] = args;
+  const rule = READ_ONLY.get(group);
+  if (group === "api") {
+    return sub.toUpperCase() === "GET"
+      ? null
+      : "termix api may only send GET requests here";
+  }
+  if (rule === true || rule?.includes(sub)) return null;
+  return `termix ${[group, sub].filter(Boolean).join(" ")} is not a read-only command. Read-only commands are: ${READ_ONLY_CLI_SUMMARY}`;
+}
+
 const SECRET_FLAG = /^--[\w-]*(password|passphrase|secret|token|key)$/i;
 const DATA_FLAG = new Set(["-d", "--data"]);
 
@@ -225,7 +275,11 @@ export interface CliTarget {
   run: PluginProcess["run"];
   cliPath: string;
   url: string;
-  token: string;
+  /**
+   * The session token to sign in with, asked for on every run so a task can
+   * mint a short-lived one each time. Only ever passed in the CLI's env.
+   */
+  token: () => Promise<string>;
 }
 
 /**
@@ -245,6 +299,7 @@ export async function runCli(
 
   const home = await mkdtemp(path.join(os.tmpdir(), "termix-ai-cli-"));
   try {
+    const token = await target.token();
     const child = await target.run(
       process.execPath,
       [target.cliPath, "--json", "--no-color", ...args],
@@ -252,7 +307,7 @@ export async function runCli(
         cwd: home,
         env: {
           TERMIX_URL: target.url,
-          TERMIX_TOKEN: target.token,
+          TERMIX_TOKEN: token,
           NO_COLOR: "1",
           TERM: "dumb",
           HOME: home,
