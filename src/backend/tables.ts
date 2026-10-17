@@ -385,6 +385,119 @@ export const taskPresets = defineTable(
   },
 );
 
+/*
+ * Asset inventory. One row per thing the collector found: a Termix host, a
+ * Proxmox guest no Termix host matched, a container, or an address outside
+ * the inventory something talks to. Collected facts are JSON, already cut to
+ * what is safe to keep. The role/importance/system columns are for the AI
+ * annotations that come later; each carries its source so a user's edit is
+ * never overwritten.
+ */
+export const assets = defineTable(
+  "assets",
+  {
+    id: id(),
+    // host:<id> | guest:<node>/<vmid> | container:<hostId>/<name> | external:<ip>
+    key: varchar().notNull().unique(),
+    // host | guest | container | external
+    kind: varchar(16).notNull(),
+    // For a host, itself; for a guest or container, the host that reported it.
+    hostId: integer(),
+    name: text().notNull(),
+    // JSON string[]
+    ips: text().notNull().default("[]"),
+    zone: varchar(120),
+    // rule | user | ai
+    zoneSource: varchar(16),
+    // Addresses in more than one zone: a potential pivot.
+    multiZone: boolean().notNull().default(false),
+    // JSON, the parsed collection.
+    facts: text(),
+    collectedAt: timestamp(),
+    // Set when the host was deleted or the guest or container disappeared.
+    removedAt: timestamp(),
+    role: text(),
+    roleSource: varchar(16),
+    // critical | high | medium | low
+    importance: varchar(16),
+    importanceSource: varchar(16),
+    importanceReason: text(),
+    system: varchar(120),
+    systemSource: varchar(16),
+    annotatedAt: timestamp(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_assets_host", columns: ["hostId"] },
+      { name: "idx_ai_assets_zone", columns: ["zone"] },
+    ],
+  },
+);
+
+/** A relation between two assets, with the evidence it was derived from. */
+export const assetEdges = defineTable(
+  "asset_edges",
+  {
+    id: id(),
+    fromAsset: integer().notNull(),
+    toAsset: integer().notNull(),
+    // runs_on | connects_to | member_of | ...
+    type: varchar(32).notNull(),
+    // JSON: ports, processes, count
+    detail: text(),
+    evidence: text(),
+    // collector | ai | user
+    source: varchar(16).notNull(),
+    firstSeen: timestamp().notNull(),
+    // Not seen in a later run means stale; edges are never deleted for it.
+    lastSeen: timestamp().notNull(),
+  },
+  {
+    uniques: [
+      {
+        name: "idx_ai_asset_edges_pair",
+        columns: ["fromAsset", "toAsset", "type"],
+      },
+    ],
+    indexes: [{ name: "idx_ai_asset_edges_to", columns: ["toAsset"] }],
+  },
+);
+
+/** One collection run and how each host went. */
+export const assetRuns = defineTable(
+  "asset_runs",
+  {
+    id: id(),
+    // schedule | manual | host_event
+    trigger: varchar(16).notNull(),
+    startedAt: timestamp().notNull(),
+    finishedAt: timestamp(),
+    // running | done | failed
+    status: varchar(16).notNull(),
+    hostsTotal: integer().notNull().default(0),
+    hostsOk: integer().notNull().default(0),
+    hostsFailed: integer().notNull().default(0),
+    // JSON { "<hostId>": "<error>" }
+    errorSummary: text(),
+  },
+  { indexes: [{ name: "idx_ai_asset_runs_started", columns: ["startedAt"] }] },
+);
+
+/** An admin's CIDR to zone rule, ahead of the built-in ones. */
+export const zones = defineTable("zones", {
+  id: id(),
+  name: varchar(120).notNull(),
+  // internal | dmz | external | cloud | overlay
+  kind: varchar(16).notNull(),
+  cidr: varchar(64).notNull(),
+  // Breaks a tie between rules with the same prefix length; higher wins.
+  priority: integer().notNull().default(0),
+  createdBy: varchar(255).notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+});
+
 export const tables = [
   providers,
   conversations,
@@ -399,4 +512,8 @@ export const tables = [
   taskRuns,
   presetLinks,
   taskPresets,
+  assets,
+  assetEdges,
+  assetRuns,
+  zones,
 ];

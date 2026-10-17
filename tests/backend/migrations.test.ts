@@ -52,6 +52,9 @@ describe("ai adoption migration", () => {
       "p_ai_agent_events",
       "p_ai_agent_queue",
       "p_ai_agent_sessions",
+      "p_ai_asset_edges",
+      "p_ai_asset_runs",
+      "p_ai_assets",
       "p_ai_cli_runs",
       "p_ai_conversations",
       "p_ai_messages",
@@ -62,6 +65,7 @@ describe("ai adoption migration", () => {
       "p_ai_task_presets",
       "p_ai_task_runs",
       "p_ai_usage",
+      "p_ai_zones",
     ]);
 
     const provider = db.sqlite
@@ -98,6 +102,9 @@ describe("ai adoption migration", () => {
       "p_ai_agent_events",
       "p_ai_agent_queue",
       "p_ai_agent_sessions",
+      "p_ai_asset_edges",
+      "p_ai_asset_runs",
+      "p_ai_assets",
       "p_ai_cli_runs",
       "p_ai_conversations",
       "p_ai_messages",
@@ -108,6 +115,7 @@ describe("ai adoption migration", () => {
       "p_ai_task_presets",
       "p_ai_task_runs",
       "p_ai_usage",
+      "p_ai_zones",
     ]);
     const columns = (
       db.sqlite.prepare("PRAGMA table_info(p_ai_providers)").all() as Array<{
@@ -135,6 +143,55 @@ describe("ai adoption migration", () => {
         }
       ).n,
     ).toBe(0);
+  });
+});
+
+describe("asset inventory migration", () => {
+  it("keeps one asset per key and one edge per pair and type", async () => {
+    db = await createTestDb(pluginDir);
+    const insertAsset = db.sqlite.prepare(
+      "INSERT INTO p_ai_assets (key, kind, name) VALUES (?, 'host', ?)",
+    );
+    insertAsset.run("host:1", "web-1");
+    expect(() => insertAsset.run("host:1", "again")).toThrow(/UNIQUE/);
+
+    const insertEdge = db.sqlite.prepare(
+      "INSERT INTO p_ai_asset_edges (from_asset, to_asset, type, source, first_seen, last_seen) VALUES (1, 2, ?, 'collector', 'a', 'a')",
+    );
+    insertEdge.run("connects_to");
+    insertEdge.run("runs_on");
+    expect(() => insertEdge.run("connects_to")).toThrow(/UNIQUE/);
+  });
+
+  it("has nullable annotation columns for later milestones", async () => {
+    db = await createTestDb(pluginDir);
+    const columns = db.sqlite
+      .prepare("PRAGMA table_info(p_ai_assets)")
+      .all() as Array<{ name: string; notnull: number }>;
+    for (const name of [
+      "role",
+      "role_source",
+      "importance",
+      "importance_source",
+      "importance_reason",
+      "system",
+      "system_source",
+      "annotated_at",
+    ]) {
+      expect(columns).toContainEqual(
+        expect.objectContaining({ name, notnull: 0 }),
+      );
+    }
+  });
+
+  it("writes only the plugin's own tables", () => {
+    for (const dialect of ["sqlite", "postgres", "mysql"]) {
+      const sql = fs.readFileSync(
+        path.join(pluginDir, "migrations", dialect, "0010_asset_inventory.sql"),
+        "utf8",
+      );
+      expect(findUnownedTableWrites("ai", sql)).toEqual([]);
+    }
   });
 });
 
