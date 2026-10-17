@@ -64,6 +64,8 @@ export interface ChatRequest {
   tools: ToolDefinition[];
   /** The window the conversation is sized for; Ollama loads the model with it. */
   contextWindow?: number;
+  /** The most tokens the reply may hold, thinking included. */
+  maxTokens?: number;
   signal?: AbortSignal;
 }
 

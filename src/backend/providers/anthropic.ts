@@ -144,7 +144,7 @@ export const anthropicAdapter: ProviderAdapter = {
 
     const stream = client.messages.stream({
       model: request.model,
-      max_tokens: MAX_TOKENS,
+      max_tokens: Math.min(request.maxTokens ?? MAX_TOKENS, MAX_TOKENS),
       // Tools, then the system prompt, then the history: each breakpoint
       // caches everything before it.
       system: [

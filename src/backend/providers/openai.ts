@@ -87,6 +87,13 @@ export const openAiAdapter: ProviderAdapter = {
       // Asks for a final usage chunk. A compatible server that rejects the
       // option is asked again without it.
       stream_options: { include_usage: true },
+      // OpenAI's own API refuses max_tokens for its reasoning models;
+      // compatible servers (vLLM, LM Studio, Groq, OpenRouter) know max_tokens.
+      ...(request.maxTokens
+        ? config.providerType === "openai"
+          ? { max_completion_tokens: request.maxTokens }
+          : { max_tokens: request.maxTokens }
+        : {}),
       ...(request.tools.length
         ? {
             tools: request.tools.map((tool) => ({

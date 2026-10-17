@@ -97,7 +97,17 @@ export interface EngineOptions {
   onUsage?: (usage: ModelUsage) => unknown;
   /** What the run's model calls are counted as. Defaults to "assistant". */
   source?: UsageSource;
+  /** The most tokens one reply may hold. Defaults to MAX_REPLY_TOKENS. */
+  maxReplyTokens?: number;
 }
+
+/**
+ * A ceiling on every reply. Without one, a model that falls into a loop
+ * streams until its whole window is spent: in real use GLM wrote 1.9 MB
+ * for one asset annotation call over 40 minutes, and usage (and so every
+ * token budget) is only reported when a reply ends.
+ */
+export const MAX_REPLY_TOKENS = 32_768;
 
 interface TurnResult {
   text: string;
@@ -187,6 +197,7 @@ export async function* runAgent(
         messages,
         tools,
         contextWindow: options.contextWindow,
+        maxTokens: options.maxReplyTokens ?? MAX_REPLY_TOKENS,
         signal: options.signal,
       })) {
         if (chunk.type === "text") {
@@ -364,6 +375,7 @@ async function summarize(
     messages: [{ role: "user" as const, content: input }],
     tools: [],
     contextWindow: options.contextWindow,
+    maxTokens: MAX_REPLY_TOKENS,
     signal: options.signal,
   };
   let text = "";

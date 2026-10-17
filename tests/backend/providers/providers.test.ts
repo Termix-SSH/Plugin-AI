@@ -358,3 +358,59 @@ describe("assertOk error messages", () => {
     ).rejects.toThrow("upstream exploded");
   });
 });
+
+describe("the reply ceiling", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const body = async (stream: AsyncIterable<ChatChunk>) => {
+    await collect(stream).catch(() => undefined);
+    return JSON.parse(providerFetch.mock.calls.at(-1)![1].body as string);
+  };
+  const capped = { ...REQUEST, maxTokens: 4096 };
+
+  it("is max_tokens on compatible servers, max_completion_tokens on OpenAI", async () => {
+    providerFetch.mockResolvedValue(streamingResponse(["data: [DONE]\n\n"]));
+    const compatible = await body(
+      openAiAdapter.streamChat(
+        {
+          fetch: providerFetch,
+          providerType: "openai_compatible",
+          baseUrl: "http://vllm.lan:8000/v1",
+        },
+        capped,
+      ),
+    );
+    expect(compatible.max_tokens).toBe(4096);
+    expect(compatible).not.toHaveProperty("max_completion_tokens");
+
+    providerFetch.mockResolvedValue(streamingResponse(["data: [DONE]\n\n"]));
+    const openai = await body(
+      openAiAdapter.streamChat(
+        { fetch: providerFetch, providerType: "openai" },
+        capped,
+      ),
+    );
+    expect(openai.max_completion_tokens).toBe(4096);
+    expect(openai).not.toHaveProperty("max_tokens");
+  });
+
+  it("is num_predict on Ollama and maxOutputTokens on Gemini", async () => {
+    providerFetch.mockResolvedValue(streamingResponse(['{"done":true}\n']));
+    const ollama = await body(
+      ollamaAdapter.streamChat(
+        { fetch: providerFetch, providerType: "ollama" },
+        capped,
+      ),
+    );
+    expect(ollama.options).toEqual({ num_predict: 4096 });
+
+    providerFetch.mockResolvedValue(streamingResponse([]));
+    const gemini = await body(
+      geminiAdapter.streamChat(
+        { fetch: providerFetch, providerType: "gemini", apiKey: "k" },
+        capped,
+      ),
+    );
+    expect(gemini.generationConfig).toEqual({ maxOutputTokens: 4096 });
+  });
+});

@@ -59,8 +59,17 @@ export const ollamaAdapter: ProviderAdapter = {
         stream: true,
         // Without it Ollama loads the model with its own small default and
         // silently drops the start of a longer prompt.
-        ...(request.contextWindow
-          ? { options: { num_ctx: request.contextWindow } }
+        ...(request.contextWindow || request.maxTokens
+          ? {
+              options: {
+                ...(request.contextWindow
+                  ? { num_ctx: request.contextWindow }
+                  : {}),
+                ...(request.maxTokens
+                  ? { num_predict: request.maxTokens }
+                  : {}),
+              },
+            }
           : {}),
         ...(request.tools.length
           ? {
