@@ -20,6 +20,7 @@ import type {
   AiTaskInput,
   AiTaskResult,
   Severity,
+  TaskPhase,
   TaskStatus,
 } from "./types.js";
 
@@ -251,6 +252,7 @@ export async function runTask(
   const onUsage = async (usage: ModelUsage) => {
     promptTokens += usage.promptTokens;
     completionTokens += usage.completionTokens;
+    await tasks.addTokens(task.id, usage.promptTokens, usage.completionTokens);
     await repository.recordUsage({
       userId,
       providerId: provider.id,
@@ -272,7 +274,11 @@ export async function runTask(
     facts: new Map(),
     onHostResult: () => undefined,
     recordRuns: (runs) => repository.recordOpsRuns(runs),
-    auditDetails: { source: "task", taskRunId: task.id },
+    auditDetails: {
+      source: "task",
+      taskRunId: task.id,
+      phase: "investigate" satisfies TaskPhase,
+    },
     autonomy,
     plan: null,
     report: null,
@@ -376,8 +382,6 @@ export async function runTask(
       status === "proposed"
         ? new Date(Date.now() + APPROVAL_TTL_MS).toISOString()
         : null,
-    promptTokens,
-    completionTokens,
     finishedAt,
   });
   await repository.appendMessage({

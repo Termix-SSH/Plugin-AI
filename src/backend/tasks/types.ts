@@ -67,10 +67,13 @@ export const OPEN_STATUSES: TaskStatus[] = [
   "executing",
 ];
 
+/** Which part of a task ran a command, as its audit entry records. */
+export type TaskPhase = "investigate" | "execute" | "verify";
+
 /** One command of an executed plan, as it ran. */
 export interface StepResult {
   command: string;
-  phase: "execute" | "verify";
+  phase: Exclude<TaskPhase, "investigate">;
   exitCode: number | null;
   output: string;
   error?: string;

@@ -226,6 +226,46 @@ describe("preset routes", () => {
     expect(disk.updateAvailable).toBe(false);
   });
 
+  it("name the automation after the preset's title in the user's language", async () => {
+    const automations = automationsMock();
+    const target = await start({ automations: automations.access });
+    await target.request("POST", "/tasks/presets/daily-patrol/enable", {
+      body: {},
+    });
+    await target.request("PUT", "/tasks/preferences", {
+      body: { language: "zh-CN" },
+    });
+    await target.request("POST", "/tasks/presets/disk-cleanup/enable", {
+      body: {},
+    });
+    // A title from the form names it too; a name from the API wins.
+    await target.request("POST", "/tasks/presets/host-down-triage/enable", {
+      body: { title: "k3s 掉线" },
+    });
+    await target.request("POST", "/tasks/presets/daily-patrol/enable", {
+      body: { name: "Morning check" },
+    });
+    // A language without a copy reads English.
+    await target.request("PUT", "/tasks/preferences", {
+      body: { language: "de_DE" },
+    });
+    await target.request("POST", "/tasks/presets/daily-patrol/enable", {
+      body: {},
+    });
+    const named = automations.created.map((input) => ({
+      name: input.name,
+      title: (input.definition as { steps: Array<{ title: string }> }).steps[0]
+        .title,
+    }));
+    expect(named).toEqual([
+      { name: "AI · Daily patrol", title: "Daily patrol" },
+      { name: "AI · 磁盘空间处理", title: "磁盘空间处理" },
+      { name: "AI · k3s 掉线", title: "k3s 掉线" },
+      { name: "Morning check", title: "每日巡检" },
+      { name: "AI · Daily patrol", title: "Daily patrol" },
+    ]);
+  });
+
   it("show an update when an automation came from an older version", async () => {
     const automations = automationsMock();
     automations.existing.set(5, { id: 5, name: "Old patrol" });
@@ -292,7 +332,12 @@ describe("preset routes", () => {
     );
     expect(enabled.status).toBe(201);
     expect(automations.created[0]).toMatchObject({
-      definition: { steps: [{ runbook: "Check k3s nodes.", presetId: id }] },
+      name: "k3s",
+      definition: {
+        steps: [
+          { runbook: "Check k3s nodes.", presetId: id, title: "k3s patrol" },
+        ],
+      },
     });
 
     const numeric = id.replace("custom:", "");

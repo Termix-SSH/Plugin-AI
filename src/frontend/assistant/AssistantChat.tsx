@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { AiMessage } from "../AiMessage";
 import { AiThinking } from "../AiThinking";
 import { AiToolCall } from "../AiToolCall";
+import { useReportLanguage } from "../autoops/report-language";
 import { aiApp } from "../app-ref";
 import { assistantTimeline } from "../transcript";
 import { CONTEXT_SOURCE_KEYS } from "../ai-api";
@@ -441,6 +442,7 @@ type Pane = "chat" | "history" | "usage";
 /** `actions` are the hosting view's own buttons, at the end of the header. */
 export function AssistantChat({ actions }: { actions?: ReactNode }) {
   const { t } = useTranslation();
+  useReportLanguage();
   const state = useAssistant();
   const [pane, setPane] = useState<Pane>("chat");
   const showHistory = pane === "history";

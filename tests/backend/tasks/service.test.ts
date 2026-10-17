@@ -10,9 +10,13 @@ import {
   REPORT,
   runTask,
   scriptedModel,
+  sse,
   submit,
   taskInput,
   taskRows,
+  text,
+  toolCall,
+  type ModelBody,
 } from "./fixtures";
 
 let server: TestServer | null = null;
@@ -108,6 +112,7 @@ describe("ai.tasks service", () => {
       command: "df -hP",
       source: "task",
       taskRunId: result.taskRunId,
+      phase: "investigate",
     });
     expect(server.mock.notifications).toContainEqual(
       expect.objectContaining({
@@ -126,6 +131,78 @@ describe("ai.tasks service", () => {
       `/ops/conversations/${row.conversation_id}`,
     );
     expect(opened.status).toBe(200);
+  });
+
+  it("adds every model call of the run to its row, compaction included", async () => {
+    const turns: Array<[string, Record<string, unknown>]> = [
+      ["run_command", { command: "uptime" }],
+      ["run_command", { command: "uptime" }],
+      ["run_command", { command: "uptime" }],
+      submit(),
+    ];
+    const bodies: ModelBody[] = [];
+    const counted = { prompt: 0, completion: 0 };
+    let turn = 0;
+    // Reported like a real provider: about four characters a token.
+    const usage = (raw: string, completion: number) => {
+      const prompt = Math.ceil(raw.length / 4);
+      counted.prompt += prompt;
+      counted.completion += completion;
+      return {
+        choices: [],
+        usage: { prompt_tokens: prompt, completion_tokens: completion },
+      };
+    };
+    const fetch = async (_url: string, init?: unknown) => {
+      const raw = (init as { body?: string } | undefined)?.body;
+      if (!raw) return new Response("{}", { status: 404 });
+      const body = JSON.parse(raw) as ModelBody;
+      bodies.push(body);
+      // The summariser is the one call offered no tools.
+      if (!body.tools?.length) {
+        return sse(text("Earlier: uptime was fine."), usage(raw, 30));
+      }
+      const next = turns[turn++] ?? submit();
+      return sse(toolCall(...next), usage(raw, 50));
+    };
+    const ssh = fakeSshClient(() => ({ stdout: `${"load ".repeat(1500)}\n` }));
+    const { server } = await start({ fetch }, { ssh });
+    const patched = await server.request("PATCH", "/providers/1", {
+      body: { modelOverrides: { "gpt-5": { contextWindow: 4096 } } },
+    });
+    expect(patched.status).toBe(200);
+
+    const result = await runTask(server, taskInput());
+    expect(result.status).toBe("reported");
+    const summaries = bodies.filter((body) => !body.tools?.length).length;
+    expect(summaries).toBeGreaterThan(0);
+    const [row] = taskRows(server);
+    expect(row.prompt_tokens).toBe(counted.prompt);
+    expect(row.completion_tokens).toBe(counted.completion);
+    const recorded = server.db.sqlite
+      .prepare(
+        "SELECT SUM(prompt_tokens) AS prompt, SUM(completion_tokens) AS completion FROM p_ai_usage WHERE conversation_id = ?",
+      )
+      .get(row.conversation_id) as { prompt: number; completion: number };
+    expect(recorded).toEqual({
+      prompt: row.prompt_tokens,
+      completion: row.completion_tokens,
+    });
+
+    const listed = await server.request("GET", "/tasks");
+    expect(listed.body.tasks[0]).toMatchObject({
+      promptTokens: row.prompt_tokens,
+      completionTokens: row.completion_tokens,
+      totalTokens: Number(row.prompt_tokens) + Number(row.completion_tokens),
+    });
+  });
+
+  it("keeps the tokens of a run that was cut off", async () => {
+    const { server } = await start(hangingModel());
+    await runTask(server, taskInput({ deadlineAt: Date.now() + 300 }));
+    const [row] = taskRows(server);
+    expect(row.status).toBe("failed");
+    expect(Number(row.prompt_tokens)).toBeGreaterThan(0);
   });
 
   it("refuses commands that are not read-only, whatever the model asks", async () => {

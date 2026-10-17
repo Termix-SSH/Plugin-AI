@@ -379,6 +379,7 @@
     "saveModel": "保存模型",
     "task": "任务",
     "tokens": "{{tokens}} tokens",
+    "tokenUsage": "{{total}} tokens（输入 {{prompt}}，输出 {{completion}}）",
     "dryRun": "测试运行",
     "trigger": "触发",
     "noTasks": "还没有任务",

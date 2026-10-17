@@ -28,6 +28,7 @@ import {
 } from "./api";
 import { SeverityBadge, StatusBadge } from "./badges";
 import { EnablePresetView, usePresetTitle } from "./EnablePresetView";
+import { useReportLanguage } from "./report-language";
 import { TaskDetailView } from "./TaskDetailView";
 
 type Section = "presets" | "tasks" | "approvals";
@@ -94,20 +95,15 @@ function TaskRow({ task, onOpen }: { task: TaskItem; onOpen: () => void }) {
 
 /** Which provider and model the user's tasks run on. */
 function PreferencesRow() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const { providers } = useAssistant();
   const [preferences, setPreferences] = useState<TaskPreferences | null>(null);
 
   useEffect(() => {
-    // Reports follow the interface language, so it is kept up to date here.
-    savePreferences({ language })
+    getPreferences()
       .then(setPreferences)
-      .catch(() =>
-        getPreferences()
-          .then(setPreferences)
-          .catch(() => undefined),
-      );
-  }, [language]);
+      .catch(() => undefined);
+  }, []);
 
   if (!preferences) return null;
   const save = (changes: Partial<TaskPreferences>) =>
@@ -232,6 +228,7 @@ export function AutoOpsView({
   onOpenConversation: (conversationId: number) => void;
 }) {
   const { t } = useTranslation();
+  useReportLanguage();
   const [section, setSection] = useState<Section>("tasks");
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [approvals, setApprovals] = useState<TaskItem[]>([]);

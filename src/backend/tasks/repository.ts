@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lt, ne, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { presetLinks, taskPresets, taskRuns } from "../tables.js";
 import type { Autonomy, PlanHost, Severity, TaskStatus } from "./types.js";
@@ -63,8 +63,6 @@ export type TaskRunUpdate = Partial<
     | "decidedBy"
     | "decidedAt"
     | "expiresAt"
-    | "promptTokens"
-    | "completionTokens"
     | "finishedAt"
   >
 >;
@@ -167,6 +165,29 @@ export async function createTaskRepository(ctx: Pick<PluginContext, "db">) {
         .where(eq(runs.id, id))
         .limit(1);
       return rows[0] ? toRun(rows[0]) : null;
+    },
+
+    /**
+     * Adds one model call's tokens to a run as it is counted, so a run that
+     * is cut off still shows what it used.
+     */
+    async addTokens(
+      id: number,
+      promptTokens: number,
+      completionTokens: number,
+    ): Promise<void> {
+      const count = (value: number) =>
+        Math.max(0, Math.round(Number(value) || 0));
+      await (
+        await client()
+      )
+        .update(runs)
+        .set({
+          promptTokens: sql`coalesce(${runs.promptTokens}, 0) + ${count(promptTokens)}`,
+          completionTokens: sql`coalesce(${runs.completionTokens}, 0) + ${count(completionTokens)}`,
+        })
+        .where(eq(runs.id, id));
+      await db.persist({ lazy: true });
     },
 
     async updateRun(id: number, changes: TaskRunUpdate): Promise<void> {

@@ -129,7 +129,7 @@ export function EnablePresetView({
       };
     }
     return {
-      name: name.trim() || presetTitle(preset),
+      // The server names the automation "AI · <title>".
       title: name.trim() || presetTitle(preset),
       trigger: nextTrigger,
       hostSelector,
@@ -159,8 +159,8 @@ export function EnablePresetView({
     if (!input) return;
     setError(null);
     try {
-      const { name: presetName, title: _title, ...config } = input;
-      await savePreset({ name: presetName, shared, config });
+      const { title, ...config } = input;
+      await savePreset({ name: title, shared, config });
       setSaved(true);
     } catch (err) {
       setError(apiMessage(err, t("autoOps.enable.saveFailed")));

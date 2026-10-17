@@ -3,6 +3,7 @@ import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { Button, InlineView, ListBadge } from "@termix-ssh/plugin-sdk/ui";
 import { ShieldCheck } from "lucide-react";
 import { AiMessage } from "../AiMessage";
+import { formatTokens } from "../usage/format";
 import {
   apiMessage,
   approveTask,
@@ -189,6 +190,15 @@ export function TaskDetailView({
               </p>
             )}
             {task.summary && <p>{task.summary}</p>}
+            {!!task.totalTokens && (
+              <p className="text-xs text-muted-foreground">
+                {t("autoOps.tokenUsage", {
+                  total: formatTokens(task.totalTokens),
+                  prompt: formatTokens(task.promptTokens),
+                  completion: formatTokens(task.completionTokens),
+                })}
+              </p>
+            )}
             {task.plan && (
               <div className="space-y-2">
                 <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

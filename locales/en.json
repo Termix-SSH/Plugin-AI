@@ -377,6 +377,7 @@
     "saveModel": "Save model",
     "task": "Task",
     "tokens": "{{tokens}} tokens",
+    "tokenUsage": "{{total}} tokens ({{prompt}} in, {{completion}} out)",
     "dryRun": "Test run",
     "trigger": "Trigger",
     "noTasks": "No tasks yet",

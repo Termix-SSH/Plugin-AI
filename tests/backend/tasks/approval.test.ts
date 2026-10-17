@@ -92,6 +92,13 @@ describe("approving a plan", () => {
       .filter((entry) => entry.action === "ai_ops_command")
       .map((entry) => JSON.parse(String(entry.details)));
     expect(audits).toHaveLength(5);
+    expect(audits.map((entry) => entry.phase)).toEqual([
+      "execute",
+      "execute",
+      "verify",
+      "execute",
+      "verify",
+    ]);
     expect(audits[0]).toMatchObject({
       command: "apt-get clean",
       source: "task",

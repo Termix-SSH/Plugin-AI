@@ -5,6 +5,7 @@ import { readOpsLimits } from "../ops/routes.js";
 import type { AiRepository } from "../repository.js";
 import { readService, requireService, SERVICE } from "../services.js";
 import { executePlan } from "./execute.js";
+import { automationName, presetTitle } from "./language.js";
 import { PREFERENCES_KEY, readPreferences, readTaskLimits } from "./limits.js";
 import {
   applyOverrides,
@@ -49,6 +50,8 @@ function listItem(task: TaskRunRecord, userId: string) {
     hostIds: task.hostIds,
     dryRun: task.dryRun,
     conversationId: task.conversationId,
+    promptTokens: task.promptTokens,
+    completionTokens: task.completionTokens,
     totalTokens: task.promptTokens + task.completionTokens,
     createdAt: task.createdAt,
     finishedAt: task.finishedAt,
@@ -278,21 +281,34 @@ export function registerTaskRoutes(
     });
   });
 
-  /** A shipped or saved preset's config and version, by its id. */
+  /**
+   * A shipped or saved preset's config, version and title, by its id. A
+   * shipped preset's title is in the user's language.
+   */
   const presetBase = async (
     presetId: string,
     userId: string,
-  ): Promise<{ config: PresetConfig; version: number } | null> => {
+  ): Promise<{
+    config: PresetConfig;
+    version: number;
+    title: string;
+  } | null> => {
     if (presetId.startsWith(CUSTOM_PREFIX)) {
       const saved = await tasks.findPreset(
         parseId(presetId.slice(CUSTOM_PREFIX.length)) ?? 0,
       );
       if (!saved || (!saved.shared && saved.userId !== userId)) return null;
       const config = parseSavedConfig(saved.config);
-      return config ? { config, version: 1 } : null;
+      return config ? { config, version: 1, title: saved.name } : null;
     }
     const preset = findPreset(presetId);
-    return preset ? { config: preset, version: preset.version } : null;
+    if (!preset) return null;
+    const { language } = await readPreferences(ctx.settings, userId);
+    return {
+      config: preset,
+      version: preset.version,
+      title: presetTitle(language, presetId),
+    };
   };
 
   /**
@@ -321,8 +337,14 @@ export function registerTaskRoutes(
    *             properties:
    *               name:
    *                 type: string
+   *                 description: >
+   *                   The automation's name. Defaults to "AI · " and the
+   *                   title.
    *               title:
    *                 type: string
+   *                 description: >
+   *                   The report title. Defaults to the preset's title in
+   *                   the user's language.
    *               description:
    *                 type: string
    *               trigger:
@@ -361,14 +383,14 @@ export function registerTaskRoutes(
         return res.status(400).json({ error: applied.error });
       }
       const body = req.body ?? {};
-      const name =
-        typeof body.name === "string" && body.name.trim()
-          ? body.name.trim().slice(0, 120)
-          : presetId;
       const title =
         typeof body.title === "string" && body.title.trim()
           ? body.title.trim().slice(0, 200)
-          : name;
+          : base.title;
+      const name =
+        typeof body.name === "string" && body.name.trim()
+          ? body.name.trim().slice(0, 120)
+          : automationName(title).slice(0, 120);
       let access;
       try {
         access = requireService(ctx.services, SERVICE.automations);

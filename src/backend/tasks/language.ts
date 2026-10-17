@@ -3,18 +3,23 @@ import zhCN from "../../../locales/translated/zh_CN.json";
 import zhTW from "../../../locales/translated/zh_TW.json";
 
 /**
- * The owner's language, for the reports the server writes without a model:
- * a stopped run, an executed plan. The model writes its own reports in the
- * language named by languageName. Strings come from the plugin's locales;
- * languages without a copy here read English.
+ * The owner's language, for what the server writes without a model: a
+ * stopped run, an executed plan, an automation's name. The model writes its
+ * own reports in the language named by languageName. Strings come from the
+ * plugin's locales; languages without a copy here read English.
  */
 
 type ReportKey = keyof typeof en.autoOps.report;
 
-const REPORT_STRINGS: Record<string, Partial<Record<ReportKey, string>>> = {
-  en: en.autoOps.report,
-  zh_CN: zhCN.autoOps?.report ?? {},
-  zh_TW: zhTW.autoOps?.report ?? {},
+interface AutoOpsStrings {
+  report?: Partial<Record<ReportKey, string>>;
+  presets?: Record<string, { title?: string }>;
+}
+
+const STRINGS: Record<string, AutoOpsStrings> = {
+  en: en.autoOps,
+  zh_CN: zhCN.autoOps ?? {},
+  zh_TW: zhTW.autoOps ?? {},
 };
 
 /** "zh-CN", "zh_cn" and "zh" all read as zh_CN. */
@@ -51,9 +56,23 @@ export function reportText(
   key: ReportKey,
   values: Record<string, string | number> = {},
 ): string {
-  const table = REPORT_STRINGS[normalizeLanguage(language)] ?? {};
+  const table = STRINGS[normalizeLanguage(language)]?.report ?? {};
   const template = table[key] ?? en.autoOps.report[key];
   return template.replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
     String(values[name] ?? ""),
   );
+}
+
+/** A shipped preset's title in the owner's language, else English. */
+export function presetTitle(language: string, presetId: string): string {
+  const title = (table: AutoOpsStrings | undefined) =>
+    table?.presets?.[presetId]?.title;
+  return (
+    title(STRINGS[normalizeLanguage(language)]) ?? title(STRINGS.en) ?? presetId
+  );
+}
+
+/** The name of an automation made from a preset: "AI · Daily patrol". */
+export function automationName(title: string): string {
+  return `AI · ${title}`;
 }

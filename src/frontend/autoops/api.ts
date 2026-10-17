@@ -31,6 +31,8 @@ export interface TaskItem {
   hostIds: number[];
   dryRun: boolean;
   conversationId: number | null;
+  promptTokens: number;
+  completionTokens: number;
   totalTokens: number;
   createdAt: string;
   finishedAt: string | null;
@@ -145,7 +147,6 @@ export async function listPresets(): Promise<PresetList> {
 }
 
 export interface EnableInput {
-  name: string;
   title: string;
   trigger: Record<string, unknown>;
   hostSelector: HostSelector;
@@ -168,7 +169,7 @@ export async function savePreset(input: {
   name: string;
   description?: string;
   shared: boolean;
-  config: Omit<EnableInput, "name" | "title">;
+  config: Omit<EnableInput, "title">;
 }): Promise<void> {
   await api().post("tasks/custom-presets", input);
 }

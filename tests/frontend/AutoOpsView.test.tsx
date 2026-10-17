@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   listPresets: vi.fn(),
   enablePreset: vi.fn(),
   savePreset: vi.fn(),
+  getPreferences: vi.fn(),
   savePreferences: vi.fn(),
 }));
 vi.mock("../../src/frontend/autoops/api", () => ({
@@ -27,7 +28,7 @@ vi.mock("../../src/frontend/autoops/api", () => ({
   enablePreset: mocks.enablePreset,
   savePreset: mocks.savePreset,
   deletePreset: vi.fn(),
-  getPreferences: vi.fn(),
+  getPreferences: mocks.getPreferences,
   savePreferences: mocks.savePreferences,
 }));
 vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
@@ -66,6 +67,8 @@ const task = (overrides: Record<string, unknown> = {}) => ({
   hostIds: [1],
   dryRun: false,
   conversationId: 12,
+  promptTokens: 4000,
+  completionTokens: 200,
   totalTokens: 4200,
   createdAt: "2026-10-17T08:00:00.000Z",
   finishedAt: "2026-10-17T08:01:05.000Z",
@@ -101,11 +104,9 @@ beforeEach(() => {
     presets: [PRESET],
     custom: [],
   });
-  mocks.savePreferences.mockResolvedValue({
-    providerId: null,
-    model: null,
-    language: "zh_CN",
-  });
+  const preferences = { providerId: null, model: null, language: "zh_CN" };
+  mocks.getPreferences.mockResolvedValue(preferences);
+  mocks.savePreferences.mockResolvedValue(preferences);
 });
 afterEach(() => {
   cleanup();
@@ -136,6 +137,7 @@ it("opens a task's report and its conversation in the assistant", async () => {
   render(<AutoOpsView onOpenConversation={open} />);
   fireEvent.click(await screen.findByText("Disk cleanup · web-1"));
   expect(await screen.findByText(/Caches fill the disk/)).toBeTruthy();
+  expect(screen.getByText("autoOps.tokenUsage")).toBeTruthy();
   fireEvent.click(screen.getByText("autoOps.openConversation"));
   expect(open).toHaveBeenCalledWith(12);
 });
@@ -211,8 +213,9 @@ it("enables a preset with the threshold the user confirmed", async () => {
   await waitFor(() => expect(mocks.enablePreset).toHaveBeenCalled());
   const [presetId, input] = mocks.enablePreset.mock.calls[0];
   expect(presetId).toBe("disk-cleanup");
+  expect(input).not.toHaveProperty("name");
   expect(input).toMatchObject({
-    name: "autoOps.presets.disk-cleanup.title",
+    title: "autoOps.presets.disk-cleanup.title",
     trigger: { kind: "metric_threshold", value: 90, forSeconds: 300 },
     hostSelector: { kind: "trigger" },
     autonomy: "propose",
