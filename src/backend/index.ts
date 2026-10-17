@@ -5,6 +5,14 @@ import { createModelInfoCache } from "./model-info.js";
 import { createAiRepository } from "./repository.js";
 import { registerProviderSync } from "./sync.js";
 import { registerAgentRoutes } from "./agents/routes.js";
+import { createAssetRepository } from "./assets/repository.js";
+import { registerAssetRoutes } from "./assets/routes.js";
+import {
+  createAssetService,
+  parseTime,
+  SETTINGS as ASSET_SETTINGS,
+  subscribeHostEvents,
+} from "./assets/service.js";
 import { createAgentStore } from "./agents/store.js";
 import { registerOpsRoutes } from "./ops/routes.js";
 import { registerAiRoutes } from "./routes.js";
@@ -62,6 +70,25 @@ export async function activate(ctx: PluginContext) {
   // The kill switch also stops what is already running.
   ctx.settings.onChange("autoOpsPaused", (value) => {
     if (value === true) taskService.stopAll();
+  });
+
+  // Asset inventory: collected daily, on host events and on request.
+  const assetRepository = await createAssetRepository(ctx);
+  await assetRepository.failInterrupted();
+  const assets = createAssetService(ctx, assetRepository);
+  registerAssetRoutes(router, ctx, assetRepository, assets);
+  subscribeHostEvents(ctx, assets);
+  ctx.schedule.every(60_000, () =>
+    assets
+      .tick()
+      .catch((error) => ctx.log.warn(`Asset schedule failed: ${error}`)),
+  );
+  ctx.disposables.add(() => assets.close());
+  ctx.settings.onValidate("admin", (values) => {
+    const time = values[ASSET_SETTINGS.time];
+    if (time !== undefined && time !== "" && !parseTime(time)) {
+      return { [ASSET_SETTINGS.time]: "Use HH:MM, for example 03:00" };
+    }
   });
 
   ctx.registry.provide("ai.hostImportNormalizer", hostImportNormalizer);

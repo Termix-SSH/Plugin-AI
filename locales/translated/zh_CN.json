@@ -35,6 +35,16 @@
         "title": "查看所有人的 AI 用量",
         "description": "查看每个用户的 AI 调用所用的 token，而不只是你自己的。默认仅管理员拥有。"
       }
+    },
+    "assets": {
+      "view": {
+        "title": "查看资产清单",
+        "description": "查看采集到的主机、来宾、容器、区域和连接。默认仅管理员拥有。"
+      },
+      "manage": {
+        "title": "管理资产清单",
+        "description": "发起采集、编辑区域规则、固定区域和修改计划。采集只以只读方式读取主机。默认仅管理员拥有。"
+      }
     }
   },
   "settings": {
@@ -80,6 +90,17 @@
       "autoOpsDailyTokens": {
         "label": "每个用户每天的 AI token 预算",
         "description": "用户今天（UTC）用到这么多 token 后，其 AI 任务会被跳过或停止。"
+      },
+      "assetsDailyCollect": {
+        "label": "每天采集资产清单",
+        "description": "每天用一个只读脚本读取采集账号能连接的所有主机。"
+      },
+      "assetsCollectTime": {
+        "label": "资产采集时间（UTC）",
+        "description": "格式为 HH:MM，例如 03:00。"
+      },
+      "assetsCollector": {
+        "label": "资产采集账号"
       }
     },
     "host": {

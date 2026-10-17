@@ -21,7 +21,8 @@
     "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider",
     "One AI assistant, floating on every page or full screen in the AI tab, that manages Termix as you through the bundled Termix CLI and opens views for you",
     "With the ai.ops.use permission, it also runs shell commands across the hosts, folders, tags or fleets you select",
-    "Auto-ops: automations start the assistant to investigate and report, or propose a plan you approve, with ready-made presets"
+    "Auto-ops: automations start the assistant to investigate and report, or propose a plan you approve, with ready-made presets",
+    "Asset inventory: a read-only collector maps hosts, Proxmox guests, containers, listening ports and connections into zones, daily and on host changes"
   ],
   "engine": {
     "termix": ">=26.10.0",
@@ -189,6 +190,18 @@
         "titleKey": "permissions.usage.view_all.title",
         "descriptionKey": "permissions.usage.view_all.description",
         "defaultRoles": ["admin"]
+      },
+      {
+        "name": "assets.view",
+        "titleKey": "permissions.assets.view.title",
+        "descriptionKey": "permissions.assets.view.description",
+        "defaultRoles": ["admin"]
+      },
+      {
+        "name": "assets.manage",
+        "titleKey": "permissions.assets.manage.title",
+        "descriptionKey": "permissions.assets.manage.description",
+        "defaultRoles": ["admin"]
       }
     ],
     "settings": {
@@ -275,6 +288,29 @@
           "default": 2000000,
           "min": 10000,
           "max": 100000000
+        },
+        {
+          "key": "assetsDailyCollect",
+          "type": "boolean",
+          "labelKey": "settings.admin.assetsDailyCollect.label",
+          "descriptionKey": "settings.admin.assetsDailyCollect.description",
+          "requires": "globallyEnabled",
+          "default": true
+        },
+        {
+          "key": "assetsCollectTime",
+          "type": "string",
+          "labelKey": "settings.admin.assetsCollectTime.label",
+          "descriptionKey": "settings.admin.assetsCollectTime.description",
+          "requires": "assetsDailyCollect",
+          "default": "03:00"
+        },
+        {
+          "key": "assetsCollector",
+          "type": "string",
+          "labelKey": "settings.admin.assetsCollector.label",
+          "default": "",
+          "hidden": true
         }
       ],
       "user": [

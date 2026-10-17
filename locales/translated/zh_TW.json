@@ -35,6 +35,16 @@
         "title": "檢視所有人的 AI 用量",
         "description": "檢視每位使用者的 AI 呼叫所用的 token，而不只是你自己的。預設僅管理員擁有。"
       }
+    },
+    "assets": {
+      "view": {
+        "title": "檢視資產清單",
+        "description": "檢視採集到的主機、來賓、容器、區域和連線。預設僅管理員擁有。"
+      },
+      "manage": {
+        "title": "管理資產清單",
+        "description": "發起採集、編輯區域規則、固定區域和修改排程。採集只以唯讀方式讀取主機。預設僅管理員擁有。"
+      }
     }
   },
   "settings": {
@@ -80,6 +90,17 @@
       "autoOpsDailyTokens": {
         "label": "每個使用者每天的 AI token 預算",
         "description": "使用者今天（UTC）用到這麼多 token 後，其 AI 任務會被略過或停止。"
+      },
+      "assetsDailyCollect": {
+        "label": "每天採集資產清單",
+        "description": "每天用一個唯讀腳本讀取採集帳號能連線的所有主機。"
+      },
+      "assetsCollectTime": {
+        "label": "資產採集時間（UTC）",
+        "description": "格式為 HH:MM，例如 03:00。"
+      },
+      "assetsCollector": {
+        "label": "資產採集帳號"
       }
     },
     "host": {

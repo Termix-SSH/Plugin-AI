@@ -31,6 +31,16 @@
         "title": "View everyone's AI usage",
         "description": "See the tokens every user's AI calls used, not only your own. Admins only by default."
       }
+    },
+    "assets": {
+      "view": {
+        "title": "View the asset inventory",
+        "description": "See the collected hosts, guests, containers, zones and connections. Admins only by default."
+      },
+      "manage": {
+        "title": "Manage the asset inventory",
+        "description": "Start collections, edit zone rules, pin zones and change the schedule. Collection reads hosts read-only. Admins only by default."
+      }
     }
   },
   "settings": {
@@ -76,6 +86,17 @@
       "autoOpsDailyTokens": {
         "label": "Daily AI token budget per user",
         "description": "Once a user has used this many tokens today (UTC), their AI tasks are skipped or stopped."
+      },
+      "assetsDailyCollect": {
+        "label": "Collect the asset inventory daily",
+        "description": "Reads every host the collector can connect to once a day with one read-only script."
+      },
+      "assetsCollectTime": {
+        "label": "Asset collection time (UTC)",
+        "description": "HH:MM, for example 03:00."
+      },
+      "assetsCollector": {
+        "label": "Asset collector"
       }
     },
     "host": {
