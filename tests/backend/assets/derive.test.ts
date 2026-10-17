@@ -43,6 +43,16 @@ describe("host assets", () => {
     ]);
   });
 
+  it("keep a NAT or forwarded Termix address out of the host's own", () => {
+    // In real use two hosts behind one public address both took its zone.
+    const natted = { ...web, address: "203.0.113.7" };
+    const draft = hostDraft(natted);
+    expect(draft.ips).not.toContain("203.0.113.7");
+    expect(draft.ips[0]).toBe("10.0.0.1");
+    expect(draft.facts).toMatchObject({ reachedVia: "203.0.113.7" });
+    expect(hostDraft(web).facts).not.toHaveProperty("reachedVia");
+  });
+
   it("skip a DNS name as an address", () => {
     expect(hostDraft(pve).ips).toEqual(["10.0.0.3"]);
   });

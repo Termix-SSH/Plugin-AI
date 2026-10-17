@@ -67,14 +67,28 @@ export interface NamedHost {
   names: string[];
 }
 
-/** The Termix address first, so it decides the zone, then the interfaces. */
+/**
+ * The host's own addresses: its interfaces, led by the Termix address when
+ * that is one of them so it decides the zone. A Termix address on no
+ * interface is a NAT or port forward in front of the host (see reachedVia),
+ * not the host's own; it only stands in when no interface was read at all.
+ */
 export function hostIps(host: CollectedHost): string[] {
+  const own = hostAddresses(host.facts);
   const address = normalizeIp(host.address);
-  const ips = [
-    ...(address && !isIgnoredIp(address) ? [address] : []),
-    ...hostAddresses(host.facts),
-  ];
-  return [...new Set(ips)];
+  const usable = address && !isIgnoredIp(address) ? address : null;
+  if (!own.length) return usable ? [usable] : [];
+  return usable && own.includes(usable)
+    ? [usable, ...own.filter((ip) => ip !== usable)]
+    : own;
+}
+
+/** The Termix address when it sits on none of the host's interfaces. */
+export function reachedVia(host: CollectedHost): string | null {
+  const own = hostAddresses(host.facts);
+  const address = normalizeIp(host.address);
+  if (!address || isIgnoredIp(address) || !own.length) return null;
+  return own.includes(address) ? null : address;
 }
 
 export function hostDraft(host: CollectedHost): AssetDraft {
@@ -84,7 +98,10 @@ export function hostDraft(host: CollectedHost): AssetDraft {
     hostId: host.hostId,
     name: host.name,
     ips: hostIps(host),
-    facts: host.facts as Record<string, unknown>,
+    facts: {
+      ...(host.facts as Record<string, unknown>),
+      ...(reachedVia(host) ? { reachedVia: reachedVia(host) } : {}),
+    },
     cloud: !!host.facts.cloud,
   };
 }
