@@ -192,6 +192,17 @@ function parseDependsOn(
   };
 }
 
+/**
+ * The spelling already in the inventory for `name`, ignoring case, spaces,
+ * hyphens and underscores, or `name` itself. Batches are annotated one
+ * after another, so without this one system came back as "OpenXDR" in one
+ * batch and "openxdr" in the next.
+ */
+export function canonicalSystem(name: string, known: string[]): string {
+  const norm = (value: string) => value.toLowerCase().replace(/[\s_-]+/g, "");
+  return known.find((existing) => norm(existing) === norm(name)) ?? name;
+}
+
 /** What a submit_annotations call holds once checked. */
 export function validateSubmission(
   args: Record<string, unknown>,

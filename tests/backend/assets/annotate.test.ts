@@ -9,6 +9,8 @@ import {
 } from "@termix-ssh/plugin-sdk/testing";
 import {
   createAnnotationService,
+  knownSystems,
+  withSystems,
   type AnnotationService,
 } from "../../../src/backend/assets/annotate";
 import {
@@ -268,6 +270,20 @@ describe("asset annotation", () => {
     expect((await lastRun(s)).hostsTotal).toBeGreaterThan(5);
   });
 
+  it("tells later runs which system names exist", async () => {
+    // Batches did not see each other's names: one system came back as
+    // "OpenXDR" and "openxdr".
+    const model = fakeAnnotator();
+    const s = await setup(model);
+    await collect(s);
+    const before = model.bodies.length;
+    await annotate(s, true);
+    const sent = model.bodies
+      .slice(before)
+      .map((body) => body.messages.find((m) => m.role === "user")!.content);
+    expect(sent[0]).toMatch(/^Systems already named in this inventory: shop\./);
+  });
+
   it("never overwrites what a user set, until it is unlocked", async () => {
     const model = fakeAnnotator();
     const s = await setup(model);
@@ -415,5 +431,19 @@ describe("asset annotation", () => {
     await collect(s);
     expect(await s.repo.listRuns(5, "annotate")).toEqual([]);
     expect(model.bodies).toEqual([]);
+  });
+});
+
+describe("known systems", () => {
+  it("lists the most used first, once each", () => {
+    const assets = [
+      { system: "shop" },
+      { system: null },
+      { system: "crm" },
+      { system: "shop" },
+    ];
+    expect(knownSystems(assets)).toEqual(["shop", "crm"]);
+    expect(withSystems("[host:1]", [])).toBe("[host:1]");
+    expect(withSystems("[host:1]", ["shop"])).toContain("shop.");
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalSystem,
   publishedPorts,
   validateSubmission,
 } from "../../../src/backend/assets/annotate-tool";
@@ -200,5 +201,15 @@ describe("submit_annotations checks", () => {
   it("reads a container's published host ports", () => {
     const { api } = scope();
     expect(publishedPorts(api)).toEqual([8080, 8080]);
+  });
+});
+
+describe("system names", () => {
+  it("reuse the inventory's spelling", () => {
+    const known = ["OpenXDR", "SoulBind-Lite"];
+    expect(canonicalSystem("openxdr", known)).toBe("OpenXDR");
+    expect(canonicalSystem("soulbind lite", known)).toBe("SoulBind-Lite");
+    expect(canonicalSystem("Soulbind_Lite", known)).toBe("SoulBind-Lite");
+    expect(canonicalSystem("Sentry", known)).toBe("Sentry");
   });
 });

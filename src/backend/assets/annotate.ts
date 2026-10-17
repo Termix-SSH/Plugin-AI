@@ -21,7 +21,11 @@ import {
   type Batch,
 } from "./annotate-plan.js";
 import { buildUnits, type HostMeta } from "./annotate-summary.js";
-import { submitAnnotationsTool, validateSubmission } from "./annotate-tool.js";
+import {
+  canonicalSystem,
+  submitAnnotationsTool,
+  validateSubmission,
+} from "./annotate-tool.js";
 import type { AssetRepository, RunTrigger } from "./repository.js";
 
 /**
@@ -65,12 +69,36 @@ export function annotationSystemPrompt(language: string): string {
     "- importance: critical, high, medium or low, by blast radius: what stops working if it fails.",
     "- importanceReason: one sentence naming who or what depends on it.",
     "- system: the business system or product it belongs to, empty when it serves the infrastructure as a whole or you cannot tell.",
+    "Give members of one cluster or pair the same importance: all control-plane nodes, both DNS servers, both nodes of an HA pair.",
     "Judge from the facts given only: listening ports, services, containers and images, connections, Proxmox and Kubernetes roles, names, folders and tags. Do not invent services.",
     "Containers are listed after the host they run on; annotate them too.",
     "Optionally suggest depends_on relations: from depends on to, from being an asset of this message. Each must cite an observed fact as evidence: an outbound connection of from (or its host) to to (connects_to, with the port), a container's published port that from connects to (port_mapping), or a runs_on relation. Suggestions without such a fact are rejected.",
     `Write role and importanceReason in ${language}. Keep keys, product and system names as they are.`,
     "Call submit_annotations once with an entry for every asset key.",
   ].join("\n");
+}
+
+/** At most this many known system names go into a batch's message. */
+const KNOWN_SYSTEMS_MAX = 60;
+
+/** The business systems the inventory already names, most used first. */
+export function knownSystems(
+  assets: Array<{ system: string | null }>,
+): string[] {
+  const counts = new Map<string, number>();
+  for (const { system } of assets) {
+    if (system) counts.set(system, (counts.get(system) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, KNOWN_SYSTEMS_MAX)
+    .map(([name]) => name);
+}
+
+/** A batch's message, told which system names to reuse. */
+export function withSystems(text: string, systems: string[]): string {
+  if (!systems.length) return text;
+  return `Systems already named in this inventory: ${systems.join(", ")}. Use the exact spelling when an asset belongs to one of them.\n\n${text}`;
 }
 
 export type AnnotationService = ReturnType<typeof createAnnotationService>;
@@ -174,6 +202,7 @@ export function createAnnotationService(deps: AnnotationDeps) {
   ): Promise<{ annotated: number; error: string | null; missed: boolean }> {
     const live = await repo.listAssets();
     const edges = await repo.listEdges();
+    const systems = knownSystems(live);
     const scope = {
       batch: new Set(batch.members.map((member) => member.asset.key)),
       known: new Map(live.map((asset) => [asset.key, asset])),
@@ -196,6 +225,10 @@ export function createAnnotationService(deps: AnnotationDeps) {
       const submission = validateSubmission(args, scope);
       for (const [key, write] of submission.annotations) {
         const member = byKey.get(key)!;
+        if (write.system) {
+          write.system = canonicalSystem(write.system, systems);
+          if (!systems.includes(write.system)) systems.push(write.system);
+        }
         await repo.annotate(member.asset.id, write, member.fingerprint);
         done.add(key);
       }
@@ -242,7 +275,7 @@ export function createAnnotationService(deps: AnnotationDeps) {
         config: state.config,
         model: state.model,
         system: state.system,
-        history: [{ role: "user", content: batch.text }],
+        history: [{ role: "user", content: withSystems(batch.text, systems) }],
         context: {
           userId: state.userId,
           conversationId: 0,
