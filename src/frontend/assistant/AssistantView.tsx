@@ -11,6 +11,8 @@ import {
   useIsMobile,
 } from "@termix-ssh/plugin-sdk/ui";
 import { PanelRight, Sparkles } from "lucide-react";
+import { aiApp } from "../app-ref";
+import { AssetsView } from "../assets/AssetsView";
 import { AutoOpsView } from "../autoops/AutoOpsView";
 import { docsUrl } from "../docs";
 import { TargetSelector } from "../ops/TargetSelector";
@@ -23,8 +25,33 @@ import { assistant, useAssistant } from "./store";
  * The AI tab: the assistant full screen. The same conversation as the
  * floating panel, so a run started in one shows in the other. A user with a
  * shell on hosts also gets the target picker on the left, and Auto-ops:
- * presets, the tasks automations ran and plans waiting for approval.
+ * presets, the tasks automations ran and plans waiting for approval. A
+ * holder of ai.assets.view also gets the asset inventory.
  */
+
+type View = "assistant" | "autoOps" | "assets";
+
+const DOCS: Record<View, string> = {
+  assistant: "assistant",
+  autoOps: "auto-ops",
+  assets: "assets",
+};
+
+function useAssetsAllowed(): boolean {
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    aiApp()
+      .hasPermission("assets.view")
+      .then((value) => live && setAllowed(value))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return allowed;
+}
+
 export function AssistantView(_props: TabProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -32,7 +59,20 @@ export function AssistantView(_props: TabProps) {
   const { hosts: allHosts } = useHosts();
   const hosts = useMemo(() => toTargetHosts(allHosts), [allHosts]);
   const selected = useMemo(() => new Set(targets), [targets]);
-  const [view, setView] = useState<"assistant" | "autoOps">("assistant");
+  const [view, setView] = useState<View>("assistant");
+  const assetsAllowed = useAssetsAllowed();
+  const views: Array<{ value: View; label: string }> = [
+    { value: "assistant", label: t("autoOps.viewAssistant") },
+    ...(hostShell
+      ? [{ value: "autoOps" as const, label: t("autoOps.viewAutoOps") }]
+      : []),
+    ...(assetsAllowed
+      ? [{ value: "assets" as const, label: t("assets.title") }]
+      : []),
+  ];
+  const shown = views.some((entry) => entry.value === view)
+    ? view
+    : "assistant";
 
   useEffect(() => {
     void assistant.ensureReady();
@@ -43,18 +83,15 @@ export function AssistantView(_props: TabProps) {
       <PanelShell
         icon={<Sparkles className="size-4" />}
         title={t("assistant.title")}
-        docs={docsUrl(view === "autoOps" ? "auto-ops" : "assistant")}
+        docs={docsUrl(DOCS[shown])}
         scroll={false}
         actions={
           <div className="flex items-center gap-2">
-            {hostShell && (
+            {views.length > 1 && (
               <Segmented
-                value={view}
-                onChange={(next) => setView(next as typeof view)}
-                options={[
-                  { value: "assistant", label: t("autoOps.viewAssistant") },
-                  { value: "autoOps", label: t("autoOps.viewAutoOps") },
-                ]}
+                value={shown}
+                onChange={(next) => setView(next)}
+                options={views}
               />
             )}
             <Button
@@ -77,7 +114,9 @@ export function AssistantView(_props: TabProps) {
           </div>
         }
       >
-        {view === "autoOps" && hostShell ? (
+        {shown === "assets" ? (
+          <AssetsView />
+        ) : shown === "autoOps" ? (
           <AutoOpsView
             onOpenConversation={(id) => {
               setView("assistant");

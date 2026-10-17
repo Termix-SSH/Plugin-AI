@@ -353,7 +353,8 @@
     "conversationTokens": "{{tokens}} tokens",
     "openFloating": "Floating panel",
     "openFloatingHint": "Open the assistant in a panel over any page. Press {{shortcut}} anywhere to open or close it.",
-    "shortcutHint": "Press {{shortcut}} on any page to open the assistant in a floating panel."
+    "shortcutHint": "Press {{shortcut}} on any page to open the assistant in a floating panel.",
+    "unread": "New results in the assistant"
   },
   "usage": {
     "title": "Token usage",
@@ -520,6 +521,54 @@
       "cert-expiry-weekly": {
         "title": "Weekly certificate expiry",
         "description": "Every Monday at 09:45, reads the expiry of Let's Encrypt, web server and Kubernetes certificates on every host and flags those under 30 days, critical under 7."
+      },
+      "backup-freshness": {
+        "title": "Backup freshness",
+        "description": "Inspect configured backup jobs, last successful snapshots and backup logs. Report missing or failed backups and backups older than the configured RPO (24 hours if no RPO is available). Do not create, prune or restore backups."
+      },
+      "storage-health": {
+        "title": "SMART / RAID / ZFS health",
+        "description": "Inspect SMART health, RAID degradation, ZFS errors and last completed scrub. Report failed disks, pending sectors, degraded arrays and scrubs older than 30 days. Do not start tests, scrubs, repairs or replace disks."
+      },
+      "ssh-login-audit": {
+        "title": "SSH login audit",
+        "description": "Inspect SSH authentication logs for the last 24 hours. Report brute-force bursts and unusual successful logins with evidence. Never print keys, change accounts or block addresses."
+      },
+      "kernel-errors": {
+        "title": "OOM and kernel errors",
+        "description": "Inspect the last 24 hours of kernel logs for OOM kills, I/O errors, hung tasks and filesystem errors. Correlate affected services and report impact. Do not restart or kill processes."
+      },
+      "password-expiry": {
+        "title": "Account password expiry",
+        "description": "Check account and password expiry without exposing password hashes. Warn within 14 days, critical for expired accounts used by services or SSH. Report locked and expiring accounts; never modify them."
+      },
+      "log-growth": {
+        "title": "Log growth",
+        "description": "Inspect journal and log disk usage, logrotate status and recent failures. Warn above 80 percent filesystem usage or 5 GiB logs without retention. Report growth only when prior measurements exist. Do not truncate or delete logs."
+      },
+      "docker-cleanup": {
+        "title": "Docker image and volume cleanup",
+        "description": "Inventory Docker disk usage and references. Clean only demonstrably unused images with bounded commands, then verify reclaimed space. Treat every volume deletion as destructive: explain candidates and require the command confirmation gate. Never remove running containers or use privileged containers."
+      },
+      "listening-ports": {
+        "title": "Listening port changes",
+        "description": "Inventory TCP and UDP listeners with bind address and process. Compare with retained prior evidence when available; otherwise report this as a baseline and do not invent changes. Flag unexpected public listeners. Do not change firewall or services."
+      },
+      "cron-failures": {
+        "title": "Cron and timer failures",
+        "description": "Inspect cron logs and systemd timers for failed, missed or overlapping jobs over 24 hours. Report expected versus observed executions where schedules are available. Do not edit schedules or rerun jobs."
+      },
+      "read-only-mounts": {
+        "title": "Read-only mounts",
+        "description": "Inspect mounts and kernel filesystem errors. Report filesystems unexpectedly remounted read-only, distinguish intentionally read-only mounts and container layers. Do not remount or repair."
+      },
+      "kubernetes-health": {
+        "title": "Kubernetes health",
+        "description": "Inspect node readiness, pressure, pod restarts, pending workloads, storage and recent warnings. Report unhealthy resources with namespace and evidence. Do not delete, drain, scale or patch."
+      },
+      "gpu-health": {
+        "title": "GPU health",
+        "description": "Inspect GPU temperatures, utilization, memory, ECC errors, Xid events and driver availability. Distinguish an idle GPU from a fault. Report thresholds and errors without resetting GPUs or stopping workloads."
       }
     },
     "report": {
@@ -555,7 +604,103 @@
       "noticeReported": "AI report: {{title}}",
       "noticeProposed": "AI plan awaiting approval: {{title}}",
       "noticeExecuted": "AI plan executed: {{title}}",
-      "noticeFailed": "AI task failed: {{title}}"
-    }
+      "noticeFailed": "AI task failed: {{title}}",
+      "confirmationExpired": "Unconfirmed: command confirmation expired after 24 hours; the task ended.",
+      "confirmationFailed": "Command confirmation failed; this command was not executed.",
+      "actionsRecorded": "See the command history for actions already executed. Stopping a run does not roll back prior changes."
+    },
+    "noTasksHint": "Enable a preset, or add an AI task step to an automation. Its runs show up here.",
+    "disable": "Disable",
+    "configure": "Create customized task"
+  },
+  "assets": {
+    "title": "Assets",
+    "search": "Search name, key or address",
+    "allZones": "All zones",
+    "showRemoved": "Show removed",
+    "collectNow": "Collect now",
+    "collecting": "Collecting…",
+    "collectFailed": "Could not start the collection",
+    "neverRun": "Not collected yet",
+    "lastRun": "Last collected {{time}}: {{ok}} of {{total}} hosts",
+    "lastRunFailed": "The collection at {{time}} failed",
+    "hostsFailed_one": "{{count}} host failed",
+    "hostsFailed_other": "{{count}} hosts failed",
+    "loadFailed": "Could not load the inventory",
+    "saveFailed": "Could not save",
+    "empty": "No assets yet",
+    "emptyHint": "Collect now to read every host the collector can connect to.",
+    "emptyHintView": "Someone with the ai.assets.manage permission has to collect first.",
+    "removed": "Removed",
+    "pinned": "Pinned",
+    "multiZone": "Multi-zone",
+    "multiZoneHint": "Has addresses in more than one zone, so it can reach both: a potential pivot.",
+    "columns": {
+      "name": "Name",
+      "kind": "Kind",
+      "zone": "Zone",
+      "ips": "Addresses",
+      "listening": "Ports",
+      "outbound": "Outbound",
+      "services": "Services",
+      "collected": "Last collected"
+    },
+    "kind": {
+      "host": "Host",
+      "guest": "Guest",
+      "container": "Container",
+      "external": "External"
+    },
+    "zone": {
+      "internal": "Internal",
+      "dmz": "DMZ",
+      "external": "External",
+      "cloud": "Cloud",
+      "overlay": "Overlay"
+    },
+    "sections": {
+      "os": "Operating system",
+      "hostname": "Hostname",
+      "uptimeSec": "Uptime (seconds)",
+      "interfaces": "Interfaces",
+      "routes": "Routes",
+      "listening": "Listening ports",
+      "connections": "Established connections",
+      "services": "Running services",
+      "containers": "Containers",
+      "kubernetes": "Kubernetes",
+      "guests": "Proxmox guests",
+      "cloud": "Cloud",
+      "missing": "Sections with no output",
+      "guest": "Proxmox guest",
+      "container": "Container"
+    },
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "noEdges": "None",
+    "stale": "Not seen in the latest collection",
+    "pinZone": "Zone",
+    "rulesDecide": "Decided by the rules",
+    "settingsTitle": "Zones and schedule",
+    "scheduleTitle": "Collection",
+    "daily": "Collect daily",
+    "dailyHint": "Hosts are also collected again when they are added or changed.",
+    "time": "Time (UTC)",
+    "save": "Save",
+    "collector": "Collects as {{collector}}, reaching the hosts that account can connect to.",
+    "collectorMe": "you",
+    "collectorOther": "another manager",
+    "collectorNone": "nobody yet",
+    "collectAsMe": "Collect as me",
+    "zonesTitle": "Zone rules",
+    "zonesHint": "A rule maps a CIDR to a zone, ahead of the built-in ones. The most specific prefix wins, then the higher priority. Assets are zoned again when you save.",
+    "zoneName": "Name",
+    "zoneNameExample": "Data center LAN",
+    "zoneKind": "Kind",
+    "cidr": "CIDR",
+    "priority": "Priority",
+    "addZone": "Add rule",
+    "deleteZone": "Delete rule",
+    "cancelEdit": "Cancel"
   }
 }
