@@ -54,7 +54,6 @@ const HOST_TRIGGERS = [
   "host_status",
   "health_check",
   "docker_event",
-  "container_event",
 ];
 const MAX_RUNBOOK = 20_000;
 const MAX_RUN_SECONDS = 3600;

@@ -241,6 +241,7 @@ describe("isReadOnlyCommand", () => {
       "find / -fls /tmp/x",
       "find / -'del'\"ete\"",
       "ping 10.0.0.5",
+      "ping 8",
       "ping -c 1000 10.0.0.5",
       "ping -f -c 3 10.0.0.5",
       "nc 10.0.0.5 22",

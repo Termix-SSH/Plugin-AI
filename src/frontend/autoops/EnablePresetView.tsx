@@ -33,7 +33,6 @@ const HOST_TRIGGERS = new Set([
   "host_status",
   "health_check",
   "docker_event",
-  "container_event",
 ]);
 const DAILY_CRON = /^(\d{1,2}) (\d{1,2}) \* \* \*$/;
 const DOCKER_EVENTS = ["exited", "unhealthy", "restarting"];

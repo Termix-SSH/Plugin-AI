@@ -238,7 +238,9 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
         "-6": false,
       });
       if ("error" in flags) return `ping ${flags.error}`;
-      if (!isCount(args[args.indexOf("-c") + 1], 10)) {
+      // Without -c, indexOf is -1 and the check would read the host instead.
+      const count = args.indexOf("-c");
+      if (count < 0 || !isCount(args[count + 1], 10)) {
         return "ping needs -c with a count of 1 to 10";
       }
       if (flags.rest.length !== 1) return "ping takes one host";
