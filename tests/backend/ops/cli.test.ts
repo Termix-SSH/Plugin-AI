@@ -66,6 +66,9 @@ describe("checkCliArgs", () => {
     ["/host/db/host/3/local-connection-auth"],
     ["/users/me/token"],
     ["/sync/v2/changes?cursor=0"],
+    ["credentials/5"],
+    ["sync/v2/changes"],
+    ["host/db/hosts/export"],
   ])("refuses the secret route %s through api", (route) => {
     expect(checkCliArgs(["api", "GET", route], true)).toContain(
       "return secrets",
