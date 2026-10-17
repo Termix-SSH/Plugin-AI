@@ -23,6 +23,7 @@
 - Alerts when an auto-ops report is ready, a plan waits for approval, a plan has run or a task failed, linking to the AI tab
 - The read-only command list also allows `docker system df`, `find` without writing actions, `ping -c`, `nc -z`, `qm` and `pct` status and list, `timedatectl`, `openssl x509 -noout`, update checks and reboot checks
 - The read-only command list also allows `docker inspect` with a `--format` limited to a container's state, memory limits and restart policy, `dnf` and `yum` `updateinfo summary` and `list`, `needs-restarting -r`, and reading `/var/run/reboot-required.pkgs`
+- The read-only command list also allows `kubectl` and `k3s kubectl` `get`, `describe`, `top`, `logs --tail`, `events`, `version`, `cluster-info`, `api-resources` and `auth can-i`, without secrets and with full objects only for kinds that hold no pod template or data; `crictl` `ps`, `pods`, `images`, `stats`, `version` and `logs --tail`; `nvidia-smi` queries and `topo -m`; `zpool status`, `list` and `iostat` with a count, `zfs list` and `zfs get` of native properties; `pvesm status` and `list`, `pvecm status` and `nodes`, `pveversion`, `pvesh get` of listed status, task, storage and log paths; and `systemctl list-timers`
 
 ### Changed
 

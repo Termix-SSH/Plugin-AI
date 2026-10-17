@@ -47,6 +47,16 @@ const READ_ONLY_COMMANDS = new Set([
   "needrestart",
   "test",
   "[",
+  "kubectl",
+  "k3s",
+  "crictl",
+  "nvidia-smi",
+  "zpool",
+  "zfs",
+  "pvesm",
+  "pvecm",
+  "pveversion",
+  "pvesh",
 ]);
 
 /** Characters that let one command become several. */
@@ -60,6 +70,7 @@ const SUBCOMMAND_ALLOWLIST: Record<string, Set<string>> = {
     "list-unit-files",
     "is-active",
     "is-enabled",
+    "list-timers",
   ]),
   // inspect only with a --format limited to state fields, since its full
   // output holds container environment variables.
@@ -293,6 +304,31 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
         return "Only needrestart -b is allowed";
       }
     },
+    kubectl: (args) => kubectl(args),
+    k3s: (args) => {
+      if (args[0] === "kubectl") return kubectl(args.slice(1));
+      if (args[0] === "crictl") return crictl(args.slice(1));
+      return "Only k3s kubectl and k3s crictl are allowed";
+    },
+    crictl: (args) => crictl(args),
+    "nvidia-smi": (args) => nvidiaSmi(args),
+    zpool: (args) => zpool(args),
+    zfs: (args) => zfs(args),
+    pvesm: (args) => pvesm(args),
+    pvecm: (args) => {
+      if (args.length !== 1 || !["status", "nodes"].includes(args[0])) {
+        return "Only pvecm status and pvecm nodes are allowed";
+      }
+    },
+    pveversion: (args) => {
+      if (
+        args.length > 1 ||
+        (args.length && !["-v", "--verbose"].includes(args[0]))
+      ) {
+        return "Only pveversion and pveversion -v are allowed";
+      }
+    },
+    pvesh: (args) => pvesh(args),
     test: (args) => fileTest(args),
     "[": (args) =>
       args.at(-1) === "]" ? fileTest(args.slice(0, -1)) : "[ needs a closing ]",
@@ -457,6 +493,574 @@ function fileTest(args: string[]): string | undefined {
     !plainPath(args[1])
   ) {
     return "Only a file test like test -f /path is allowed";
+  }
+}
+
+/** The values given to any of the named flags. */
+const flagValues = (args: string[], names: string[]) =>
+  args.flatMap((arg, index) => (names.includes(arg) ? [args[index + 1]] : []));
+
+/** Flags every kubectl verb here may take. */
+const KUBECTL_COMMON: Record<string, boolean> = {
+  "-n": true,
+  "--namespace": true,
+  "--context": true,
+  "--kubeconfig": true,
+  "--request-timeout": true,
+};
+
+const KUBECTL_LISTING: Record<string, boolean> = {
+  ...KUBECTL_COMMON,
+  "-A": false,
+  "--all-namespaces": false,
+  "-l": true,
+  "--selector": true,
+  "--field-selector": true,
+  "--no-headers": false,
+};
+
+/**
+ * Kinds whose whole object holds no pod template, environment or data, so
+ * describe, -o json and the like may print them. Pods and workloads carry
+ * literal environment values and configmaps carry data, the way docker
+ * inspect does, so those stay tables.
+ */
+const KUBECTL_DETAIL_KINDS = new Set([
+  "node",
+  "nodes",
+  "no",
+  "namespace",
+  "namespaces",
+  "ns",
+  "service",
+  "services",
+  "svc",
+  "endpoints",
+  "ep",
+  "endpointslice",
+  "endpointslices",
+  "event",
+  "events",
+  "ev",
+  "persistentvolume",
+  "persistentvolumes",
+  "pv",
+  "persistentvolumeclaim",
+  "persistentvolumeclaims",
+  "pvc",
+  "storageclass",
+  "storageclasses",
+  "sc",
+  "ingress",
+  "ingresses",
+  "ing",
+  "ingressclass",
+  "ingressclasses",
+  "resourcequota",
+  "resourcequotas",
+  "quota",
+  "limitrange",
+  "limitranges",
+  "limits",
+  "poddisruptionbudget",
+  "poddisruptionbudgets",
+  "pdb",
+  "horizontalpodautoscaler",
+  "horizontalpodautoscalers",
+  "hpa",
+  "priorityclass",
+  "priorityclasses",
+  "pc",
+  "networkpolicy",
+  "networkpolicies",
+  "netpol",
+]);
+
+const KUBECTL_DETAIL_HINT =
+  "nodes, namespaces, services, endpoints, events, volumes and claims, storage classes, ingresses, quotas, limit ranges, disruption budgets, autoscalers, priority classes and network policies";
+
+const KUBECTL_TABLE_OUTPUTS = new Set(["wide", "name"]);
+
+const KUBECTL_FULL_OUTPUT =
+  /^(json|yaml|(jsonpath|jsonpath-as-json|custom-columns|go-template|template)=.+)$/;
+
+/** Sort keys that read nothing but names, ages and status, on any kind. */
+const KUBECTL_PLAIN_SORT =
+  /^\{?\.(metadata\.(name|namespace|creationTimestamp)|status(\.\w+|\[\d+\])+)\}?$/;
+
+/** The kinds a get or describe names: pods,svc or pod/web, without group. */
+function kubectlKinds(rest: string[]): string[] {
+  const [types = "", ...names] = rest;
+  return [types, ...names.filter((name) => name.includes("/"))]
+    .flatMap((word) => word.split(","))
+    .map((word) => word.split("/")[0].split(".")[0].toLowerCase());
+}
+
+const detailKinds = (kinds: string[]) =>
+  kinds.every((kind) => KUBECTL_DETAIL_KINDS.has(kind));
+
+/**
+ * -o beyond a table, and --sort-by on fields other than names, ages and
+ * status, can read any field, so they need detail kinds.
+ */
+function kubectlOutput(args: string[], kinds: string[]): string | undefined {
+  const outputs = flagValues(args, ["-o", "--output"]);
+  const unknown = outputs.find(
+    (output) =>
+      !KUBECTL_TABLE_OUTPUTS.has(output) && !KUBECTL_FULL_OUTPUT.test(output),
+  );
+  if (unknown !== undefined) return `kubectl -o ${unknown} is not allowed`;
+  const full =
+    outputs.some((output) => !KUBECTL_TABLE_OUTPUTS.has(output)) ||
+    flagValues(args, ["--sort-by"]).some(
+      (key) => !KUBECTL_PLAIN_SORT.test(key),
+    );
+  if (full && !detailKinds(kinds)) {
+    return `kubectl -o other than wide or name, and --sort-by beyond names, ages and status, are only for ${KUBECTL_DETAIL_HINT}`;
+  }
+}
+
+interface KubectlVerb {
+  flags: Record<string, boolean>;
+  check: (rest: string[], args: string[]) => string | undefined;
+}
+
+/** The read-only verbs, with the flags each may take. */
+const KUBECTL_VERBS: Record<string, KubectlVerb> = {
+  get: {
+    flags: {
+      ...KUBECTL_LISTING,
+      "-o": true,
+      "--output": true,
+      "--sort-by": true,
+      "-L": true,
+      "--label-columns": true,
+      "--show-labels": false,
+      "--show-kind": false,
+      "--ignore-not-found": false,
+    },
+    check: (rest, args) => {
+      const kinds = kubectlKinds(rest);
+      if (kinds.some((kind) => kind === "secret" || kind === "secrets")) {
+        return "kubectl get secrets is not allowed";
+      }
+      return kubectlOutput(args, kinds);
+    },
+  },
+  describe: {
+    flags: KUBECTL_LISTING,
+    check: (rest) =>
+      detailKinds(kubectlKinds(rest))
+        ? undefined
+        : `kubectl describe is only for ${KUBECTL_DETAIL_HINT}`,
+  },
+  top: {
+    flags: { ...KUBECTL_LISTING, "--containers": false, "--sort-by": true },
+    check: (rest) =>
+      ["node", "nodes", "no", "pod", "pods", "po"].includes(rest[0])
+        ? undefined
+        : "Only kubectl top nodes and top pods are allowed",
+  },
+  logs: {
+    flags: {
+      ...KUBECTL_COMMON,
+      "--tail": true,
+      "-c": true,
+      "--container": true,
+      "-p": false,
+      "--previous": false,
+      "--since": true,
+      "--since-time": true,
+      "--timestamps": false,
+      "--all-containers": false,
+    },
+    check: (rest, args) => {
+      const tails = flagValues(args, ["--tail"]);
+      if (!tails.length || !tails.every((tail) => isCount(tail, 1000))) {
+        return "kubectl logs needs --tail with 1 to 1000 lines";
+      }
+      if (rest.length !== 1) return "kubectl logs takes one pod";
+    },
+  },
+  events: {
+    flags: {
+      ...KUBECTL_COMMON,
+      "-A": false,
+      "--all-namespaces": false,
+      "--for": true,
+      "--types": true,
+      "-o": true,
+      "--output": true,
+      "--no-headers": false,
+    },
+    check: (rest, args) =>
+      rest.length
+        ? "kubectl events takes --for, not names"
+        : kubectlOutput(args, ["events"]),
+  },
+  version: {
+    flags: { ...KUBECTL_COMMON, "--client": false },
+    check: (rest) =>
+      rest.length ? "kubectl version takes no names" : undefined,
+  },
+  "cluster-info": {
+    flags: KUBECTL_COMMON,
+    check: (rest) =>
+      rest.length
+        ? "Only kubectl cluster-info is allowed, not dump"
+        : undefined,
+  },
+  "api-resources": {
+    flags: {
+      ...KUBECTL_COMMON,
+      "--api-group": true,
+      "--no-headers": false,
+      "-o": true,
+      "--output": true,
+    },
+    check: (rest, args) =>
+      rest.length ||
+      !flagValues(args, ["-o", "--output"]).every((output) =>
+        KUBECTL_TABLE_OUTPUTS.has(output),
+      )
+        ? "Only kubectl api-resources with -o wide or name is allowed"
+        : undefined,
+  },
+  auth: {
+    flags: {
+      ...KUBECTL_COMMON,
+      "-A": false,
+      "--all-namespaces": false,
+      "--list": false,
+      "--subresource": true,
+      "-q": false,
+      "--quiet": false,
+    },
+    check: (rest) =>
+      rest[0] === "can-i" ? undefined : "Only kubectl auth can-i is allowed",
+  },
+};
+
+/** Every verb's flags, to find the verb behind flags such as -n before it. */
+const KUBECTL_ANY_FLAG: Record<string, boolean> = Object.assign(
+  {},
+  ...Object.values(KUBECTL_VERBS).map((verb) => verb.flags),
+);
+
+/**
+ * kubectl, never with --token, --as, --server, -v or --raw, which onlyFlags
+ * refuses, and never near secrets.
+ */
+function kubectl(raw: string[]): string | undefined {
+  const args = splitEquals(raw);
+  const all = onlyFlags(args, KUBECTL_ANY_FLAG);
+  if ("error" in all) return `kubectl ${all.error}`;
+  const [verb = "", ...rest] = all.rest;
+  if (!Object.hasOwn(KUBECTL_VERBS, verb)) {
+    return `kubectl ${verb} is not on the read-only allowlist`;
+  }
+  const flags = onlyFlags(args, KUBECTL_VERBS[verb].flags);
+  if ("error" in flags) return `kubectl ${verb} ${flags.error}`;
+  if (!flagValues(args, ["--kubeconfig"]).every(plainPath)) {
+    return "kubectl --kubeconfig needs an absolute path";
+  }
+  return KUBECTL_VERBS[verb].check(rest, args);
+}
+
+/**
+ * crictl subcommands and their flags. inspect and info are left out: they
+ * print container environment and the registry credentials of the runtime,
+ * and -o or -v would print pod annotations.
+ */
+const CRICTL_FLAGS: Record<string, Record<string, boolean>> = {
+  ps: {
+    "-a": false,
+    "--all": false,
+    "-q": false,
+    "--quiet": false,
+    "--no-trunc": false,
+    "--name": true,
+    "--pod": true,
+    "--state": true,
+    "--label": true,
+    "--namespace": true,
+    "--image": true,
+  },
+  pods: {
+    "-q": false,
+    "--quiet": false,
+    "--no-trunc": false,
+    "--name": true,
+    "--namespace": true,
+    "--state": true,
+    "--label": true,
+  },
+  images: {
+    "-q": false,
+    "--quiet": false,
+    "--no-trunc": false,
+    "--digests": false,
+  },
+  stats: {
+    "-a": false,
+    "--all": false,
+    "--id": true,
+    "--pod": true,
+    "--label": true,
+  },
+  version: {},
+  logs: {
+    "--tail": true,
+    "-p": false,
+    "--previous": false,
+    "-t": false,
+    "--timestamps": false,
+    "--since": true,
+  },
+};
+
+/** crictl as one sample, and logs with a bounded --tail, never following. */
+function crictl(raw: string[]): string | undefined {
+  const [subcommand = "", ...args] = splitEquals(raw);
+  if (!Object.hasOwn(CRICTL_FLAGS, subcommand)) {
+    return `crictl ${subcommand} is not on the read-only allowlist`;
+  }
+  const flags = onlyFlags(args, CRICTL_FLAGS[subcommand]);
+  if ("error" in flags) return `crictl ${subcommand} ${flags.error}`;
+  if (subcommand !== "logs") return;
+  const tails = flagValues(args, ["--tail"]);
+  if (!tails.length || !tails.every((tail) => isCount(tail, 1000))) {
+    return "crictl logs needs --tail with 1 to 1000 lines";
+  }
+  if (flags.rest.length !== 1 || !containerNames(flags.rest, true)) {
+    return "crictl logs takes one container";
+  }
+}
+
+const NVIDIA_SMI_FLAGS: Record<string, boolean> = {
+  "-L": false,
+  "--list-gpus": false,
+  "-q": false,
+  "--query": false,
+  "-d": true,
+  "--display": true,
+  "-i": true,
+  "--id": true,
+  "--query-gpu": true,
+  "--query-compute-apps": true,
+  "--format": true,
+};
+
+const NVIDIA_SMI_FIELDS = /^[\w.]+(,[\w.]+)*$/;
+
+/**
+ * nvidia-smi queries. Every setter, reset and loop flag is outside the list,
+ * and so is -f, which writes the output to a file.
+ */
+function nvidiaSmi(raw: string[]): string | undefined {
+  if (raw[0] === "topo") {
+    return raw.join(" ") === "topo -m"
+      ? undefined
+      : "Only nvidia-smi topo -m is allowed";
+  }
+  const args = splitEquals(raw);
+  const flags = onlyFlags(args, NVIDIA_SMI_FLAGS);
+  if ("error" in flags) return `nvidia-smi ${flags.error}`;
+  if (flags.rest.length) return "nvidia-smi takes only flags";
+  const display = ["-d", "--display"].some((flag) => args.includes(flag));
+  if (display && !["-q", "--query"].some((flag) => args.includes(flag))) {
+    return "nvidia-smi -d is only for -q";
+  }
+  const fields = flagValues(args, ["--query-gpu", "--query-compute-apps"]);
+  const formats = flagValues(args, ["--format"]);
+  if (!fields.every((field) => NVIDIA_SMI_FIELDS.test(field))) {
+    return "nvidia-smi --query-gpu takes field names";
+  }
+  if (
+    fields.length > 0 !== formats.length > 0 ||
+    !formats.every((format) => /^csv(,(noheader|nounits))*$/.test(format))
+  ) {
+    return "nvidia-smi --query-gpu and --query-compute-apps need --format=csv";
+  }
+}
+
+/** Pool names start with a letter, so a number after them is an interval. */
+const ZFS_POOL = /^[A-Za-z][\w.:-]*$/;
+const ZFS_DATASET = /^[A-Za-z][\w.:/@#-]*$/;
+
+/** Native property and column names. User properties hold a ':', and all includes them. */
+const zfsFields = (value: string) =>
+  /^[a-z][\w.]*(,[a-z][\w.]*)*$/.test(value) &&
+  !value.split(",").includes("all");
+
+const ZPOOL_FLAGS: Record<string, Record<string, boolean>> = {
+  status: { "-x": false, "-v": false },
+  list: { "-H": false, "-p": false, "-v": false, "-o": true },
+  iostat: { "-H": false, "-p": false, "-v": false, "-y": false },
+};
+
+/**
+ * zpool status, list and iostat. Each repeats forever after an interval, so
+ * only iostat takes one, and only with a count.
+ */
+function zpool(raw: string[]): string | undefined {
+  const [subcommand = "", ...args] = raw;
+  if (!Object.hasOwn(ZPOOL_FLAGS, subcommand)) {
+    return `zpool ${subcommand} is not on the read-only allowlist`;
+  }
+  const flags = onlyFlags(args, ZPOOL_FLAGS[subcommand]);
+  if ("error" in flags) return `zpool ${subcommand} ${flags.error}`;
+  if (!flagValues(args, ["-o"]).every(zfsFields)) {
+    return "zpool list -o takes property names";
+  }
+  const split = flags.rest.findIndex((word) => !ZFS_POOL.test(word));
+  const pools = split < 0 ? flags.rest : flags.rest.slice(0, split);
+  const timing = split < 0 ? [] : flags.rest.slice(split);
+  if (subcommand === "iostat") {
+    if (
+      timing.length &&
+      !(timing.length === 2 && isCount(timing[0], 10) && isCount(timing[1], 5))
+    ) {
+      return "zpool iostat takes an interval of 1 to 10 seconds only with a count of 1 to 5";
+    }
+    return;
+  }
+  if (timing.length || pools.length > 1) {
+    return `zpool ${subcommand} takes one pool and no interval`;
+  }
+}
+
+const ZFS_FLAGS: Record<string, Record<string, boolean>> = {
+  list: { "-H": false, "-p": false, "-r": false, "-o": true, "-t": true },
+  get: { "-H": false, "-p": false, "-r": false, "-o": true, "-t": true },
+};
+
+/** zfs list and zfs get of native properties. */
+function zfs(raw: string[]): string | undefined {
+  const [subcommand = "", ...args] = raw;
+  if (!Object.hasOwn(ZFS_FLAGS, subcommand)) {
+    return `zfs ${subcommand} is not on the read-only allowlist`;
+  }
+  const flags = onlyFlags(args, ZFS_FLAGS[subcommand]);
+  if ("error" in flags) return `zfs ${subcommand} ${flags.error}`;
+  if (!flagValues(args, ["-o", "-t"]).every(zfsFields)) {
+    return `zfs ${subcommand} -o and -t take property names, not all`;
+  }
+  const [properties, ...datasets] =
+    subcommand === "get" ? flags.rest : ["", ...flags.rest];
+  if (subcommand === "get" && (!properties || !zfsFields(properties))) {
+    return "zfs get takes native property names, not all";
+  }
+  if (
+    datasets.length > 1 ||
+    !datasets.every((name) => ZFS_DATASET.test(name))
+  ) {
+    return `zfs ${subcommand} takes one dataset`;
+  }
+}
+
+/** pvesm status and pvesm list of one storage. */
+function pvesm(raw: string[]): string | undefined {
+  const [subcommand = "", ...args] = splitEquals(raw);
+  if (subcommand === "status") {
+    const flags = onlyFlags(args, { "--storage": true, "--content": true });
+    if ("error" in flags) return `pvesm status ${flags.error}`;
+    if (flags.rest.length) return "pvesm status takes no names";
+    return;
+  }
+  if (subcommand !== "list")
+    return "Only pvesm status and pvesm list are allowed";
+  const flags = onlyFlags(args, { "--content": true, "--vmid": true });
+  if ("error" in flags) return `pvesm list ${flags.error}`;
+  if (flags.rest.length !== 1 || !/^[A-Za-z][\w.-]*$/.test(flags.rest[0])) {
+    return "pvesm list takes one storage";
+  }
+}
+
+/**
+ * API paths pvesh get may read, * standing for one segment. Listed rather
+ * than filtered: agent/file-read, file-restore/download and the ACME and
+ * notification plugin settings are GETs that return files and credentials,
+ * and guest configs may hold cloud-init passwords.
+ */
+const PVESH_PATHS = [
+  "/version",
+  "/cluster/status",
+  "/cluster/resources",
+  "/cluster/tasks",
+  "/cluster/log",
+  "/cluster/ha/status/current",
+  "/cluster/ha/resources",
+  "/cluster/ceph/status",
+  "/access/users",
+  "/nodes",
+  "/nodes/*/status",
+  "/nodes/*/version",
+  "/nodes/*/time",
+  "/nodes/*/dns",
+  "/nodes/*/netstat",
+  "/nodes/*/network",
+  "/nodes/*/services",
+  "/nodes/*/syslog",
+  "/nodes/*/journal",
+  "/nodes/*/rrddata",
+  "/nodes/*/tasks",
+  "/nodes/*/tasks/*/status",
+  "/nodes/*/tasks/*/log",
+  "/nodes/*/apt/update",
+  "/nodes/*/apt/versions",
+  "/nodes/*/disks/list",
+  "/nodes/*/disks/smart",
+  "/nodes/*/disks/zfs",
+  "/nodes/*/storage",
+  "/nodes/*/storage/*/status",
+  "/nodes/*/storage/*/content",
+  "/nodes/*/storage/*/rrddata",
+  "/nodes/*/qemu",
+  "/nodes/*/qemu/*/status/current",
+  "/nodes/*/qemu/*/rrddata",
+  "/nodes/*/lxc",
+  "/nodes/*/lxc/*/status/current",
+  "/nodes/*/lxc/*/rrddata",
+];
+
+const PVESH_PATTERNS = PVESH_PATHS.map(
+  (path) => new RegExp(`^${path.replaceAll("*", "[\\w.:@-]+")}$`),
+);
+
+/** pvesh get of a listed path, with the read parameters those paths take. */
+function pvesh(raw: string[]): string | undefined {
+  const [method, ...args] = splitEquals(raw);
+  if (method !== "get") return "Only pvesh get is allowed";
+  const flags = onlyFlags(args, {
+    "--output-format": true,
+    "--type": true,
+    "--timeframe": true,
+    "--cf": true,
+    "--disk": true,
+    "--limit": true,
+    "--start": true,
+    "--since": true,
+    "--until": true,
+    "--lastentries": true,
+    "--vmid": true,
+    "--typefilter": true,
+    "--source": true,
+  });
+  if ("error" in flags) return `pvesh get ${flags.error}`;
+  const formats = flagValues(args, ["--output-format"]);
+  if (
+    !formats.every((format) =>
+      ["json", "json-pretty", "text", "yaml"].includes(format),
+    )
+  ) {
+    return "pvesh get --output-format is json, json-pretty, text or yaml";
+  }
+  if (
+    flags.rest.length !== 1 ||
+    !PVESH_PATTERNS.some((pattern) => pattern.test(flags.rest[0]))
+  ) {
+    return `pvesh get reads only ${PVESH_PATHS.join(", ")}`;
   }
 }
 
