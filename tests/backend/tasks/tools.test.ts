@@ -175,7 +175,7 @@ describe("task tools", () => {
       { args: ["api", "GET", "/host/db/host/export"] },
       context,
     )) as { error?: string };
-    expect(exported.error).toMatch(/export routes/);
+    expect(exported.error).toMatch(/return secrets/);
     expect(run).not.toHaveBeenCalled();
 
     const listed = (await termix.handler(
