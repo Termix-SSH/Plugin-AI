@@ -67,7 +67,7 @@ export const conversations = adoptLegacyTable(
       title: text(),
       providerId: integer(),
       model: text(),
-      // chat | ops
+      // chat | ops | task
       mode: varchar(16).notNull().default("chat"),
       // Cluster Ops only: the host ids the conversation may run commands on.
       targets: text(),
@@ -285,7 +285,7 @@ export const usage = defineTable(
     model: text().notNull(),
     // Null outside a conversation.
     conversationId: integer(),
-    // assistant | terminal | compaction
+    // assistant | terminal | compaction | task
     source: varchar(16).notNull(),
     promptTokens: integer().notNull().default(0),
     completionTokens: integer().notNull().default(0),
@@ -301,6 +301,90 @@ export const usage = defineTable(
   },
 );
 
+/**
+ * One auto-ops task: an ai.tasks run an automation started, with its input
+ * snapshot, report, L1 plan and decision. Plan and host ids are JSON.
+ */
+export const taskRuns = defineTable(
+  "task_runs",
+  {
+    id: id(),
+    userId: refUser(),
+    automationId: integer().notNull(),
+    automationRunId: integer(),
+    presetId: varchar(64),
+    title: text().notNull(),
+    // report | propose
+    autonomy: varchar(16).notNull(),
+    hostIds: text().notNull(),
+    trigger: text().notNull(),
+    dryRun: boolean().notNull().default(false),
+    // running | reported | proposed | approved | rejected | expired |
+    // executing | done | failed | skipped
+    status: varchar(16).notNull(),
+    // info | warning | critical
+    severity: varchar(16),
+    summary: text(),
+    report: text(),
+    // [{ hostId, commands, rationale, risk, rollback, verify, results? }]
+    plan: text(),
+    decidedBy: varchar(255),
+    decidedAt: timestamp(),
+    // When a proposed plan stops being approvable.
+    expiresAt: timestamp(),
+    conversationId: integer(),
+    promptTokens: integer().notNull().default(0),
+    completionTokens: integer().notNull().default(0),
+    createdAt: timestamp().notNull().defaultNow(),
+    finishedAt: timestamp(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_task_runs_user", columns: ["userId", "createdAt"] },
+      {
+        name: "idx_ai_task_runs_automation",
+        columns: ["automationId", "createdAt"],
+      },
+      { name: "idx_ai_task_runs_status", columns: ["status"] },
+    ],
+  },
+);
+
+/** An automation made from a preset, with the preset version it used. */
+export const presetLinks = defineTable(
+  "preset_links",
+  {
+    id: id(),
+    userId: refUser(),
+    presetId: varchar(64).notNull(),
+    presetVersion: integer().notNull(),
+    automationId: integer().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  { indexes: [{ name: "idx_ai_preset_links_user", columns: ["userId"] }] },
+);
+
+/** A preset a user saved, for themselves or shared with everyone. */
+export const taskPresets = defineTable(
+  "task_presets",
+  {
+    id: id(),
+    userId: refUser(),
+    name: varchar(120).notNull(),
+    description: text(),
+    shared: boolean().notNull().default(false),
+    // JSON: trigger, hostSelector, autonomy, runbook, maxRunSeconds
+    config: text().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_task_presets_user", columns: ["userId"] },
+      { name: "idx_ai_task_presets_shared", columns: ["shared"] },
+    ],
+  },
+);
+
 export const tables = [
   providers,
   conversations,
@@ -312,4 +396,7 @@ export const tables = [
   opsRuns,
   cliRuns,
   usage,
+  taskRuns,
+  presetLinks,
+  taskPresets,
 ];

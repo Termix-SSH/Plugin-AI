@@ -373,3 +373,14 @@ it("opens the usage view from the header", async () => {
   expect(await screen.findByText("usage.today")).toBeTruthy();
   expect(screen.getByText("glm-5.3-flash")).toBeTruthy();
 });
+
+it("switches to Auto-ops for a user with a shell on hosts only", async () => {
+  await ready();
+  fireEvent.click(screen.getByText("autoOps.viewAutoOps"));
+  expect(await screen.findByText("autoOps.sections.approvals")).toBeTruthy();
+  cleanup();
+
+  assistant.setHostShell(false);
+  render(<AssistantView {...({} as TabProps)} />);
+  expect(screen.queryByText("autoOps.viewAutoOps")).toBeNull();
+});

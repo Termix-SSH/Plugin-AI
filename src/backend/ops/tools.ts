@@ -46,6 +46,8 @@ export interface OpsSession {
   facts: Map<number, string>;
   onHostResult: (tool: string, command: string, result: HostResult) => void;
   recordRuns: (runs: OpsRunInput[]) => Promise<void>;
+  /** Added to every command's audit line, e.g. the task that ran it. */
+  auditDetails?: Record<string, unknown>;
 }
 
 const FACTS_COMMAND = [
@@ -151,7 +153,11 @@ async function fanOut(
         resourceType: "host",
         resourceId: String(hostId),
         resourceName: name,
-        details: JSON.stringify({ command, exitCode: result.exitCode }),
+        details: JSON.stringify({
+          command,
+          exitCode: result.exitCode,
+          ...session.auditDetails,
+        }),
         success: !failure,
         errorMessage: failure,
       })

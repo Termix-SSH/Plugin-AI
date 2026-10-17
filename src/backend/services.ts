@@ -104,6 +104,9 @@ interface AutomationsAccess {
     description?: string | null;
     definition: unknown;
     enabled?: boolean;
+    /** Taken by Automations once it accepts them on create; else ignored. */
+    concurrencyPolicy?: "skip" | "queue" | "allow";
+    maxRunSeconds?: number;
   }) => Promise<{ id: number; name: string }>;
 }
 

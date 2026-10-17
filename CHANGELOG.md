@@ -16,6 +16,11 @@
 - The assistant loads Ollama models with the conversation's window as `num_ctx`, and uses prompt caching on Anthropic
 - Automatic compaction: as a conversation nears what the context window leaves after the reply's tokens, older tool results are trimmed and then the earlier part is summarised, marked with "Context compacted"; a header button compacts on request
 - Token usage for every AI call, with a usage view in the assistant and in settings, a dashboard card, and every user's usage for those with the new `ai.usage.view_all` permission (admins only by default)
+- Auto-ops: the `ai.tasks` service lets an automation start the assistant unattended, to investigate read-only and report, or to propose a plan per host that runs verbatim only after the owner or someone with `ai.ops.use` approves it; plans expire after 24 hours
+- An Auto-ops view in the AI tab with tasks and their reports, plans waiting for approval with live progress, and presets for a daily patrol, disk space cleanup and host down triage that become automations in one step; save your own presets, privately or shared
+- Auto-ops guardrails under Settings, AI Assistant: Pause AI auto-ops, AI tasks per automation per hour, a token budget per task and a daily token budget per user; duplicate triggers for a host with an open task are skipped
+- Alerts when an auto-ops report is ready, a plan waits for approval, a plan has run or a task failed, linking to the AI tab
+- The read-only command list also allows `docker system df`, `find` without writing actions, `ping -c`, `nc -z`, `qm` and `pct` status and list, `timedatectl`, `openssl x509 -noout`, update checks and reboot checks
 
 ### Changed
 
@@ -28,6 +33,7 @@
 
 - Change proposals showed a host id instead of the host name
 - Thinking from reasoning models, sent as `reasoning_content`, `<think>` tags, Gemini thought parts or Ollama's thinking field, no longer runs into the answer
+- Read-only commands no longer allow `journalctl --vacuum-*` and `--rotate`, `ip` changes such as `ip link set`, `date -s` or setting the hostname
 
 ## 1.0.1
 

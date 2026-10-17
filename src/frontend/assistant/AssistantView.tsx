@@ -1,11 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useHosts,
   useTranslation,
   type TabProps,
 } from "@termix-ssh/plugin-sdk/frontend";
-import { PanelShell, useIsMobile } from "@termix-ssh/plugin-sdk/ui";
+import { PanelShell, Segmented, useIsMobile } from "@termix-ssh/plugin-sdk/ui";
 import { Sparkles } from "lucide-react";
+import { AutoOpsView } from "../autoops/AutoOpsView";
 import { docsUrl } from "../docs";
 import { TargetSelector } from "../ops/TargetSelector";
 import { fleetGroups, toTargetHosts } from "../ops/targets";
@@ -15,7 +16,8 @@ import { assistant, useAssistant } from "./store";
 /**
  * The AI tab: the assistant full screen. The same conversation as the
  * floating panel, so a run started in one shows in the other. A user with a
- * shell on hosts also gets the target picker on the left.
+ * shell on hosts also gets the target picker on the left, and Auto-ops:
+ * presets, the tasks automations ran and plans waiting for approval.
  */
 export function AssistantView(_props: TabProps) {
   const { t } = useTranslation();
@@ -24,6 +26,7 @@ export function AssistantView(_props: TabProps) {
   const { hosts: allHosts } = useHosts();
   const hosts = useMemo(() => toTargetHosts(allHosts), [allHosts]);
   const selected = useMemo(() => new Set(targets), [targets]);
+  const [view, setView] = useState<"assistant" | "autoOps">("assistant");
 
   useEffect(() => {
     void assistant.ensureReady();
@@ -34,25 +37,46 @@ export function AssistantView(_props: TabProps) {
       <PanelShell
         icon={<Sparkles className="size-4" />}
         title={t("assistant.title")}
-        docs={docsUrl("assistant")}
+        docs={docsUrl(view === "autoOps" ? "auto-ops" : "assistant")}
         scroll={false}
-      >
-        <div
-          className={`flex min-h-0 flex-1 ${isMobile ? "flex-col" : "flex-row"}`}
-        >
-          {hostShell && (
-            <TargetSelector
-              hosts={hosts}
-              fleets={fleets ? fleetGroups(fleets, hosts) : null}
-              selected={selected}
-              onChange={(next) => assistant.setTargets([...next])}
-              className={
-                isMobile ? "max-h-64 border-b" : "w-64 shrink-0 border-r"
-              }
+        actions={
+          hostShell ? (
+            <Segmented
+              value={view}
+              onChange={(next) => setView(next as typeof view)}
+              options={[
+                { value: "assistant", label: t("autoOps.viewAssistant") },
+                { value: "autoOps", label: t("autoOps.viewAutoOps") },
+              ]}
             />
-          )}
-          <AssistantChat />
-        </div>
+          ) : undefined
+        }
+      >
+        {view === "autoOps" && hostShell ? (
+          <AutoOpsView
+            onOpenConversation={(id) => {
+              setView("assistant");
+              void assistant.openConversation(id);
+            }}
+          />
+        ) : (
+          <div
+            className={`flex min-h-0 flex-1 ${isMobile ? "flex-col" : "flex-row"}`}
+          >
+            {hostShell && (
+              <TargetSelector
+                hosts={hosts}
+                fleets={fleets ? fleetGroups(fleets, hosts) : null}
+                selected={selected}
+                onChange={(next) => assistant.setTargets([...next])}
+                className={
+                  isMobile ? "max-h-64 border-b" : "w-64 shrink-0 border-r"
+                }
+              />
+            )}
+            <AssistantChat />
+          </div>
+        )}
       </PanelShell>
     </div>
   );

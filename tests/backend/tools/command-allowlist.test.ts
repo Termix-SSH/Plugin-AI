@@ -100,4 +100,83 @@ describe("isReadOnlyCommand", () => {
     expect(isReadOnlyCommand("").allowed).toBe(false);
     expect(isReadOnlyCommand("   ").allowed).toBe(false);
   });
+
+  it("allows the read-only checks auto-ops needs", () => {
+    for (const command of [
+      "docker system df",
+      "docker system df -v",
+      "find /var/log -type f -name '*.gz' -mtime +7 -ls",
+      "find / -xdev -size +1G",
+      "ping -c 3 -W 2 10.0.0.5",
+      "nc -z -w 3 10.0.0.5 22",
+      "nc -zv 10.0.0.5 22",
+      "qm status 101",
+      "qm list",
+      "pct list",
+      "pct status 200",
+      "timedatectl",
+      "timedatectl show",
+      "openssl x509 -noout -enddate -in /etc/ssl/site.pem",
+      "apt list --upgradable",
+      "dnf check-update -q --security",
+      "yum check-update",
+      "needrestart -b",
+      "test -f /var/run/reboot-required",
+      "[ -f /var/run/reboot-required ]",
+      "journalctl --disk-usage",
+      "ip addr show",
+      "ip route get 1.1.1.1",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
+  });
+
+  it("refuses the writing forms of those commands", () => {
+    for (const command of [
+      "docker system prune -af",
+      "docker system df prune",
+      "find /var/log -name '*.gz' -delete",
+      "find / -exec rm {} +",
+      "find / -execdir rm",
+      "find / -ok rm",
+      "find / -fprint /etc/cron.d/x",
+      "find / -fprintf /tmp/x %p",
+      "find / -fls /tmp/x",
+      "find / -'del'\"ete\"",
+      "ping 10.0.0.5",
+      "ping -c 1000 10.0.0.5",
+      "ping -f -c 3 10.0.0.5",
+      "nc 10.0.0.5 22",
+      "nc -l -p 4444",
+      "nc -z -e /bin/sh 10.0.0.5 22",
+      "nc -zc sh 10.0.0.5 22",
+      "qm start 101",
+      "qm destroy 101",
+      "pct stop 200",
+      "timedatectl set-time 12:00",
+      "timedatectl set-ntp false",
+      "openssl x509 -in /etc/ssl/a.pem -out /etc/ssl/b.pem",
+      "openssl x509 -noout -in /etc/ssl/a.pem -out /tmp/b",
+      "openssl req -new",
+      "openssl x509 -noout -in relative.pem",
+      "apt install curl",
+      "apt list --upgradable curl",
+      "dnf update -y",
+      "yum check-update && yum update",
+      "needrestart -r a",
+      "needrestart",
+      "test -w /etc/passwd",
+      "[ -f /etc/passwd",
+      "journalctl --vacuum-time=1d",
+      "journalctl --rotate",
+      "ip link set eth0 down",
+      "ip route add default via 10.0.0.1",
+      "ip neigh flush all",
+      "date -s 2020-01-01",
+      "date --set=2020-01-01",
+      "hostname evil",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(false);
+    }
+  });
 });
