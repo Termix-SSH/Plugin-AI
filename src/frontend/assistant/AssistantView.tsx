@@ -4,13 +4,19 @@ import {
   useTranslation,
   type TabProps,
 } from "@termix-ssh/plugin-sdk/frontend";
-import { PanelShell, Segmented, useIsMobile } from "@termix-ssh/plugin-sdk/ui";
-import { Sparkles } from "lucide-react";
+import {
+  Button,
+  PanelShell,
+  Segmented,
+  useIsMobile,
+} from "@termix-ssh/plugin-sdk/ui";
+import { PanelRight, Sparkles } from "lucide-react";
 import { AutoOpsView } from "../autoops/AutoOpsView";
 import { docsUrl } from "../docs";
 import { TargetSelector } from "../ops/TargetSelector";
 import { fleetGroups, toTargetHosts } from "../ops/targets";
 import { AssistantChat } from "./AssistantChat";
+import { shortcutLabel } from "./hotkey";
 import { assistant, useAssistant } from "./store";
 
 /**
@@ -40,16 +46,35 @@ export function AssistantView(_props: TabProps) {
         docs={docsUrl(view === "autoOps" ? "auto-ops" : "assistant")}
         scroll={false}
         actions={
-          hostShell ? (
-            <Segmented
-              value={view}
-              onChange={(next) => setView(next as typeof view)}
-              options={[
-                { value: "assistant", label: t("autoOps.viewAssistant") },
-                { value: "autoOps", label: t("autoOps.viewAutoOps") },
-              ]}
-            />
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {hostShell && (
+              <Segmented
+                value={view}
+                onChange={(next) => setView(next as typeof view)}
+                options={[
+                  { value: "assistant", label: t("autoOps.viewAssistant") },
+                  { value: "autoOps", label: t("autoOps.viewAutoOps") },
+                ]}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-xs"
+              title={t("assistant.openFloatingHint", {
+                shortcut: shortcutLabel(),
+              })}
+              onClick={() => assistant.setOpen(true)}
+            >
+              <PanelRight className="size-3.5" />
+              {t("assistant.openFloating")}
+              {!isMobile && (
+                <kbd className="font-mono text-[10px] text-muted-foreground">
+                  {shortcutLabel()}
+                </kbd>
+              )}
+            </Button>
+          </div>
         }
       >
         {view === "autoOps" && hostShell ? (

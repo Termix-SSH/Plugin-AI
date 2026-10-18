@@ -4,7 +4,7 @@
 
 ### Added
 
-- One AI assistant with two views that share their conversations: a floating panel on every page, opened from a button or Ctrl+J, and the full-screen AI tab
+- One AI assistant with two views that share their conversations: a floating panel on every page, opened with Ctrl+J or from the AI tab, and the full-screen AI tab
 - The assistant manages Termix through the Termix CLI, which ships inside the plugin and runs as the signed-in user, and can open terminals, tabs, settings and sidebar views
 - With the new `ai.ops.use` permission (admins only by default), the assistant runs shell commands on target hosts in parallel, with live results per host; pick targets by fleet, folder, tag or host, type `@` to add them, or let the assistant choose
 - Every command on a host and every Termix CLI call is recorded and written to the audit log, with secret arguments masked

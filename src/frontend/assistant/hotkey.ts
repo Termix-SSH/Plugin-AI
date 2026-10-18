@@ -61,3 +61,8 @@ export function installHotkey(toggle: () => void): () => void {
     window.removeEventListener("keydown", onKeyDown, true);
   };
 }
+
+/** The default shortcut as shown to users. */
+export function shortcutLabel(): string {
+  return isMac() ? "Cmd+J" : "Ctrl+J";
+}

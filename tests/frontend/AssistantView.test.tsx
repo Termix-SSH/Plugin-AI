@@ -395,3 +395,12 @@ it("switches to Auto-ops for a user with a shell on hosts only", async () => {
   render(<AssistantView {...({} as TabProps)} />);
   expect(screen.queryByText("autoOps.viewAutoOps")).toBeNull();
 });
+
+it("opens the floating panel from the AI tab", async () => {
+  await ready();
+  expect(assistant.get().open).toBe(false);
+  fireEvent.click(
+    screen.getByRole("button", { name: /assistant.openFloating/ }),
+  );
+  expect(assistant.get().open).toBe(true);
+});

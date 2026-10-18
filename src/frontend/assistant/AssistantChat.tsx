@@ -43,6 +43,7 @@ import {
   toTargetHosts,
   type TargetChip,
 } from "../ops/targets";
+import { shortcutLabel } from "./hotkey";
 import { currentPage, performClientAction } from "./shell";
 import { assistant, useAssistant } from "./store";
 
@@ -74,11 +75,11 @@ function Transcript() {
         <EmptyState
           icon={Sparkles}
           title={t("assistant.emptyTitle")}
-          hint={t(
+          hint={`${t(
             state.hostShell
               ? "assistant.emptyHint"
               : "assistant.emptyHintBasic",
-          )}
+          )} ${t("assistant.shortcutHint", { shortcut: shortcutLabel() })}`}
         />
       )}
       {timeline.map((item, index) => {

@@ -293,7 +293,6 @@
     "title": "AI assistant",
     "moveHint": "Drag to move. Double-click to dock to the side.",
     "toggle": "Toggle the AI assistant",
-    "unread": "New results in the assistant",
     "close": "Close",
     "dock": "Dock to the right",
     "float": "Float",
@@ -329,7 +328,10 @@
     "todayTokens": "Today {{tokens}}",
     "todayTitle": "Tokens you used today. Click for details.",
     "usage": "Token usage",
-    "conversationTokens": "{{tokens}} tokens"
+    "conversationTokens": "{{tokens}} tokens",
+    "openFloating": "Floating panel",
+    "openFloatingHint": "Open the assistant in a panel over any page. Press {{shortcut}} anywhere to open or close it.",
+    "shortcutHint": "Press {{shortcut}} on any page to open the assistant in a floating panel."
   },
   "usage": {
     "title": "Token usage",

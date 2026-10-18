@@ -126,19 +126,17 @@ describe(`${manifest.id} activate`, () => {
 
     Element.prototype.scrollTo = vi.fn();
     const overlay = rendered.renderSlot("shell.overlay");
-    const ball = await within(overlay).findByRole("button", {
-      name: "AI assistant",
-    });
-    fireEvent.pointerDown(ball, { clientX: 10, clientY: 10 });
-    fireEvent.pointerUp(ball, { clientX: 10, clientY: 10 });
+    // No floating button: the panel opens from Ctrl+J or the AI tab.
+    expect(
+      within(overlay).queryByRole("button", { name: "AI assistant" }),
+    ).toBeNull();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
+    );
     expect(assistant.get().open).toBe(true);
     expect(
       await within(overlay).findByRole("dialog", { name: "AI assistant" }),
     ).toBeTruthy();
-    // The ball steps aside while the panel is open.
-    expect(
-      within(overlay).queryByRole("button", { name: "AI assistant" }),
-    ).toBeNull();
 
     // The full view is the AI tab.
     fireEvent.click(
@@ -150,7 +148,7 @@ describe(`${manifest.id} activate`, () => {
     });
     expect(assistant.get().open).toBe(false);
 
-    // The default key toggles it too, and the ball comes back.
+    // The default key toggles it.
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
     );
@@ -159,9 +157,6 @@ describe(`${manifest.id} activate`, () => {
       new KeyboardEvent("keydown", { key: "j", ctrlKey: true }),
     );
     expect(assistant.get().open).toBe(false);
-    expect(
-      await within(overlay).findByRole("button", { name: "AI assistant" }),
-    ).toBeTruthy();
   });
 
   it("gives the assistant a shell on hosts only with ai.ops.use", async () => {

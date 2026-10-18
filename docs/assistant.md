@@ -7,17 +7,16 @@ The AI assistant works on all of Termix for you: it reads and changes hosts, cre
 
 There is one assistant with two views, sharing the same conversations. A run started in one shows in the other.
 
-- **Floating:** a button in the bottom-right corner of every page. Click it, or press Ctrl+J (Cmd+J on a Mac).
+- **Floating:** a panel over any page. Press Ctrl+J (Cmd+J on a Mac), or use Floating panel in the AI tab.
 - **Full screen:** AI in the sidebar opens the AI tab.
 
 Changes run without asking you first. Only use it for requests you would trust a person signed in as you with.
 
 ## Open it
 
-- Click the button, or press Ctrl+J. Change the key under Settings, Keybindings, Toggle the AI assistant.
-- Drag the button to move it. It stays where you put it.
+- Press Ctrl+J on any page, or use Floating panel in the AI tab. Change the key under Settings, Keybindings, Toggle the AI assistant.
 - Drag the panel's header to move it and its edges to resize it. The dock button makes it a full-height drawer on the right, and the expand button opens the AI tab.
-- The assistant works on the server. Closing the panel, switching pages, reloading or closing the browser does not stop it, and neither does a dropped connection. The button spins while it works; come back to see how it went, or to watch it carry on. One message at a time per conversation.
+- The assistant works on the server. Closing the panel, switching pages, reloading or closing the browser does not stop it, and neither does a dropped connection. Come back to see how it went, or to watch it carry on. One message at a time per conversation.
 
 Pick a provider at the top. With none set up yet, Add provider takes you to Settings, AI Assistant, Providers.
 

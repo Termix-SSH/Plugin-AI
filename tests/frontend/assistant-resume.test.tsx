@@ -121,8 +121,7 @@ async function reloadIntoRun() {
 it("joins a run still going on after a reload and shows its progress", async () => {
   const stream = await reloadIntoRun();
 
-  // The ball spins for a run it did not start.
-  expect(await screen.findByLabelText("agents.working")).toBeTruthy();
+  await waitFor(() => expect(assistant.get().streaming).toBe(true));
   act(() => assistant.setOpen(true));
   expect(await screen.findByText("deploy web")).toBeTruthy();
   expect(screen.getAllByText("Checking.")).toHaveLength(1);
@@ -144,16 +143,6 @@ it("joins a run still going on after a reload and shows its progress", async () 
   });
   expect(await screen.findByText("All deployed.")).toBeTruthy();
   expect(assistant.get().streaming).toBe(false);
-});
-
-it("leaves a dot on the ball when a joined run ends while closed", async () => {
-  const stream = await reloadIntoRun();
-  mocks.getConversation.mockResolvedValue({
-    conversation: conversation(false),
-    messages: [asked],
-  });
-  act(() => stream.end());
-  expect(await screen.findByTestId("assistant-unread")).toBeTruthy();
 });
 
 it("asks the server to stop, and keeps watching until the run ends", async () => {
