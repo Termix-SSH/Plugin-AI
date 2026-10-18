@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { redactString } from "../redaction.js";
+import { isIgnoredIp, parseIp } from "../assets/net.js";
 import { classifyIp } from "../assets/zones.js";
 import type { AssetRecord } from "../assets/repository.js";
 import {
@@ -130,14 +131,193 @@ export function decodeObservations(raw: string): Observation[] {
 export function publicAddress(ip: string): boolean {
   return !!isIP(ip) && classifyIp(ip, [])?.kind === "external";
 }
+const sensitivePorts = new Set([
+  22, 53, 445, 2375, 2379, 3306, 3389, 5432, 5900, 6379, 6443, 9200, 11211,
+  27017,
+]);
+export function exposureReasons(
+  entry: Pick<
+    Entry,
+    "endpoint" | "source" | "kind" | "constraints" | "bindings"
+  >,
+): string[] {
+  const reasons: string[] = [];
+  if (
+    (entry.bindings ?? [entry.endpoint]).some((ep) => publicAddress(ep.address))
+  )
+    reasons.push("public-address");
+  if (
+    entry.source === "uci" &&
+    entry.kind === "mapping" &&
+    entry.constraints.includes("source-zone:wan")
+  )
+    reasons.push("wan-zone");
+  if (
+    entry.kind === "tunnel" &&
+    ["cloudflared", "tailscale"].includes(entry.source)
+  )
+    reasons.push("configured-public-tunnel");
+  return reasons;
+}
+export function internetRelevant(entry: Entry): boolean {
+  return exposureReasons(entry).length > 0;
+}
+export function reviewPriority(
+  entry: Pick<Entry, "endpoint" | "importance"> & Partial<Entry>,
+): { priority: Entry["priority"]; reasons: string[] } {
+  const reasons = exposureReasons({
+    ...entry,
+    source: entry.source ?? "listen",
+    kind: entry.kind ?? "listener",
+    constraints: entry.constraints ?? [],
+  });
+  if (reasons.length) {
+    const ports = new Set([
+      entry.endpoint.port,
+      entry.backend?.port,
+      ...(entry.paths ?? []).flatMap((p) =>
+        p.hops.flatMap((h) => [h.endpoint.port, h.backend?.port]),
+      ),
+    ]);
+    const sensitive = [...ports]
+      .filter((p): p is number => p !== undefined && sensitivePorts.has(p))
+      .sort((a, b) => a - b);
+    const high = sensitive.length > 0 || entry.importance === "critical";
+    return {
+      priority: high ? "high" : "medium",
+      reasons: [
+        ...reasons,
+        ...sensitive.map((p) => `sensitive-service:${p}`),
+        ...(entry.importance === "critical" ? ["critical-asset"] : []),
+      ],
+    };
+  }
+  const known = (entry.bindings ?? [entry.endpoint]).some(
+    (ep) => isIP(ep.address) && !["0.0.0.0", "::"].includes(ep.address),
+  );
+  return {
+    priority: known ? "low" : "medium",
+    reasons: [known ? "internal-only" : "exposure-unknown"],
+  };
+}
 export function rulePriority(
-  entry: Pick<Entry, "endpoint" | "importance">,
+  entry: Pick<Entry, "endpoint" | "importance"> & Partial<Entry>,
 ): Entry["priority"] {
-  return publicAddress(entry.endpoint.address) &&
-    ([22, 3389, 3306, 5432, 6379, 27017, 6443].includes(entry.endpoint.port) ||
-      entry.importance === "critical")
-    ? "high"
-    : "medium";
+  return reviewPriority(entry).priority;
+}
+export const entryIdentity = (
+  entry: Pick<Entry, "ownerId" | "sourceHostId" | "source" | "objectKey">,
+) =>
+  fingerprint([
+    "exposure-rule-v2",
+    entry.ownerId,
+    entry.sourceHostId,
+    entry.source,
+    entry.objectKey,
+  ]);
+const sortedBindings = (values: Endpoint[]) =>
+  [...new Map(values.map((ep) => [JSON.stringify(ep), ep])).values()].sort(
+    (a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)),
+  );
+export function evidenceFingerprint(entry: Entry): string {
+  return fingerprint({
+    kind: entry.kind,
+    endpoint: { port: entry.endpoint.port, protocol: entry.endpoint.protocol },
+    bindings: sortedBindings(entry.bindings ?? [entry.endpoint]),
+    backend: entry.backend,
+    hostname: entry.hostname,
+    path: entry.path,
+    tls: entry.tls,
+    restricted: entry.restricted,
+    constraints: entry.constraints,
+  });
+}
+function firstHop(entry: Entry) {
+  return {
+    sourceHostId: entry.sourceHostId,
+    source: entry.source,
+    observationId: entry.observationId,
+    observationIds: entry.observationIds,
+    endpoint: entry.endpoint,
+    ...(entry.backend ? { backend: entry.backend } : {}),
+    ...(entry.hostname ? { hostname: entry.hostname } : {}),
+    ...(entry.path ? { path: entry.path } : {}),
+    constraints: [...entry.constraints],
+  };
+}
+/** Normalize old interface-expanded rows without rewriting observations or losing overrides. */
+export function compactEntries(entries: Entry[]): Entry[] {
+  const groups = new Map<string, Entry[]>();
+  for (const entry of entries) {
+    const key = entryIdentity(entry);
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+  return [...groups.entries()].map(([key, group]) => {
+    const active = group.filter((e) => !e.resolvedAt),
+      current = active.length ? active : group;
+    const latest = [...current].sort(
+      (a, b) =>
+        b.lastSeen.localeCompare(a.lastSeen) || a.key.localeCompare(b.key),
+    )[0];
+    const addresses = sortedBindings(
+      current.flatMap((e) => e.bindings ?? [e.endpoint]),
+    );
+    const overrides = group
+      .filter((e) => e.prioritySource === "user")
+      .sort(
+        (a, b) =>
+          ({ high: 0, medium: 1, low: 2 })[a.priority] -
+          { high: 0, medium: 1, low: 2 }[b.priority],
+      );
+    const endpoint =
+      latest.bindings || addresses.length < 2
+        ? latest.endpoint
+        : {
+            ...latest.endpoint,
+            address: addresses.every((e) => isIP(e.address) === 4)
+              ? "0.0.0.0"
+              : addresses.every((e) => isIP(e.address) === 6)
+                ? "::"
+                : latest.endpoint.address,
+          };
+    const entry: Entry = {
+      ...latest,
+      key,
+      endpoint,
+      bindings: addresses,
+      observationIds: [
+        ...new Set(
+          current.flatMap((e) => e.observationIds ?? [e.observationId]),
+        ),
+      ],
+      memberKeys: [
+        ...new Set(group.flatMap((e) => [e.key, ...(e.memberKeys ?? [])])),
+      ],
+      firstSeen: group.map((e) => e.firstSeen).sort()[0],
+      staleAt: current.find((e) => e.staleAt)?.staleAt ?? null,
+      requiredHostIds: [...new Set(current.flatMap((e) => e.requiredHostIds))],
+      paths: undefined,
+      pathsTruncated: undefined,
+      priority: overrides[0]?.priority ?? latest.priority,
+      prioritySource: overrides.length ? "user" : "rule",
+    };
+    entry.exposureReasons = exposureReasons(entry);
+    entry.binding = entry.exposureReasons.length
+      ? "public"
+      : addresses.some(
+            (e) => isIP(e.address) && !["0.0.0.0", "::"].includes(e.address),
+          )
+        ? "local"
+        : "unknown";
+    const review = reviewPriority(entry);
+    if (entry.prioritySource === "rule") entry.priority = review.priority;
+    entry.priorityReasons =
+      entry.prioritySource === "user" ? ["manual"] : review.reasons;
+    entry.hops = [firstHop(entry)];
+    entry.pathStatus = "partial";
+    entry.fingerprint = evidenceFingerprint(entry);
+    return entry;
+  });
 }
 function bindings(ep: Endpoint, asset: AssetRecord): Endpoint[] {
   if (!["0.0.0.0", "::"].includes(ep.address)) return [ep];
@@ -164,72 +344,73 @@ export function deriveEntries(
   const { host, assets, ownerId, observationId, at } = context;
   const rows: Entry[] = [];
   for (const record of observation.records) {
-    for (const ep of bindings(record.endpoint, host)) {
-      // Keep private backends as path evidence, but never label them publicly reachable.
-      const backendHosts = assets.filter(
-        (a) =>
-          a.kind === "host" &&
-          (a.ips.includes(ep.address) ||
-            (record.backend && a.ips.includes(record.backend.address))),
-      );
-      const ids = [
-        ...new Set([
-          host.hostId!,
-          ...backendHosts.flatMap((a) => (a.hostId ? [a.hostId] : [])),
-        ]),
-      ];
-      const key = fingerprint([
-        ownerId,
-        host.hostId,
-        observation.source,
-        record.objectKey,
-        ep,
-      ]);
-      const priority = rulePriority({
-        endpoint: ep,
-        importance: host.importance,
-      });
-      const normalized = { ...record, endpoint: ep };
-      rows.push({
-        ...normalized,
-        key,
-        sourceHostId: host.hostId!,
-        source: observation.source,
-        observationId,
-        ownerId,
-        assetId: host.id,
-        zone: host.zone,
-        importance: host.importance,
-        annotation: null,
-        requiredHostIds: ids,
-        firstSeen: at,
-        lastSeen: at,
-        staleAt: observation.status === "ok" ? null : at,
-        resolvedAt: null,
-        fingerprint: fingerprint(normalized),
-        priority,
-        prioritySource: "rule",
-        binding: publicAddress(ep.address)
-          ? "public"
-          : isIP(ep.address) && !["0.0.0.0", "::"].includes(ep.address)
-            ? "local"
-            : "unknown",
-        verification: "not_tested",
-        pathStatus: "partial",
-        hops: [
-          {
-            sourceHostId: host.hostId!,
-            source: observation.source,
-            observationId,
-            endpoint: ep,
-            ...(record.backend ? { backend: record.backend } : {}),
-            constraints: [...record.constraints],
-          },
-        ],
-      });
-    }
+    const ep = record.endpoint;
+    const observedBindings = bindings(ep, host);
+    // Keep private backends as path evidence, but never label them publicly reachable.
+    const backendHosts = assets.filter(
+      (a) =>
+        a.kind === "host" &&
+        (observedBindings.some((binding) => a.ips.includes(binding.address)) ||
+          (record.backend && a.ips.includes(record.backend.address))),
+    );
+    const ids = [
+      ...new Set([
+        host.hostId!,
+        ...backendHosts.flatMap((a) => (a.hostId ? [a.hostId] : [])),
+      ]),
+    ];
+    const key = fingerprint([
+      ownerId,
+      host.hostId,
+      observation.source,
+      record.objectKey,
+      ep,
+    ]);
+    const priority = rulePriority({
+      endpoint: ep,
+      importance: host.importance,
+    });
+    const normalized = { ...record, endpoint: ep };
+    rows.push({
+      ...normalized,
+      bindings: observedBindings,
+      key,
+      sourceHostId: host.hostId!,
+      source: observation.source,
+      observationId,
+      ownerId,
+      assetId: host.id,
+      zone: host.zone,
+      importance: host.importance,
+      annotation: null,
+      requiredHostIds: ids,
+      firstSeen: at,
+      lastSeen: at,
+      staleAt: observation.status === "ok" ? null : at,
+      resolvedAt: null,
+      fingerprint: fingerprint(normalized),
+      priority,
+      prioritySource: "rule",
+      binding: publicAddress(ep.address)
+        ? "public"
+        : isIP(ep.address) && !["0.0.0.0", "::"].includes(ep.address)
+          ? "local"
+          : "unknown",
+      verification: "not_tested",
+      pathStatus: "partial",
+      hops: [
+        {
+          sourceHostId: host.hostId!,
+          source: observation.source,
+          observationId,
+          endpoint: ep,
+          ...(record.backend ? { backend: record.backend } : {}),
+          constraints: [...record.constraints],
+        },
+      ],
+    });
   }
-  return rows;
+  return compactEntries(rows);
 }
 export function bindCurrentHosts(
   entries: Entry[],
@@ -237,7 +418,10 @@ export function bindCurrentHosts(
 ): Entry[] {
   return entries.map((entry) => {
     const addresses = new Set(
-      [entry.endpoint.address, entry.backend?.address].filter(
+      [
+        ...(entry.bindings ?? [entry.endpoint]).map((ep) => ep.address),
+        entry.backend?.address,
+      ].filter(
         (ip): ip is string =>
           !!ip &&
           !!isIP(ip) &&
@@ -274,54 +458,146 @@ export function ageEntries(entries: Entry[], at = Date.now()): Entry[] {
 }
 export function linkPaths(entries: Entry[]): Entry[] {
   const live = entries.filter((e) => !e.resolvedAt && !e.staleAt);
+  const endpointKey = (owner: string, ep: Endpoint, hostId: number) => {
+    const parsed = parseIp(ep.address);
+    return JSON.stringify([
+      owner,
+      isIgnoredIp(ep.address) ? hostId : null,
+      parsed ? `${parsed.version}:${parsed.value}` : ep.address,
+      ep.port,
+      ep.protocol,
+    ]);
+  };
   const index = new Map<string, Entry[]>();
-  const local = (address: string) =>
-    address === "::1" || address.startsWith("127.");
-  const endpointKey = (owner: string, ep: Endpoint, hostId: number) =>
-    JSON.stringify([owner, local(ep.address) ? hostId : null, ep]);
-  for (const e of live) {
-    if (e.hostname || e.path) continue;
-    const key = endpointKey(e.ownerId, e.endpoint, e.sourceHostId);
-    index.set(key, [...(index.get(key) ?? []), e]);
-  }
-  return entries.map((entry) => {
-    const result = {
-      ...entry,
-      hops: entry.hops.slice(0, 1),
-      requiredHostIds: [entry.sourceHostId, ...entry.requiredHostIds],
-      pathStatus: "partial" as Entry["pathStatus"],
-    };
-    if (entry.staleAt || entry.resolvedAt) return result;
-    const seen = new Set([entry.key]);
-    let current = entry;
-    while (current.backend && result.hops.length < 8) {
-      if (
-        current.constraints.includes("container-backend-namespace-unresolved")
-      )
-        break;
-      const target = current.backend;
-      if (!isIP(target.address)) break;
-      // Names, load balancing, and local-loopback targets remain unresolved unless explicit.
-      const candidates =
-        index.get(endpointKey(entry.ownerId, target, current.sourceHostId)) ??
-        [];
-      if (candidates.length !== 1) {
-        if (candidates.length > 1) result.pathStatus = "conflicting";
-        break;
-      }
-      const next = candidates[0];
-      if (seen.has(next.key)) {
-        result.pathStatus = "conflicting";
-        break;
-      }
-      seen.add(next.key);
-      result.hops.push(next.hops[0]);
-      result.requiredHostIds.push(...next.requiredHostIds);
-      current = next;
-      if (!current.backend && current.kind === "listener")
-        result.pathStatus = "complete";
+  for (const entry of live)
+    for (const ep of entry.bindings ?? [entry.endpoint]) {
+      if (!isIP(ep.address) || ["0.0.0.0", "::"].includes(ep.address)) continue;
+      const key = endpointKey(entry.ownerId, ep, entry.sourceHostId);
+      index.set(key, [...(index.get(key) ?? []), entry]);
     }
-    result.requiredHostIds = [...new Set(result.requiredHostIds)];
+  return entries.map((entry) => {
+    const paths: NonNullable<Entry["paths"]> = [],
+      required = new Set(entry.requiredHostIds);
+    let truncated = false;
+    const add = (
+      hops: Entry["hops"],
+      status: "partial" | "complete" | "conflicting",
+    ) => {
+      if (paths.length >= 128) {
+        truncated = true;
+        return;
+      }
+      paths.push({ hops, status });
+    };
+    const walk = (
+      current: Entry,
+      hops: Entry["hops"],
+      seen: Set<string>,
+      branched = false,
+    ) => {
+      if (paths.length >= 128) {
+        truncated = true;
+        return;
+      }
+      if (!current.backend) {
+        add(hops, current.kind === "listener" ? "complete" : "partial");
+        return;
+      }
+      if (
+        hops.length >= 8 ||
+        current.constraints.includes(
+          "container-backend-namespace-unresolved",
+        ) ||
+        !isIP(current.backend.address)
+      ) {
+        add(hops, "partial");
+        return;
+      }
+      const candidates = [
+        ...new Map(
+          (
+            index.get(
+              endpointKey(entry.ownerId, current.backend, current.sourceHostId),
+            ) ?? []
+          ).map((e) => [e.key, e]),
+        ).values(),
+      ];
+      for (const e of candidates)
+        for (const id of e.requiredHostIds) required.add(id);
+      if (!candidates.length) {
+        add(hops, "partial");
+        return;
+      }
+      if (new Set(candidates.map((e) => e.sourceHostId)).size > 1) {
+        add(hops, "conflicting");
+        return;
+      }
+      // A proxy route explains forwarding; a socket at the same endpoint is supporting evidence, not another branch.
+      const forwarding = candidates.filter((e) => e.backend);
+      const next = forwarding.length ? forwarding : candidates;
+      const distinctRoutes = new Set(
+        next.map((e) => JSON.stringify([e.hostname ?? "", e.path ?? ""])),
+      );
+      const proxyBranches = next.every(
+        (e) => e.kind === "proxy" && e.source === next[0].source,
+      );
+      if (
+        next.length > 1 &&
+        distinctRoutes.size !== next.length &&
+        !proxyBranches
+      ) {
+        add(hops, "conflicting");
+        return;
+      }
+      if (next.length > 1 && branched) {
+        const tail = hops[hops.length - 1];
+        add(
+          [
+            ...hops.slice(0, -1),
+            {
+              ...tail,
+              constraints: [
+                ...tail.constraints,
+                "downstream-route-selection-unverified",
+              ],
+            },
+          ],
+          "partial",
+        );
+        return;
+      }
+      for (const e of next.sort((a, b) => a.key.localeCompare(b.key))) {
+        if (seen.has(e.key)) {
+          add(hops, "conflicting");
+          continue;
+        }
+        walk(
+          e,
+          [...hops, { ...firstHop(e), endpoint: current.backend }],
+          new Set([...seen, e.key]),
+          branched || next.length > 1,
+        );
+      }
+    };
+    if (entry.staleAt || entry.resolvedAt) add([firstHop(entry)], "partial");
+    else walk(entry, [firstHop(entry)], new Set([entry.key]));
+    const result: Entry = {
+      ...entry,
+      paths,
+      pathsTruncated: truncated,
+      hops: paths.length === 1 ? paths[0].hops : [firstHop(entry)],
+      requiredHostIds: [...required],
+      pathStatus: truncated
+        ? "partial"
+        : paths.length > 1
+          ? "branched"
+          : (paths[0]?.status ?? "partial"),
+    };
+    const review = reviewPriority(result);
+    if (result.prioritySource === "rule") {
+      result.priority = review.priority;
+      result.priorityReasons = review.reasons;
+    }
     return result;
   });
 }

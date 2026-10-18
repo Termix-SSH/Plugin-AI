@@ -78,6 +78,47 @@ describe("exposure evidence view", () => {
     expect(screen.getByText("exposure.aiLabel")).toBeTruthy();
     expect(mocks.post).toHaveBeenCalledWith("assets/exposure/entry1/explain");
   });
+  it("requests internet scope by default and renders grouped bindings and path branches", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        entries: [
+          {
+            ...entry,
+            bindings: [
+              entry.endpoint,
+              { ...entry.endpoint, address: "10.0.0.1" },
+            ],
+            priorityReasons: ["sensitive-service:22"],
+            paths: [
+              {
+                hops: [
+                  entry.hops[0],
+                  {
+                    ...entry.hops[0],
+                    source: "caddy",
+                    hostname: "app.example",
+                    path: "/api",
+                  },
+                ],
+                status: "partial",
+              },
+              { hops: [entry.hops[0]], status: "partial" },
+            ],
+          },
+        ],
+        coverage: [],
+        changes: [],
+        total: 1,
+        offset: 0,
+      },
+    });
+    render(<ExposureView canManage={false} refreshKey={0} />);
+    fireEvent.click(await screen.findByText("tcp://8.8.8.8:22"));
+    expect(mocks.get.mock.calls[0][0]).toContain("scope=internet");
+    expect(screen.getByText("exposure.reason_sensitive")).toBeTruthy();
+    expect(screen.getAllByText(/app.example/).length).toBeGreaterThan(0);
+    expect(screen.getByText("tcp://10.0.0.1:22")).toBeTruthy();
+  });
   it("clears cached rows after an authorization failure", async () => {
     render(<ExposureView canManage={false} refreshKey={0} />);
     await screen.findByText("tcp://8.8.8.8:22");

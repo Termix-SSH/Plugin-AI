@@ -1,3 +1,4 @@
+import { deriveEntries } from "../../../src/backend/exposure/derive.js";
 import * as execOps from "../../../src/backend/ops/exec.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { startServer, type TestServer } from "../helpers.js";
@@ -14,7 +15,10 @@ async function setup(
 ) {
   server = await startServer({
     permissions,
-    extraHosts: [{ id: 2, name: "backend" }],
+    extraHosts: [
+      { id: 2, name: "gateway" },
+      { id: 3, name: "backend" },
+    ],
   });
   await server.enableFor("user-1");
   const repo = await createExposureRepository({ db: server.db.database });
@@ -123,6 +127,92 @@ describe("exposure authorization and durable notification", () => {
     expect(
       (await s.request("POST", `/assets/exposure/${key}/explain`)).status,
     ).toBe(404);
+  });
+  it("filters an entire branched path and its counts after downstream access is revoked", async () => {
+    const { s, repo } = await setup();
+    const h = host(2, "10.0.0.2"),
+      backend = host(3, "10.0.0.3");
+    const o = {
+      ...observation(
+        [0, 1].map((i) => ({
+          ...listener(80),
+          objectKey: `route-${i}`,
+          kind: "proxy" as const,
+          hostname: `route-${i}.example`,
+          backend: {
+            address: "10.0.0.3",
+            port: 5432,
+            protocol: "tcp" as const,
+          },
+        })),
+        true,
+        new Date().toISOString(),
+      ),
+      source: "caddy" as const,
+      hostId: 2,
+    };
+    await repo.apply(
+      o,
+      deriveEntries(o, {
+        host: h,
+        assets: [h, backend],
+        ownerId: "user-1",
+        observationId: o.id,
+        at: o.at,
+      }),
+    );
+    let response = await s.request("GET", "/assets/exposure");
+    expect(response.body.entries[0].paths).toHaveLength(2);
+    const key = response.body.entries[0].key;
+    s.mock.ctx.hosts.checkAccess = async (id) => ({
+      hasAccess: id !== 3,
+      isOwner: id !== 3,
+      isShared: false,
+    });
+    response = await s.request("GET", "/assets/exposure");
+    expect(response.body.entries).toEqual([]);
+    expect(response.body.summary.internet).toBe(0);
+    expect(JSON.stringify(response.body)).not.toMatch(
+      /route-0.example|10.0.0.3/,
+    );
+    expect(
+      (await s.request("POST", `/assets/exposure/${key}/explain`)).status,
+    ).toBe(404);
+    expect(
+      (
+        await s.request("PUT", `/assets/exposure/${key}/priority`, {
+          body: { priority: "low" },
+        })
+      ).status,
+    ).toBe(404);
+  });
+  it("defaults to internet candidates and keeps internal evidence searchable in the all view", async () => {
+    const { s, repo } = await setup();
+    const h = host(1, "10.0.0.1"),
+      o = {
+        ...observation([listener(5353)], true, new Date().toISOString()),
+        source: "docker" as const,
+      };
+    await repo.apply(
+      o,
+      deriveEntries(o, {
+        host: h,
+        assets: [h],
+        ownerId: o.ownerId,
+        observationId: o.id,
+        at: o.at,
+      }),
+    );
+    expect((await s.request("GET", "/assets/exposure")).body.total).toBe(1);
+    const all = await s.request("GET", "/assets/exposure?scope=all");
+    expect(all.body.total).toBe(2);
+    expect(all.body.summary).toMatchObject({ internet: 1, all: 2 });
+    const found = await s.request(
+      "GET",
+      "/assets/exposure?scope=all&q=10.0.0.1",
+    );
+    expect(found.body.entries).toHaveLength(1);
+    expect(found.body.entries[0].priority).toBe("low");
   });
   it("does not grant override permission to viewers", async () => {
     const { s, repo } = await setup(["ai.use", "ai.assets.view"]);

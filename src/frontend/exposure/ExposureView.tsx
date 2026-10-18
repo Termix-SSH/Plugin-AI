@@ -8,6 +8,8 @@ interface Data {
   entries: Entry[];
   total: number;
   offset: number;
+  summary?: { all: number; internet: number; unknown: number };
+  zones?: string[];
   coverage: Array<{
     hostId: number;
     source: string;
@@ -42,6 +44,7 @@ export function ExposureView({
   const [zone, setZone] = useState("");
   const [source, setSource] = useState("");
   const [state, setState] = useState("active");
+  const [scope, setScope] = useState("internet");
   const [explanation, setExplanation] = useState<{
     key: string;
     observationId: string;
@@ -57,6 +60,7 @@ export function ExposureView({
       zone,
       source,
       state,
+      scope,
       offset: String(offset),
     });
     try {
@@ -73,10 +77,10 @@ export function ExposureView({
         setError(t("exposure.loadFailed"));
       }
     }
-  }, [t, query, priority, zone, source, state, offset]);
+  }, [t, query, priority, zone, source, state, scope, offset]);
   useEffect(() => {
     setOffset(0);
-  }, [query, priority, zone, source, state]);
+  }, [query, priority, zone, source, state, scope]);
   useEffect(() => {
     void load();
     const timer = setInterval(() => void load(), 30000);
@@ -109,22 +113,7 @@ export function ExposureView({
       setExplaining(false);
     }
   }
-  const rows =
-    data?.entries.filter(
-      (e) =>
-        (!priority || e.priority === priority) &&
-        (!zone || e.zone === zone) &&
-        (!source || e.source === source) &&
-        (state === "all" ||
-          (state === "active"
-            ? !e.resolvedAt
-            : state === "stale"
-              ? !!e.staleAt && !e.resolvedAt
-              : !!e.resolvedAt)) &&
-        `${address(e.endpoint)} ${e.hostname ?? ""} ${e.path ?? ""} ${e.sourceHostId}`
-          .toLowerCase()
-          .includes(query.toLowerCase()),
-    ) ?? [];
+  const rows = data?.entries ?? [];
   async function override(value: string) {
     if (!entry) return;
     try {
@@ -140,7 +129,21 @@ export function ExposureView({
   return (
     <div className="min-h-0 flex-1 overflow-auto p-3 text-sm">
       <p className="mb-3 text-muted-foreground">{t("exposure.disclaimer")}</p>
+      {data?.summary && (
+        <p className="mb-2 text-muted-foreground">
+          {t("exposure.inventorySummary", data.summary)}
+        </p>
+      )}
       <div className="mb-3 flex flex-wrap gap-2">
+        <SelectField
+          label={t("exposure.scope")}
+          value={scope}
+          onChange={setScope}
+          options={["internet", "all", "unknown"].map((value) => ({
+            value,
+            label: t(`exposure.scope_${value}`),
+          }))}
+        />
         <PanelSearch
           value={query}
           onChange={setQuery}
@@ -166,7 +169,9 @@ export function ExposureView({
             { value: "", label: t("exposure.allZones") },
             ...[
               ...new Set(
-                data?.entries.flatMap((e) => (e.zone ? [e.zone] : [])) ?? [],
+                data?.zones ??
+                  data?.entries.flatMap((e) => (e.zone ? [e.zone] : [])) ??
+                  [],
               ),
             ].map((value) => ({ value, label: value })),
           ]}
@@ -233,6 +238,13 @@ export function ExposureView({
                     >
                       {address(e.endpoint)} {e.hostname} {e.path}
                     </button>
+                    {!!e.bindings?.length && (
+                      <p className="text-muted-foreground">
+                        {t("exposure.bindingCount", {
+                          count: e.bindings.length,
+                        })}
+                      </p>
+                    )}
                   </td>
                   <td className="p-2">
                     #{e.sourceHostId} · {e.source}
@@ -308,6 +320,29 @@ export function ExposureView({
                   </div>
                 )}
               <p>{t("exposure.priorityReason")}</p>
+              <ul>
+                {entry.priorityReasons?.map((reason) => (
+                  <li key={reason}>
+                    {reason.startsWith("sensitive-service:")
+                      ? t("exposure.reason_sensitive", {
+                          port: reason.split(":")[1],
+                        })
+                      : t(`exposure.reason_${reason}`)}
+                  </li>
+                ))}
+              </ul>
+              <details className="my-2">
+                <summary>
+                  {t("exposure.bindingCount", {
+                    count: entry.bindings?.length ?? 1,
+                  })}
+                </summary>
+                <ul>
+                  {(entry.bindings ?? [entry.endpoint]).map((binding, i) => (
+                    <li key={i}>{address(binding)}</li>
+                  ))}
+                </ul>
+              </details>
               <p>
                 {t("exposure.tls")}: {t(`exposure.${entry.tls}`)} ·{" "}
                 {t("exposure.restrictions")}:{" "}
@@ -331,23 +366,46 @@ export function ExposureView({
                   ]}
                 />
               )}
-              <ol className="mt-2 list-decimal pl-5">
-                {entry.hops.map((hop, index) => (
-                  <li key={index}>
-                    <span>
-                      #{hop.sourceHostId} · {hop.source}:{" "}
-                      {address(hop.endpoint)}
-                      {hop.backend ? ` → ${address(hop.backend)}` : ""}
-                    </span>
-                    <p className="text-muted-foreground">
-                      {hop.constraints.join("; ") || t("exposure.unknown")}
-                    </p>
-                    <small>
-                      {t("exposure.evidence")}: {hop.observationId}
-                    </small>
-                  </li>
-                ))}
-              </ol>
+              {entry.pathsTruncated && <p>{t("exposure.pathsTruncated")}</p>}
+              {(
+                entry.paths ?? [{ hops: entry.hops, status: entry.pathStatus }]
+              ).map((path, pathIndex) => (
+                <details
+                  key={pathIndex}
+                  className="my-2 rounded border border-border p-2"
+                  open={(entry.paths?.length ?? 1) === 1}
+                >
+                  <summary>
+                    {t("exposure.pathBranch", { index: pathIndex + 1 })} ·{" "}
+                    {t(`exposure.${path.status}`)} ·{" "}
+                    {path.hops
+                      .filter((h) => h.hostname || h.path)
+                      .map((h) => `${h.hostname ?? ""}${h.path ?? ""}`)
+                      .join(" → ")}
+                  </summary>
+                  <ol className="mt-2 list-decimal pl-5">
+                    {path.hops.map((hop, index) => (
+                      <li key={index}>
+                        <span>
+                          #{hop.sourceHostId} · {hop.source}:{" "}
+                          {address(hop.endpoint)}
+                          {hop.backend ? ` → ${address(hop.backend)}` : ""}{" "}
+                          {hop.hostname} {hop.path}
+                        </span>
+                        <p className="text-muted-foreground">
+                          {hop.constraints.join("; ") || t("exposure.unknown")}
+                        </p>
+                        <small>
+                          {t("exposure.evidence")}:{" "}
+                          {(hop.observationIds ?? [hop.observationId]).join(
+                            ", ",
+                          )}
+                        </small>
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              ))}
             </section>
           )}
           <details className="mt-4" open>

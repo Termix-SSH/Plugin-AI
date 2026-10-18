@@ -20,7 +20,7 @@ describe("configuration evidence derivation", () => {
       },
     ]);
     const rows = derived(o, [v4]);
-    expect(rows.map((e) => e.endpoint.address)).toEqual([
+    expect(rows.flatMap((e) => e.bindings!.map((b) => b.address))).toEqual([
       "8.8.8.8",
       "2001:4860::1",
     ]);

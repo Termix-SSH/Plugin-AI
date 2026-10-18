@@ -41,15 +41,23 @@ export interface Hop {
   sourceHostId: number;
   source: Source;
   observationId: string;
+  observationIds?: string[];
   endpoint: Endpoint;
   backend?: Endpoint;
   constraints: string[];
+  hostname?: string;
+  path?: string;
+}
+export interface EvidencePath {
+  hops: Hop[];
+  status: "partial" | "complete" | "conflicting";
 }
 export interface Entry extends Candidate {
   key: string;
   sourceHostId: number;
   source: Source;
   observationId: string;
+  observationIds?: string[];
   ownerId: string;
   assetId: number | null;
   zone: string | null;
@@ -65,6 +73,13 @@ export interface Entry extends Candidate {
   prioritySource: "rule" | "user";
   binding: "public" | "local" | "unknown";
   verification: "not_tested";
-  pathStatus: "partial" | "complete" | "conflicting";
+  pathStatus: "partial" | "complete" | "conflicting" | "branched";
   hops: Hop[];
+  /** One rule, many observed interface bindings; absent on legacy rows. */
+  bindings?: Endpoint[];
+  memberKeys?: string[];
+  exposureReasons?: string[];
+  priorityReasons?: string[];
+  paths?: EvidencePath[];
+  pathsTruncated?: boolean;
 }

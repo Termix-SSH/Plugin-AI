@@ -20,6 +20,7 @@ import {
   decodeObservations,
   deriveEntries,
   fingerprint,
+  entryIdentity,
   linkPaths,
 } from "./derive.js";
 import type { ExposureRepository } from "./repository.js";
@@ -211,7 +212,7 @@ export function createExposureService(
                 ? bindCurrentHosts([stored], inventory)[0]
                 : null;
               const linked = entry
-                ? entries.find((e) => e.key === entry.key)
+                ? entries.find((e) => e.key === entryIdentity(entry))
                 : null;
               return (
                 permitted &&

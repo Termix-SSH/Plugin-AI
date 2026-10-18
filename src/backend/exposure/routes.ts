@@ -7,6 +7,8 @@ import {
   ageEntries,
   bindCurrentHosts,
   fingerprint,
+  internetRelevant,
+  entryIdentity,
   linkPaths,
 } from "./derive.js";
 import { canSee, visibleHosts } from "./service.js";
@@ -72,7 +74,9 @@ export function registerExposureRoutes(
           (!c.before || canSee(c.before, hosts)) &&
           (!c.after || canSee(c.after, hosts)) &&
           (!c.after ||
-            !linked.some((e) => e.key === c.after!.key && !canSee(e, hosts))),
+            !linked.some(
+              (e) => e.key === entryIdentity(c.after!) && !canSee(e, hosts),
+            )),
       )
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 200);
@@ -81,6 +85,10 @@ export function registerExposureRoutes(
       .toLowerCase();
     const filtered = entries.filter(
       (e) =>
+        (req.query.scope === "all" ||
+          (req.query.scope === "unknown"
+            ? e.binding === "unknown"
+            : internetRelevant(e))) &&
         (!req.query.priority || e.priority === req.query.priority) &&
         (!req.query.zone || e.zone === req.query.zone) &&
         (!req.query.source || e.source === req.query.source) &&
@@ -90,9 +98,24 @@ export function registerExposureRoutes(
             : req.query.state === "resolved"
               ? !!e.resolvedAt
               : !e.resolvedAt)) &&
-        JSON.stringify([e.endpoint, e.hostname, e.path, e.sourceHostId])
+        JSON.stringify([
+          e.endpoint,
+          e.bindings,
+          e.backend,
+          e.hostname,
+          e.path,
+          e.sourceHostId,
+          e.paths,
+        ])
           .toLowerCase()
           .includes(query),
+    );
+    const rank = { high: 0, medium: 1, low: 2 };
+    filtered.sort(
+      (a, b) =>
+        rank[a.priority] - rank[b.priority] ||
+        a.sourceHostId - b.sourceHostId ||
+        a.key.localeCompare(b.key),
     );
     const offset = Math.max(0, Math.floor(Number(req.query.offset) || 0));
     const limit = Math.min(
@@ -103,6 +126,16 @@ export function registerExposureRoutes(
       entries: filtered.slice(offset, offset + limit),
       total: filtered.length,
       offset,
+      summary: {
+        all: entries.filter((e) => !e.resolvedAt).length,
+        internet: entries.filter((e) => !e.resolvedAt && internetRelevant(e))
+          .length,
+        unknown: entries.filter((e) => !e.resolvedAt && e.binding === "unknown")
+          .length,
+      },
+      zones: [
+        ...new Set(entries.flatMap((e) => (e.zone ? [e.zone] : []))),
+      ].sort(),
       coverage: [...latest.values()],
       changes,
     });
@@ -144,7 +177,8 @@ export function registerExposureRoutes(
           return;
         }
         if (
-          fingerprint(current.hops) !== fingerprint(entry.hops) ||
+          fingerprint([current.hops, current.paths, current.bindings]) !==
+            fingerprint([entry.hops, entry.paths, entry.bindings]) ||
           current.fingerprint !== entry.fingerprint ||
           current.staleAt !== entry.staleAt ||
           current.resolvedAt !== entry.resolvedAt ||

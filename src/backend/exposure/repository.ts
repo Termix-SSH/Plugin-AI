@@ -1,4 +1,4 @@
-import { rulePriority } from "./derive.js";
+import { compactEntries, evidenceFingerprint, rulePriority } from "./derive.js";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
@@ -59,8 +59,10 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
     await db.persist();
   }
   async function listEntries(): Promise<Entry[]> {
-    return (await (await db.client<Client>()).select().from(entries)).map(
-      (r: any) => JSON.parse(r.payload),
+    return compactEntries(
+      (await (await db.client<Client>()).select().from(entries)).map((r: any) =>
+        JSON.parse(r.payload),
+      ),
     );
   }
   async function listObservations(): Promise<StoredObservation[]> {
@@ -99,9 +101,11 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
             eq(table.ownerId, observation.ownerId),
             eq(table.source, observation.source),
           );
-        const old: Entry[] = (
-          await client.select().from(entries).where(where(entries))
-        ).map((r: any) => JSON.parse(r.payload));
+        const old = compactEntries(
+          (await client.select().from(entries).where(where(entries))).map(
+            (r: any) => JSON.parse(r.payload),
+          ),
+        );
         const prior = (
           await client
             .select()
@@ -120,9 +124,33 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
           before: Entry | null;
           after: Entry | null;
         }> = [];
-        for (const entry of incoming) {
+        for (const entry of compactEntries(incoming)) {
           const existing = before.get(entry.key);
           entry.firstSeen = existing?.firstSeen ?? entry.firstSeen;
+          if (existing && !observation.complete) {
+            const seen = new Set(
+              (entry.bindings ?? [entry.endpoint]).map((ep) =>
+                JSON.stringify(ep),
+              ),
+            );
+            const missing = (existing.bindings ?? [existing.endpoint]).filter(
+              (ep) => !seen.has(JSON.stringify(ep)),
+            );
+            if (missing.length) {
+              entry.bindings = [
+                ...(entry.bindings ?? [entry.endpoint]),
+                ...missing,
+              ];
+              entry.staleAt = observation.at;
+              entry.observationIds = [
+                ...new Set([
+                  ...(entry.observationIds ?? [entry.observationId]),
+                  ...(existing.observationIds ?? [existing.observationId]),
+                ]),
+              ];
+              entry.fingerprint = evidenceFingerprint(entry);
+            }
+          }
           if (existing?.prioritySource === "user") {
             entry.priority = existing.priority;
             entry.prioritySource = "user";
@@ -139,7 +167,10 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
             events.push({ kind: "changed", before: existing, after: entry });
         }
         for (const existing of before.values()) {
-          if (existing.resolvedAt) continue;
+          if (existing.resolvedAt) {
+            updated.push(existing);
+            continue;
+          }
           const after = {
             ...existing,
             staleAt: observation.complete ? null : observation.at,
@@ -167,10 +198,8 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
               payload: JSON.stringify(observation),
             }),
         ];
+        ops.push((tx) => tx.delete(entries).where(where(entries)));
         for (const entry of updated) {
-          ops.push((tx) =>
-            tx.delete(entries).where(eq(entries.key, entry.key)),
-          );
           ops.push((tx) =>
             tx.insert(entries).values({
               key: entry.key,
@@ -208,13 +237,25 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
         if (!entry) return;
         entry.prioritySource = priority ? "user" : "rule";
         entry.priority = priority ?? rulePriority(entry);
-        await transaction([
-          (tx) =>
-            tx
-              .update(entries)
-              .set({ payload: JSON.stringify(entry) })
-              .where(eq(entries.key, key)),
-        ]);
+        const raw = await (await db.client<Client>()).select().from(entries);
+        const keys = new Set([key, ...(entry.memberKeys ?? [])]);
+        await transaction(
+          raw
+            .filter((row: any) => keys.has(row.key))
+            .map(
+              (row: any) => (tx: Client) =>
+                tx
+                  .update(entries)
+                  .set({
+                    payload: JSON.stringify({
+                      ...JSON.parse(row.payload),
+                      prioritySource: entry.prioritySource,
+                      priority: entry.priority,
+                    }),
+                  })
+                  .where(eq(entries.key, row.key)),
+            ),
+        );
       });
     },
     async noticeMany(ids: string[], status: "sent" | "withheld") {
@@ -244,13 +285,17 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
         const cutoff = new Date(at - days * 86400000).toISOString();
         const current = await listEntries(),
           history = await listChanges();
-        const keep = new Set(current.map((e) => e.observationId));
+        const keep = new Set(
+          current.flatMap((e) => e.observationIds ?? [e.observationId]),
+        );
         for (const c of history.filter(
           (c) => c.at >= cutoff || c.noticeStatus === "pending",
         )) {
           keep.add(c.observationId);
-          if (c.before) keep.add(c.before.observationId);
-          if (c.after) keep.add(c.after.observationId);
+          for (const entry of [c.before, c.after])
+            for (const id of entry?.observationIds ??
+              (entry ? [entry.observationId] : []))
+              keep.add(id);
         }
         const latest = new Map<string, StoredObservation>();
         const all = await listObservations();

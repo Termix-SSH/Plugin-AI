@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "@termix-ssh/plugin-sdk/testing";
 import { pluginDir } from "../helpers.js";
 import { createExposureRepository } from "../../../src/backend/exposure/repository.js";
-import { derived, listener, observation } from "./fixtures.js";
+import { derived, host, listener, observation } from "./fixtures.js";
 let db: TestDb;
 afterEach(() => db?.close());
 async function setup() {
@@ -29,6 +29,73 @@ describe("durable exposure state", () => {
     await r.apply(d, []);
     expect((await r.listEntries())[0].resolvedAt).toBe(d.at);
     expect((await r.listChanges()).map((c) => c.kind)).toContain("removed");
+  });
+  it("normalizes legacy expanded rows atomically without false add/remove notices or lost overrides", async () => {
+    const r = await setup(),
+      o = observation();
+    const h = host();
+    h.facts!.interfaces = [
+      { name: "eth0", addrs: ["8.8.8.8/24", "10.0.0.1/24"] },
+    ];
+    const current = derived(o, [h])[0];
+    await r.apply(o, [current]);
+    const sql = db.sqlite;
+    sql.exec("DELETE FROM p_ai_exposure_entries");
+    for (const [i, ep] of current.bindings!.entries()) {
+      const legacy = {
+        ...current,
+        key: `legacy-${i}`,
+        bindings: undefined,
+        memberKeys: undefined,
+        endpoint: ep,
+      };
+      sql
+        .prepare(
+          "INSERT INTO p_ai_exposure_entries (key,host_id,owner_id,source,payload) VALUES (?,?,?,?,?)",
+        )
+        .run(legacy.key, 1, o.ownerId, o.source, JSON.stringify(legacy));
+    }
+    expect(await r.listEntries()).toHaveLength(1);
+    await r.override(current.key, "low");
+    expect(
+      sql.prepare("SELECT count(*) AS n FROM p_ai_exposure_entries").get(),
+    ).toEqual({ n: 2 });
+    const next = observation(undefined, true, "2026-01-02T00:00:00.000Z");
+    await r.apply(next, derived(next, [h]));
+    expect(
+      sql.prepare("SELECT count(*) AS n FROM p_ai_exposure_entries").get(),
+    ).toEqual({ n: 1 });
+    expect((await r.listEntries())[0]).toMatchObject({
+      priority: "low",
+      prioritySource: "user",
+      firstSeen: o.at,
+    });
+    expect((await r.listChanges()).map((c) => c.kind)).toEqual(["baseline"]);
+    expect(await r.listObservations()).toHaveLength(2);
+  });
+  it("retains unconfirmed bindings and their evidence during a partial refresh", async () => {
+    const r = await setup(),
+      first = observation();
+    const h = host();
+    h.facts!.interfaces = [
+      { name: "eth0", addrs: ["8.8.8.8/24", "10.0.0.1/24"] },
+    ];
+    await r.apply(first, derived(first, [h]));
+    h.facts!.interfaces = [{ name: "eth0", addrs: ["10.0.0.1/24"] }];
+    const partial = {
+      ...observation(undefined, true, "2026-01-02T00:00:00.000Z"),
+      complete: false,
+    };
+    await r.apply(partial, derived(partial, [h]));
+    const row = (await r.listEntries())[0];
+    expect(row.bindings).toHaveLength(2);
+    expect(row.staleAt).toBe(partial.at);
+    expect(row.observationIds).toEqual(
+      expect.arrayContaining([first.id, partial.id]),
+    );
+    expect((await r.listChanges()).map((c) => c.kind)).not.toContain("removed");
+    await r.prune(Date.parse("2026-10-18"));
+    expect(await r.listObservations()).toHaveLength(2);
   });
   it("preserves human priorities and records property changes without changing identity", async () => {
     const r = await setup(),
