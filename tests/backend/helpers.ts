@@ -54,6 +54,8 @@ export async function startServer(
     fetch?: (url: string, init?: unknown) => Promise<Response>;
     sshClient?: unknown;
     process?: FakeProcessOptions;
+    /** Hosts besides web-1 (id 1). */
+    extraHosts?: Array<{ id: number; name: string; userId?: string }>;
   } = {},
 ): Promise<TestServer> {
   const db = await createTestDb(pluginDir);
@@ -87,6 +89,16 @@ export async function startServer(
         folder: null,
         authType: "password",
       },
+      ...(options.extraHosts ?? []).map((host) => ({
+        userId: "user-1",
+        ip: `10.0.0.${host.id}`,
+        port: 22,
+        username: "root",
+        tags: null,
+        folder: null,
+        authType: "password",
+        ...host,
+      })),
     ],
   });
 

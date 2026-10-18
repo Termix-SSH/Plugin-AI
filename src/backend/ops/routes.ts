@@ -29,6 +29,12 @@ import {
   type OpsLimits,
 } from "./tools.js";
 
+/**
+ * What the assistant opens and continues: its own conversations and those of
+ * auto-ops tasks, so a task can be read and asked about after it ran.
+ */
+const ASSISTANT_MODES = new Set<string>(["ops", "task"]);
+
 /** Conversations whose host facts are kept in memory at once. */
 const FACTS_CONVERSATIONS = 200;
 
@@ -139,7 +145,9 @@ export function registerOpsRoutes(
     const conversation = id
       ? await repository.findConversation(id, ctx.currentActor() as string)
       : null;
-    return conversation?.mode === "ops" ? conversation : null;
+    return conversation && ASSISTANT_MODES.has(conversation.mode)
+      ? conversation
+      : null;
   };
 
   const logError = (message: string, error: unknown) =>
@@ -656,7 +664,10 @@ export function registerOpsRoutes(
       let conversation = conversationId
         ? await repository.findConversation(Number(conversationId), userId)
         : null;
-      if (conversationId && conversation?.mode !== "ops") {
+      if (
+        conversationId &&
+        !(conversation && ASSISTANT_MODES.has(conversation.mode))
+      ) {
         return res.status(404).json({ error: "Conversation not found" });
       }
       // Claimed before anything is written, so two messages cannot race.
@@ -725,7 +736,7 @@ export function registerOpsRoutes(
                 run: ctx.process.run,
                 cliPath,
                 url: CORE_URL,
-                token,
+                token: async () => token,
               }
             : null,
         saveTargets: async (next) => {

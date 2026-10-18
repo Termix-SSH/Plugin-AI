@@ -64,12 +64,33 @@
       "opsOutputLimit": {
         "label": "AI 助手每台主机输出（字符）",
         "description": "每台主机保留多少输出。更长的输出会保留开头和结尾。"
+      },
+      "autoOpsPaused": {
+        "label": "暂停 AI 自动运维",
+        "description": "立即停止所有运行中的 AI 任务和已批准的方案，并拒绝新任务，直到关闭此项。"
+      },
+      "autoOpsRunsPerHour": {
+        "label": "每个自动化每小时的 AI 任务数",
+        "description": "同一小时内更多的触发会被跳过。"
+      },
+      "autoOpsRunTokens": {
+        "label": "单个 AI 任务的 token 预算",
+        "description": "任务用到这么多 token 时会停止，并报告已发现的内容。"
+      },
+      "autoOpsDailyTokens": {
+        "label": "每个用户每天的 AI token 预算",
+        "description": "用户今天（UTC）用到这么多 token 后，其 AI 任务会被跳过或停止。"
       }
     },
     "host": {
       "enableAiAssistant": {
         "label": "启用 AI 助手",
         "description": "允许 AI 助手在此主机的终端中提供帮助。默认关闭，且仍需为您的账户启用 AI。"
+      }
+    },
+    "user": {
+      "autoOpsPreferences": {
+        "label": "值守偏好"
       }
     }
   },
@@ -341,6 +362,174 @@
       "assistant": "助手",
       "terminal": "终端面板",
       "compaction": "上下文压缩"
+    }
+  },
+  "autoOps": {
+    "viewAssistant": "助手",
+    "viewAutoOps": "值守",
+    "sections": {
+      "tasks": "任务",
+      "approvals": "待审批",
+      "presets": "预设"
+    },
+    "provider": "任务使用的提供商",
+    "providerDefault": "第一个设置了默认模型的提供商",
+    "model": "任务使用的模型",
+    "modelDefault": "提供商的默认模型",
+    "saveModel": "保存模型",
+    "task": "任务",
+    "tokens": "{{tokens}} tokens",
+    "tokenUsage": "{{total}} tokens（输入 {{prompt}}，输出 {{completion}}）",
+    "dryRun": "测试运行",
+    "trigger": "触发",
+    "noTasks": "还没有任务",
+    "noTasksHint": "启用一个预设，或在自动化里添加 AI 任务步骤，运行记录会显示在这里。",
+    "noApprovals": "没有待审批的方案",
+    "loadFailed": "加载值守失败",
+    "decideFailed": "无法保存审批结果",
+    "openConversation": "在助手中打开",
+    "approve": "批准并执行",
+    "reject": "拒绝",
+    "expires": "{{time}} 过期",
+    "enabled": "已启用",
+    "updateAvailable": "有新版本",
+    "shared": "共享",
+    "needsAutomations": "需要 Automations 插件",
+    "enableAgain": "再次启用",
+    "deletePreset": "删除预设",
+    "autonomy": {
+      "report": "只报告",
+      "propose": "提方案"
+    },
+    "status": {
+      "running": "运行中",
+      "reported": "已报告",
+      "proposed": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "expired": "已过期",
+      "executing": "执行中",
+      "done": "已完成",
+      "failed": "失败",
+      "skipped": "已跳过"
+    },
+    "severity": {
+      "info": "信息",
+      "warning": "警告",
+      "critical": "严重"
+    },
+    "plan": {
+      "title": "方案",
+      "commands": "命令",
+      "rationale": "理由",
+      "risk": "风险",
+      "rollback": "回滚",
+      "verify": "验证",
+      "progress": "进度"
+    },
+    "enable": {
+      "title": "启用{{name}}",
+      "submit": "启用",
+      "name": "名称",
+      "targets": "主机",
+      "targetAll": "全部主机",
+      "targetTrigger": "触发的主机",
+      "targetHosts": "选定的主机",
+      "noHosts": "请至少选择一台主机。",
+      "threshold": "阈值（%）",
+      "forSeconds": "持续至少（秒）",
+      "time": "每天时间",
+      "cron": "计划（cron）",
+      "dockerEvent": "容器事件",
+      "dockerEvents": {
+        "exited": "已退出",
+        "unhealthy": "不健康",
+        "restarting": "重启中"
+      },
+      "badTime": "请按 HH:MM 输入时间。",
+      "autonomy": "助手可以做什么",
+      "maxRunSeconds": "时间上限（秒）",
+      "runbook": "运维手册",
+      "runbookHint": "用平实的语言写助手该做什么，英文效果最好。",
+      "shared": "另存为预设时共享",
+      "sharedHint": "所有能使用值守的人都可以启用它。",
+      "saveAsPreset": "另存为预设",
+      "savedPreset": "已保存",
+      "failed": "无法创建自动化",
+      "saveFailed": "无法保存预设"
+    },
+    "presets": {
+      "daily-patrol": {
+        "title": "每日巡检",
+        "description": "每天 09:00 检查所有主机的磁盘、内存、负载、失败的服务、容器、证书、更新、待重启和时间同步，并按严重程度汇总报告。"
+      },
+      "disk-cleanup": {
+        "title": "磁盘空间处理",
+        "description": "磁盘使用率持续 5 分钟不低于 85% 时，找出占用并提出安全的清理方案，由你批准后执行。业务数据一律不碰。"
+      },
+      "host-down-triage": {
+        "title": "主机掉线排查",
+        "description": "主机下线时，从其他主机和 Proxmox 探测它，判断是网络、机器停止还是 SSH 的问题。"
+      },
+      "service-failure": {
+        "title": "服务故障处理",
+        "description": "健康检查开始失败时，找出背后的 systemd 单元，查看状态和日志，在重启有用时提出一次重启，由你批准后执行。配置一律不改。"
+      },
+      "container-anomaly": {
+        "title": "容器异常处理",
+        "description": "容器退出、变为不健康或反复重启时，查看其状态、退出码、日志和内存，提出一次启动或重启，由你批准后执行。不删除任何东西。"
+      },
+      "resource-overload-cpu": {
+        "title": "CPU 过载",
+        "description": "CPU 持续 15 分钟不低于 95% 时，找出背后的进程、服务和容器，并报告处理建议。不做任何改动。"
+      },
+      "resource-overload-memory": {
+        "title": "内存过载",
+        "description": "内存持续 10 分钟不低于 95% 时，找出占用、交换和 OOM 终止情况，并报告处理建议。不做任何改动。"
+      },
+      "security-updates-weekly": {
+        "title": "每周安全更新",
+        "description": "每周一 09:30 汇总待装安全更新（按严重程度）、待重启及其相关软件包、运行与已安装内核、距上次更新天数，所有主机一张表。"
+      },
+      "cert-expiry-weekly": {
+        "title": "每周证书到期",
+        "description": "每周一 09:45 读取每台主机上 Let's Encrypt、Web 服务器和 Kubernetes 证书的到期时间，30 天内到期标为警告，7 天内为严重。"
+      }
+    },
+    "report": {
+      "verdict": "结论",
+      "evidence": "证据",
+      "actionsTaken": "已做的事",
+      "recommendations": "建议",
+      "nothingFound": "运行结束前没有发现任何内容。",
+      "noChanges": "没有做任何更改。",
+      "openConversation": "在助手中打开对应会话，可以查看每一步并继续追问。",
+      "noFurtherAction": "无需进一步操作。",
+      "stoppedBudgetRun": "已停止：本次运行已用完 {{tokens}} tokens 的预算。",
+      "stoppedBudgetDaily": "已停止：所有者今天 {{tokens}} tokens 的预算已用完。",
+      "stoppedDeadline": "已停止：已到达自动化的时间上限。",
+      "stoppedPaused": "已停止：管理员暂停了 AI 自动运维。",
+      "stoppedAborted": "已停止：自动化运行被取消。",
+      "providerFailed": "AI 提供商出错：{{error}}",
+      "noHosts": "自动化所有者无法连接任何目标主机。",
+      "noProvider": "自动化所有者没有可用于运行任务的 AI 提供商和模型。",
+      "needsOpsUse": "自动化所有者没有 ai.ops.use 权限。",
+      "assistantOff": "自动化所有者没有启用 AI 助手。",
+      "skippedPaused": "AI 自动运维已被管理员暂停。",
+      "skippedDuplicate": "同一自动化和主机已有任务在运行或等待审批。",
+      "skippedRate": "这个自动化在过去一小时内已启动 {{count}} 个 AI 任务。",
+      "hostNotRun": "未执行：方案已被停止。",
+      "hostNoAccess": "未执行：所有者已无法连接这台主机。",
+      "hostUnreachable": "未执行：无法连接这台主机。",
+      "hostStopped": "在第一条失败的命令处停止。",
+      "executionDone": "已批准的方案在 {{count}} 台主机上执行完毕，所有命令和验证均成功。",
+      "executionFailed": "已批准的方案没有在所有主机上完成。",
+      "executionStopped": "已批准的方案在完成前被停止。",
+      "approvedBy": "已按原样执行批准的方案。批准人：{{user}}。",
+      "noticeReported": "AI 报告：{{title}}",
+      "noticeProposed": "AI 方案待审批：{{title}}",
+      "noticeExecuted": "AI 方案已执行：{{title}}",
+      "noticeFailed": "AI 任务失败：{{title}}"
     }
   }
 }

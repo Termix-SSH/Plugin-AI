@@ -50,7 +50,8 @@ export interface AiConversationRecord {
   updatedAt: string;
 }
 
-export type ConversationMode = "chat" | "ops";
+/** ops is the assistant; task is an auto-ops run, opened in the assistant. */
+export type ConversationMode = "chat" | "ops" | "task";
 
 /** One Termix CLI call the assistant made. */
 export interface CliRunInput {
@@ -561,7 +562,7 @@ export async function createAiRepository(
         .where(
           and(
             eq(usage.conversationId, conversationId),
-            inArray(usage.source, ["assistant", "terminal"]),
+            inArray(usage.source, ["assistant", "terminal", "task"]),
           ),
         )
         .orderBy(desc(usage.id))

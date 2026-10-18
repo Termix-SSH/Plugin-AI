@@ -1,0 +1,15 @@
+{
+  "id": "daily-patrol",
+  "version": 2,
+  "autonomy": "report",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "0 9 * * *"
+  },
+  "hostSelector": {
+    "kind": "all"
+  },
+  "concurrencyPolicy": "skip",
+  "maxRunSeconds": 1800,
+  "runbook": "Daily health patrol. Investigate only and change nothing. Every command must be read-only; anything else is refused.\n\nCheck every target host. Send each command to all hosts in one run_command call instead of one call per host. Skip a check silently where it does not apply (no Docker, not a Debian family system, and so on).\n\n1. Disk: `df -hP` and `df -iP`. Warning at 80% or more used, critical at 90% or more, for blocks or inodes. Ignore tmpfs, devtmpfs, overlay and squashfs.\n2. Memory: `free -m`. Warning when available memory is under 10% of total or swap is more than 50% used.\n3. Load: `uptime`, compared with the CPU count from get_host_facts. Warning when the 15 minute load is above the CPU count, critical above twice the CPU count. Inside an LXC container (`systemd-detect-virt` prints lxc) the load can be the hypervisor's when lxcfs does not virtualise /proc/loadavg: if containers on one node report the same load to three decimals, or the load is high while `vmstat 1 3` shows the CPU mostly idle, report \"load is not container-scoped\" as info instead of judging it against the container's CPUs.\n4. Failed services: `systemctl list-units --state=failed --no-pager --plain`. Each failed unit is a warning.\n5. Containers, where Docker is installed: `docker ps -a --format '{{.Names}} {{.Status}}'`. Warning for any container that is restarting, unhealthy, or exited with a non-zero code. Ignore containers that exited with code 0.\n6. Certificates, only where `test -d /etc/letsencrypt/live` succeeds: list them with `find /etc/letsencrypt/live -name cert.pem` and read each with `openssl x509 -noout -enddate -in <file>`. Warning when one expires within 14 days, critical within 3 days. Never inspect the system CA bundle.\n7. Pending updates: `apt list --upgradable` on Debian and Ubuntu, `dnf check-update -q` (or `yum check-update -q`) on RHEL family systems. Exit code 100 from dnf or yum means updates are available, not a failure. Count the security updates. Pending security updates are a warning.\n8. Reboot required: `test -f /var/run/reboot-required` on Debian and Ubuntu (exit code 0 means a reboot is needed), and `needrestart -b` where it is installed. A pending reboot is a warning.\n9. Time sync: `timedatectl show`. Warning when NTPSynchronized is not yes.\n\nIf a command is refused or fails for lack of permission, note the check as not run on that host; do not try to work around it.\n\nSeverity of the whole report: critical if any finding is critical, warning if any is a warning, otherwise info.\n\nIn the report, list findings grouped by severity, each with the host and the measured value. Name hosts with nothing to report on a single line. Recommendations are short and concrete, for a person to act on."
+}

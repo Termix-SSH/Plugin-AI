@@ -44,7 +44,7 @@ const KEEP_RECENT = 0.3;
 /** The share of the budget the summariser's input may take. */
 const SUMMARY_INPUT = 0.6;
 
-export type UsageSource = "assistant" | "terminal" | "compaction";
+export type UsageSource = "assistant" | "terminal" | "compaction" | "task";
 
 /** One model call's tokens, estimated when the provider reported none. */
 export interface ModelUsage {

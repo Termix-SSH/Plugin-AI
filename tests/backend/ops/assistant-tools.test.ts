@@ -144,7 +144,7 @@ describe("termix", () => {
       run: spawnRun,
       cliPath,
       url: "http://127.0.0.1:30001",
-      token: "jwt-1",
+      token: async () => "jwt-1",
     });
     const result = (await call("termix", {
       args: ["credentials", "create", "--password", "hunter2"],
@@ -176,7 +176,7 @@ describe("termix", () => {
       run: spawnRun,
       cliPath,
       url: "u",
-      token: "t",
+      token: async () => "t",
     });
     expect(await call("termix", { args: ["fail"] })).toMatchObject({
       exitCode: 3,
@@ -191,7 +191,7 @@ describe("termix", () => {
       run: spawnRun,
       cliPath,
       url: "u",
-      token: "t",
+      token: async () => "t",
     });
     const long = "h".repeat(30000);
     const cut = (await call("termix", { args: [long] })) as { output: string };
@@ -206,7 +206,12 @@ describe("termix", () => {
 
   it("refuses blocked commands without starting anything", async () => {
     const run = vi.fn(spawnRun);
-    const { cliRuns, call } = setup({ run, cliPath, url: "u", token: "t" });
+    const { cliRuns, call } = setup({
+      run,
+      cliPath,
+      url: "u",
+      token: async () => "t",
+    });
     expect(await call("termix", { args: ["ssh", "1"] })).toEqual({
       error: expect.stringContaining("run_command"),
     });
@@ -220,7 +225,7 @@ describe("termix", () => {
   it("refuses host commands to a user without a shell on hosts", async () => {
     const run = vi.fn(spawnRun);
     const { cliRuns, call, tools } = setup(
-      { run, cliPath, url: "u", token: "t" },
+      { run, cliPath, url: "u", token: async () => "t" },
       false,
     );
     expect(tools.has("set_targets")).toBe(false);

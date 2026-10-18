@@ -1,0 +1,19 @@
+{
+  "id": "host-down-triage",
+  "version": 1,
+  "autonomy": "report",
+  "trigger": {
+    "kind": "host_status",
+    "hostSelector": {
+      "kind": "all"
+    },
+    "to": "offline",
+    "cooldownMinutes": 30
+  },
+  "hostSelector": {
+    "kind": "all"
+  },
+  "concurrencyPolicy": "skip",
+  "maxRunSeconds": 600,
+  "runbook": "Host down triage. The host in the trigger stopped responding. Investigate only and change nothing. Every command must be read-only; anything else is refused.\n\n1. Find the down host: its id is the trigger's host id. Get its address and SSH port with list_targets.\n2. Try it directly: run `uptime` on the down host alone. If it answers, it is back; report that it recovered, with severity info, and stop.\n3. Probe it from up to three other target hosts that are up, preferring ones on the same network: `ping -c 3 -W 2 <address>` and `nc -z -w 3 <address> <ssh port>`.\n4. If a target host is a Proxmox VE node (`qm list` or `pct list` succeeds on it), look for a VM or container whose name or address matches the down host, and get `qm status <vmid>` or `pct status <vmid>`.\n5. Decide which it is:\n   - Powered off or stopped: the VM or container is stopped, or nothing answers ping and the node says so.\n   - Network: no ping from anywhere and no hypervisor says it is stopped.\n   - SSH service: ping answers but the SSH port is closed.\n   - Overloaded or login problem: the SSH port is open but commands do not run.\n\nSeverity: critical if it is still down, warning if ping answers but SSH does not, info if it recovered.\n\nIn the report, give the conclusion first, then what each probe showed from which host, then concrete next steps for a person (start the VM, check sshd, check the network path). Do not run anything that would change state."
+}

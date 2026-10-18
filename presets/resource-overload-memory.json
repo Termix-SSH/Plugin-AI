@@ -1,0 +1,25 @@
+{
+  "id": "resource-overload-memory",
+  "version": 2,
+  "autonomy": "report",
+  "trigger": {
+    "kind": "metric_threshold",
+    "hostSelector": {
+      "kind": "all"
+    },
+    "metric": {
+      "path": "memory.percent"
+    },
+    "operator": ">=",
+    "value": 95,
+    "forSeconds": 600,
+    "cooldownMinutes": 120,
+    "severity": "warning"
+  },
+  "hostSelector": {
+    "kind": "trigger"
+  },
+  "concurrencyPolicy": "skip",
+  "maxRunSeconds": 600,
+  "runbook": "Resource overload report. CPU or memory use on the triggering host stayed above the threshold in the trigger. Investigate only and change nothing: never kill, renice, restart or stop anything. Every command must be read-only; anything else is refused.\n\nWork on the triggering host only. The trigger's metric says which resource fired; look at both, since memory pressure shows up as CPU (swapping, reclaim) and the reverse.\n\n1. Confirm it: `uptime`, `free -m`, and the CPU count from get_host_facts. If CPU and memory are both well below the threshold now, say that it eased, still do steps 2 to 4 once to name the likely cause, and use severity info. Run `systemd-detect-virt` too: in an LXC container the load may be the hypervisor's (lxcfs not virtualising /proc/loadavg). There, judge CPU by vmstat idle, `cat /proc/pressure/cpu` and `cat /sys/fs/cgroup/cpu.stat` (nr_throttled), not by load; a high load with an idle CPU is not an overload, so say so and use severity info.\n2. Trend and pressure: `vmstat 1 5` (r: runnable tasks against the CPU count; si and so: swapping; wa: I/O wait; st: CPU stolen by the hypervisor), and `cat /proc/pressure/cpu`, `cat /proc/pressure/memory` and `cat /proc/pressure/io` where the kernel has them. Compare the 1, 5 and 15 minute load to tell rising from easing.\n3. Top consumers. Only the first 15 lines or so matter, and long output is cut in the middle:\n   - CPU now: `top -b -n 1 -o %CPU`. Prefer it to ps for CPU: ps averages %CPU over each process's lifetime and hides a recent spike.\n   - Memory: `ps -eo pid,user,%mem,rss,etime,comm --sort=-rss`.\n   - The full command of the top three: `ps -o pid,args -p <pid>,<pid>,<pid>`. A command line can hold a password or token; never repeat one in the report.\n4. Who owns them:\n   - systemd: `systemctl status <pid> --no-pager -n 0` for each of the top three names its unit, or the container scope it runs in.\n   - Docker, where installed: `docker stats --no-stream --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}} {{.MemPerc}}'`.\n5. Memory events: `journalctl -k --since -24h -g oom --no-pager -n 20` for out-of-memory kills (if --grep is not supported, `journalctl -k --since -24h -p warning --no-pager -n 50`), and swap use from `free -m`.\n6. Only when vmstat shows wa above 20: `iostat -x 1 2` where installed, to name the busy disk. Only when st is above 10: the host is short of CPU on its hypervisor, not busy itself; say so.\n\nName the likely cause: one runaway process, one container, many processes from a job (backup, build, cron, indexing), a leak (one process with large and growing RSS and a long elapsed time), swapping, I/O wait, or a busy hypervisor.\n\nIf a command is refused or fails for lack of permission, note it and move on; do not work around it.\n\nSeverity: critical if memory is above 95% with swap nearly full or OOM kills in the last hour, or the 15 minute load is above twice the CPU count; warning while it stays above the threshold; info if it eased.\n\nIn the report, give the resource and its numbers, the top consumers with their unit or container, the likely cause, and short, concrete recommendations for a person: which process or container to look at, a memory or CPU limit to set, a job to move out of busy hours, or more capacity. Recommend only; this task changes nothing."
+}

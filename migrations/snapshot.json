@@ -571,6 +571,214 @@
           ]
         }
       ]
+    },
+    "task_runs": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "automationId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "automationRunId": {
+          "type": "integer"
+        },
+        "presetId": {
+          "type": "varchar",
+          "length": 64
+        },
+        "title": {
+          "type": "text",
+          "notNull": true
+        },
+        "autonomy": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "hostIds": {
+          "type": "text",
+          "notNull": true
+        },
+        "trigger": {
+          "type": "text",
+          "notNull": true
+        },
+        "dryRun": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": false
+        },
+        "status": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "severity": {
+          "type": "varchar",
+          "length": 16
+        },
+        "summary": {
+          "type": "text"
+        },
+        "report": {
+          "type": "text"
+        },
+        "plan": {
+          "type": "text"
+        },
+        "decidedBy": {
+          "type": "varchar",
+          "length": 255
+        },
+        "decidedAt": {
+          "type": "timestamp"
+        },
+        "expiresAt": {
+          "type": "timestamp"
+        },
+        "conversationId": {
+          "type": "integer"
+        },
+        "promptTokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "completionTokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        },
+        "finishedAt": {
+          "type": "timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_task_runs_user",
+          "columns": [
+            "userId",
+            "createdAt"
+          ]
+        },
+        {
+          "name": "idx_ai_task_runs_automation",
+          "columns": [
+            "automationId",
+            "createdAt"
+          ]
+        },
+        {
+          "name": "idx_ai_task_runs_status",
+          "columns": [
+            "status"
+          ]
+        }
+      ]
+    },
+    "preset_links": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "presetId": {
+          "type": "varchar",
+          "length": 64,
+          "notNull": true
+        },
+        "presetVersion": {
+          "type": "integer",
+          "notNull": true
+        },
+        "automationId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_preset_links_user",
+          "columns": [
+            "userId"
+          ]
+        }
+      ]
+    },
+    "task_presets": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "name": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true
+        },
+        "description": {
+          "type": "text"
+        },
+        "shared": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": false
+        },
+        "config": {
+          "type": "text",
+          "notNull": true
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_task_presets_user",
+          "columns": [
+            "userId"
+          ]
+        },
+        {
+          "name": "idx_ai_task_presets_shared",
+          "columns": [
+            "shared"
+          ]
+        }
+      ]
     }
   }
 }

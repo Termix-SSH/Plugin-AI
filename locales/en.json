@@ -60,12 +60,33 @@
       "opsOutputLimit": {
         "label": "AI assistant output per host (characters)",
         "description": "How much of each host's output is kept. Longer output keeps its start and end."
+      },
+      "autoOpsPaused": {
+        "label": "Pause AI auto-ops",
+        "description": "Stops every AI task and approved plan that is running and refuses new ones, until turned off again."
+      },
+      "autoOpsRunsPerHour": {
+        "label": "AI tasks per automation per hour",
+        "description": "More triggers in the same hour are skipped."
+      },
+      "autoOpsRunTokens": {
+        "label": "Token budget per AI task",
+        "description": "A task that uses this many tokens is stopped and reports what it found."
+      },
+      "autoOpsDailyTokens": {
+        "label": "Daily AI token budget per user",
+        "description": "Once a user has used this many tokens today (UTC), their AI tasks are skipped or stopped."
       }
     },
     "host": {
       "enableAiAssistant": {
         "label": "Enable AI Assistant",
         "description": "Allow the AI assistant to help in this host's terminal. Off by default, and still needs AI enabled for your account."
+      }
+    },
+    "user": {
+      "autoOpsPreferences": {
+        "label": "Auto-ops preferences"
       }
     }
   },
@@ -339,6 +360,174 @@
       "assistant": "Assistant",
       "terminal": "Terminal panel",
       "compaction": "Compaction"
+    }
+  },
+  "autoOps": {
+    "viewAssistant": "Assistant",
+    "viewAutoOps": "Auto-ops",
+    "sections": {
+      "tasks": "Tasks",
+      "approvals": "Approvals",
+      "presets": "Presets"
+    },
+    "provider": "Provider for tasks",
+    "providerDefault": "First provider with a default model",
+    "model": "Model for tasks",
+    "modelDefault": "The provider's default model",
+    "saveModel": "Save model",
+    "task": "Task",
+    "tokens": "{{tokens}} tokens",
+    "tokenUsage": "{{total}} tokens ({{prompt}} in, {{completion}} out)",
+    "dryRun": "Test run",
+    "trigger": "Trigger",
+    "noTasks": "No tasks yet",
+    "noTasksHint": "Enable a preset, or add an AI task step to an automation. Its runs show up here.",
+    "noApprovals": "No plans are waiting for approval",
+    "loadFailed": "Failed to load auto-ops",
+    "decideFailed": "The decision could not be saved",
+    "openConversation": "Open in assistant",
+    "approve": "Approve and run",
+    "reject": "Reject",
+    "expires": "Expires {{time}}",
+    "enabled": "Enabled",
+    "updateAvailable": "Update available",
+    "shared": "Shared",
+    "needsAutomations": "Needs Automations",
+    "enableAgain": "Enable again",
+    "deletePreset": "Delete preset",
+    "autonomy": {
+      "report": "Report only",
+      "propose": "Propose a plan"
+    },
+    "status": {
+      "running": "Running",
+      "reported": "Reported",
+      "proposed": "Awaiting approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "executing": "Running plan",
+      "done": "Done",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "severity": {
+      "info": "Info",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "plan": {
+      "title": "Proposed plan",
+      "commands": "Commands",
+      "rationale": "Why",
+      "risk": "Risk",
+      "rollback": "Rollback",
+      "verify": "Verify",
+      "progress": "Progress"
+    },
+    "enable": {
+      "title": "Enable {{name}}",
+      "submit": "Enable",
+      "name": "Name",
+      "targets": "Hosts",
+      "targetAll": "All hosts",
+      "targetTrigger": "The host that triggered it",
+      "targetHosts": "Selected hosts",
+      "noHosts": "Select at least one host.",
+      "threshold": "Threshold (%)",
+      "forSeconds": "For at least (seconds)",
+      "time": "Time of day",
+      "cron": "Schedule (cron)",
+      "dockerEvent": "Container event",
+      "dockerEvents": {
+        "exited": "Exited",
+        "unhealthy": "Unhealthy",
+        "restarting": "Restarting"
+      },
+      "badTime": "Enter the time as HH:MM.",
+      "autonomy": "What the assistant may do",
+      "maxRunSeconds": "Time limit (seconds)",
+      "runbook": "Runbook",
+      "runbookHint": "What the assistant should do, in plain words. English works best.",
+      "shared": "Share when saved as a preset",
+      "sharedHint": "Everyone who may use auto-ops can then enable it.",
+      "saveAsPreset": "Save as preset",
+      "savedPreset": "Saved",
+      "failed": "The automation could not be created",
+      "saveFailed": "The preset could not be saved"
+    },
+    "presets": {
+      "daily-patrol": {
+        "title": "Daily patrol",
+        "description": "Every morning at 09:00, checks every host's disks, memory, load, failed services, containers, certificates, updates, pending reboots and time sync, and reports by severity."
+      },
+      "disk-cleanup": {
+        "title": "Disk space cleanup",
+        "description": "When a disk stays at 85% or more for 5 minutes, finds what fills it and proposes a safe cleanup for you to approve. Business data is never touched."
+      },
+      "host-down-triage": {
+        "title": "Host down triage",
+        "description": "When a host goes offline, probes it from other hosts and Proxmox, and reports whether it is the network, a stopped machine or SSH."
+      },
+      "service-failure": {
+        "title": "Service failure",
+        "description": "When a health check starts failing, finds the systemd unit behind it, reads its status and log, and proposes a single restart for you to approve when that can help. Configuration is never changed."
+      },
+      "container-anomaly": {
+        "title": "Container anomaly",
+        "description": "When a container exits, turns unhealthy or keeps restarting, reads its state, exit code, logs and memory, and proposes starting or restarting it once for you to approve. Nothing is removed."
+      },
+      "resource-overload-cpu": {
+        "title": "CPU overload",
+        "description": "When CPU stays at 95% or more for 15 minutes, finds the processes, services and containers behind it and reports what to do. Nothing is changed."
+      },
+      "resource-overload-memory": {
+        "title": "Memory overload",
+        "description": "When memory stays at 95% or more for 10 minutes, finds what uses it, swapping and out-of-memory kills, and reports what to do. Nothing is changed."
+      },
+      "security-updates-weekly": {
+        "title": "Weekly security updates",
+        "description": "Every Monday at 09:30, lists pending security updates by severity, pending reboots and the packages behind them, running and installed kernels and days since the last update, in one table for all hosts."
+      },
+      "cert-expiry-weekly": {
+        "title": "Weekly certificate expiry",
+        "description": "Every Monday at 09:45, reads the expiry of Let's Encrypt, web server and Kubernetes certificates on every host and flags those under 30 days, critical under 7."
+      }
+    },
+    "report": {
+      "verdict": "Verdict",
+      "evidence": "Evidence",
+      "actionsTaken": "Actions taken",
+      "recommendations": "Recommendations",
+      "nothingFound": "Nothing was found before the run ended.",
+      "noChanges": "No changes were made.",
+      "openConversation": "Open the conversation in the assistant to see every step and ask follow-up questions.",
+      "noFurtherAction": "No further action is needed.",
+      "stoppedBudgetRun": "Stopped: this run used its budget of {{tokens}} tokens.",
+      "stoppedBudgetDaily": "Stopped: the owner's daily budget of {{tokens}} tokens is used up.",
+      "stoppedDeadline": "Stopped: the automation's time limit was reached.",
+      "stoppedPaused": "Stopped: an administrator paused AI auto-ops.",
+      "stoppedAborted": "Stopped: the automation run was cancelled.",
+      "providerFailed": "The AI provider failed: {{error}}",
+      "noHosts": "None of the target hosts can be reached by the automation's owner.",
+      "noProvider": "The automation's owner has no AI provider with a model to run tasks on.",
+      "needsOpsUse": "The automation's owner does not have the ai.ops.use permission.",
+      "assistantOff": "The AI assistant is turned off for the automation's owner.",
+      "skippedPaused": "AI auto-ops is paused by an administrator.",
+      "skippedDuplicate": "A task for the same automation and host is still running or waiting for approval.",
+      "skippedRate": "This automation already started {{count}} AI tasks in the last hour.",
+      "hostNotRun": "Not run: the plan was stopped.",
+      "hostNoAccess": "Not run: the owner can no longer connect to this host.",
+      "hostUnreachable": "Not run: the host could not be reached.",
+      "hostStopped": "Stopped at the first failed command.",
+      "executionDone": "The approved plan ran on {{count}} host(s) and every command and check succeeded.",
+      "executionFailed": "The approved plan did not complete on every host.",
+      "executionStopped": "The approved plan was stopped before it finished.",
+      "approvedBy": "The approved plan ran as written. Approved by {{user}}.",
+      "noticeReported": "AI report: {{title}}",
+      "noticeProposed": "AI plan awaiting approval: {{title}}",
+      "noticeExecuted": "AI plan executed: {{title}}",
+      "noticeFailed": "AI task failed: {{title}}"
     }
   }
 }

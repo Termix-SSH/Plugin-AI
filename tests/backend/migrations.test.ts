@@ -56,8 +56,11 @@ describe("ai adoption migration", () => {
       "p_ai_conversations",
       "p_ai_messages",
       "p_ai_ops_runs",
+      "p_ai_preset_links",
       "p_ai_proposals",
       "p_ai_providers",
+      "p_ai_task_presets",
+      "p_ai_task_runs",
       "p_ai_usage",
     ]);
 
@@ -99,8 +102,11 @@ describe("ai adoption migration", () => {
       "p_ai_conversations",
       "p_ai_messages",
       "p_ai_ops_runs",
+      "p_ai_preset_links",
       "p_ai_proposals",
       "p_ai_providers",
+      "p_ai_task_presets",
+      "p_ai_task_runs",
       "p_ai_usage",
     ]);
     const columns = (

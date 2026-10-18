@@ -19,6 +19,10 @@ Termix blocks requests to private addresses by default. To use Ollama or another
 
 One assistant, in two views that share their conversations: a floating panel on every page, and the full-screen AI tab. It changes things without asking first, and with the `ai.ops.use` permission it can also run shell commands across hosts you select. See [AI assistant](assistant.md).
 
+## Auto-ops
+
+With the Automations plugin, automations can start the assistant on their own: on a schedule, when a disk fills up, when a host goes down. It investigates read-only and writes a report, or proposes a plan that runs only after someone approves it. Presets for a daily patrol, disk cleanup and host down triage get you started. See [Auto-ops](auto-ops.md).
+
 ## In the terminal
 
 Turn on Enable AI Assistant in a host's settings to get an assistant panel next to its terminal. It knows which host you are on and reads your setup through a fixed set of tools.
@@ -41,11 +45,11 @@ The plugin can also start a coding agent, like Claude Code, Codex, OpenCode or P
 
 ## Permissions
 
-| Permission            | What it allows                                                         |
-| --------------------- | ---------------------------------------------------------------------- |
-| `ai.use`              | Use the assistant, in the AI tab, the floating panel and the terminal. |
-| `ai.manage_providers` | Add, edit and remove providers and their keys.                         |
-| `ai.apply_proposals`  | Approve the changes the terminal assistant proposes.                   |
-| `ai.agents`           | Start coding agents on hosts. Admins only by default.                  |
-| `ai.ops.use`          | Let the assistant run shell commands on hosts. Admins only by default. |
-| `ai.usage.view_all`   | See every user's token usage. Admins only by default.                  |
+| Permission            | What it allows                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `ai.use`              | Use the assistant, in the AI tab, the floating panel and the terminal.                   |
+| `ai.manage_providers` | Add, edit and remove providers and their keys.                                           |
+| `ai.apply_proposals`  | Approve the changes the terminal assistant proposes.                                     |
+| `ai.agents`           | Start coding agents on hosts. Admins only by default.                                    |
+| `ai.ops.use`          | Let the assistant run shell commands on hosts, and use auto-ops. Admins only by default. |
+| `ai.usage.view_all`   | See every user's token usage. Admins only by default.                                    |

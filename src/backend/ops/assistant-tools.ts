@@ -68,7 +68,13 @@ function cliFailure(result: Awaited<ReturnType<typeof runCli>>) {
   return undefined;
 }
 
-function termixTool(session: AssistantSession, cli: CliTarget): AiTool {
+/** What the termix tool needs: the assistant's session, or a task's. */
+export type CliSession = Pick<
+  AssistantSession,
+  "hostShell" | "signal" | "recordCliRun" | "auditDetails" | "limits"
+>;
+
+export function termixTool(session: CliSession, cli: CliTarget): AiTool {
   return {
     name: "termix",
     description: termixDescription(session.hostShell),
@@ -112,6 +118,7 @@ function termixTool(session: AssistantSession, cli: CliTarget): AiTool {
           details: JSON.stringify({
             args: redacted,
             exitCode: result.exitCode,
+            ...session.auditDetails,
           }),
           success: !failure,
           errorMessage: failure,

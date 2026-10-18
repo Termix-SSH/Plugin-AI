@@ -13,6 +13,11 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn(),
   getConversation: vi.fn(),
   compact: vi.fn(),
+  savePreferences: vi.fn(),
+}));
+vi.mock("../../src/frontend/autoops/api", async (original) => ({
+  ...(await original<object>()),
+  savePreferences: mocks.savePreferences,
 }));
 vi.mock("../../src/frontend/app-ref", () => ({
   aiApp: () => ({
@@ -59,7 +64,7 @@ vi.mock("../../src/frontend/ai-api", () => ({
 }));
 vi.mock("@termix-ssh/plugin-sdk/frontend", async (original) => ({
   ...(await original<object>()),
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, language: "zh_CN" }),
   useHosts: () => ({
     loaded: true,
     hosts: [
@@ -87,6 +92,7 @@ beforeEach(() => {
     removeEventListener: vi.fn(),
   });
   mocks.fetch.mockResolvedValue(frames({ type: "done" }));
+  mocks.savePreferences.mockResolvedValue({});
   assistant.setHostShell(true);
 });
 afterEach(() => {
@@ -117,6 +123,11 @@ it("sends the selected hosts and the page with every message", async () => {
     hostIds: [2],
   });
   expect(await screen.findByText("check disk space")).toBeTruthy();
+});
+
+it("saves the interface language for reports when the assistant opens", async () => {
+  await ready();
+  expect(mocks.savePreferences).toHaveBeenCalledWith({ language: "zh_CN" });
 });
 
 it("adds targets from an @-mention and removes them from their chip", async () => {
@@ -372,4 +383,15 @@ it("opens the usage view from the header", async () => {
   fireEvent.click(screen.getByRole("button", { name: "assistant.usage" }));
   expect(await screen.findByText("usage.today")).toBeTruthy();
   expect(screen.getByText("glm-5.3-flash")).toBeTruthy();
+});
+
+it("switches to Auto-ops for a user with a shell on hosts only", async () => {
+  await ready();
+  fireEvent.click(screen.getByText("autoOps.viewAutoOps"));
+  expect(await screen.findByText("autoOps.sections.approvals")).toBeTruthy();
+  cleanup();
+
+  assistant.setHostShell(false);
+  render(<AssistantView {...({} as TabProps)} />);
+  expect(screen.queryByText("autoOps.viewAutoOps")).toBeNull();
 });

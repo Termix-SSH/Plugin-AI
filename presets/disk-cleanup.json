@@ -1,0 +1,25 @@
+{
+  "id": "disk-cleanup",
+  "version": 1,
+  "autonomy": "propose",
+  "trigger": {
+    "kind": "metric_threshold",
+    "hostSelector": {
+      "kind": "all"
+    },
+    "metric": {
+      "path": "disk.percent"
+    },
+    "operator": ">=",
+    "value": 85,
+    "forSeconds": 300,
+    "cooldownMinutes": 60,
+    "severity": "warning"
+  },
+  "hostSelector": {
+    "kind": "trigger"
+  },
+  "concurrencyPolicy": "skip",
+  "maxRunSeconds": 900,
+  "runbook": "Disk space response. A filesystem crossed the alert threshold given in the trigger. Investigate read-only, then propose a cleanup plan for a person to approve. Never touch business data.\n\nInvestigate the triggering host (read-only; anything else is refused):\n1. Confirm the problem: `df -hP` and `df -iP`. Note the full filesystem, its mount point and how full it is. If it is now below the threshold, report that it recovered and propose nothing.\n2. Find where the space went with depth-limited scans on that filesystem only, such as `du -xh --max-depth=2 /var`. Do not scan deeper than three levels at once.\n3. Measure each safe candidate:\n   - Docker, where installed: `docker system df` (only dangling images and build cache count).\n   - systemd journal: `journalctl --disk-usage`.\n   - Package caches: `du -sh /var/cache/apt/archives`, `du -sh /var/cache/dnf` or `du -sh /var/cache/yum`, whichever exists.\n   - Rotated, compressed logs older than 7 days: `find /var/log -type f -name '*.gz' -mtime +7 -ls`, and the same for '*.xz', '*.zst' and '*.[0-9]'.\n\nThen call propose_plan, for the triggering host only, using only these actions:\n- `docker image prune -f` (dangling images only; never with -a or --all)\n- `docker builder prune -f` (build cache)\n- `journalctl --vacuum-time=7d`\n- `apt-get clean`, or `dnf clean packages`, or `yum clean packages`\n- `find /var/log -type f -name '*.gz' -mtime +7 -delete`, and the same for '*.xz', '*.zst' and '*.[0-9]'\n\nNever propose: docker system prune, docker volume prune, removing containers or volumes, any -a or --all flag, rm, truncating or deleting active log files, or anything under /home, /root, /srv, /opt, /data, /mnt, /media or /var/lib other than through the Docker and journal commands above. Leave database, application, upload and backup directories alone even when they are the largest. If the allowed actions cannot free enough space, say so in the report and name what a person should look at; do not propose it.\n\nCommands run without a terminal as the host's SSH user. If `id -u` is not 0, prefix each command that needs root with `sudo -n`. Leave out an action whose candidate is empty or tiny.\n\nFor the plan give, per host: the commands in order; the rationale with the measured size of each candidate; the estimated space freed in total; the risk (cleared caches are downloaded or rebuilt again when needed, deleted rotated logs are gone for good); the rollback (none is possible for deleted data, say so); and verify commands that are read-only, such as `df -hP <mount>`, `docker system df` and `journalctl --disk-usage`.\n\nSeverity: critical at 95% or more used (blocks or inodes), warning below that, info if it already recovered.\n\nIn the report, state the filesystem, its usage, what takes the space, the plan and the space it should free."
+}
