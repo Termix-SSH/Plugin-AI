@@ -367,8 +367,7 @@
     "conversationTokens": "{{tokens}} tokens",
     "openFloating": "Floating panel",
     "openFloatingHint": "Open the assistant in a panel over any page. Press {{shortcut}} anywhere to open or close it.",
-    "shortcutHint": "Press {{shortcut}} on any page to open the assistant in a floating panel.",
-    "unread": "New results in the assistant"
+    "shortcutHint": "Press {{shortcut}} on any page to open the assistant in a floating panel."
   },
   "usage": {
     "title": "Token usage",
@@ -536,54 +535,6 @@
       "cert-expiry-weekly": {
         "title": "Weekly certificate expiry",
         "description": "Every Monday at 09:45, reads the expiry of Let's Encrypt, web server and Kubernetes certificates on every host and flags those under 30 days, critical under 7."
-      },
-      "backup-freshness": {
-        "title": "Backup freshness",
-        "description": "Inspect configured backup jobs, last successful snapshots and backup logs. Report missing or failed backups and backups older than the configured RPO (24 hours if no RPO is available). Do not create, prune or restore backups."
-      },
-      "storage-health": {
-        "title": "SMART / RAID / ZFS health",
-        "description": "Inspect SMART health, RAID degradation, ZFS errors and last completed scrub. Report failed disks, pending sectors, degraded arrays and scrubs older than 30 days. Do not start tests, scrubs, repairs or replace disks."
-      },
-      "ssh-login-audit": {
-        "title": "SSH login audit",
-        "description": "Inspect SSH authentication logs for the last 24 hours. Report brute-force bursts and unusual successful logins with evidence. Never print keys, change accounts or block addresses."
-      },
-      "kernel-errors": {
-        "title": "OOM and kernel errors",
-        "description": "Inspect the last 24 hours of kernel logs for OOM kills, I/O errors, hung tasks and filesystem errors. Correlate affected services and report impact. Do not restart or kill processes."
-      },
-      "password-expiry": {
-        "title": "Account password expiry",
-        "description": "Check account and password expiry without exposing password hashes. Warn within 14 days, critical for expired accounts used by services or SSH. Report locked and expiring accounts; never modify them."
-      },
-      "log-growth": {
-        "title": "Log growth",
-        "description": "Inspect journal and log disk usage, logrotate status and recent failures. Warn above 80 percent filesystem usage or 5 GiB logs without retention. Report growth only when prior measurements exist. Do not truncate or delete logs."
-      },
-      "docker-cleanup": {
-        "title": "Docker image and volume cleanup",
-        "description": "Inventory Docker disk usage and references. Clean only demonstrably unused images with bounded commands, then verify reclaimed space. Treat every volume deletion as destructive: explain candidates and require the command confirmation gate. Never remove running containers or use privileged containers."
-      },
-      "listening-ports": {
-        "title": "Listening port changes",
-        "description": "Inventory TCP and UDP listeners with bind address and process. Compare with retained prior evidence when available; otherwise report this as a baseline and do not invent changes. Flag unexpected public listeners. Do not change firewall or services."
-      },
-      "cron-failures": {
-        "title": "Cron and timer failures",
-        "description": "Inspect cron logs and systemd timers for failed, missed or overlapping jobs over 24 hours. Report expected versus observed executions where schedules are available. Do not edit schedules or rerun jobs."
-      },
-      "read-only-mounts": {
-        "title": "Read-only mounts",
-        "description": "Inspect mounts and kernel filesystem errors. Report filesystems unexpectedly remounted read-only, distinguish intentionally read-only mounts and container layers. Do not remount or repair."
-      },
-      "kubernetes-health": {
-        "title": "Kubernetes health",
-        "description": "Inspect node readiness, pressure, pod restarts, pending workloads, storage and recent warnings. Report unhealthy resources with namespace and evidence. Do not delete, drain, scale or patch."
-      },
-      "gpu-health": {
-        "title": "GPU health",
-        "description": "Inspect GPU temperatures, utilization, memory, ECC errors, Xid events and driver availability. Distinguish an idle GPU from a fault. Report thresholds and errors without resetting GPUs or stopping workloads."
       }
     },
     "report": {
@@ -620,14 +571,8 @@
       "noticeProposed": "AI plan awaiting approval: {{title}}",
       "noticeExecuted": "AI plan executed: {{title}}",
       "noticeFailed": "AI task failed: {{title}}",
-      "confirmationExpired": "Unconfirmed: command confirmation expired after 24 hours; the task ended.",
-      "confirmationFailed": "Command confirmation failed; this command was not executed.",
-      "actionsRecorded": "See the command history for actions already executed. Stopping a run does not roll back prior changes.",
       "noticeAssetsAnnotationFailed": "Asset annotation failed"
-    },
-    "noTasksHint": "Enable a preset, or add an AI task step to an automation. Its runs show up here.",
-    "disable": "Disable",
-    "configure": "Create customized task"
+    }
   },
   "assets": {
     "title": "Assets",

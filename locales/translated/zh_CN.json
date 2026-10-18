@@ -369,8 +369,7 @@
     "conversationTokens": "{{tokens}} token",
     "openFloating": "浮动面板",
     "openFloatingHint": "在任何页面上方以面板形式打开助手。在任何位置按 {{shortcut}} 即可打开或关闭它。",
-    "shortcutHint": "在任何页面按 {{shortcut}} 即可在浮动面板中打开助手。",
-    "unread": "助手有新结果"
+    "shortcutHint": "在任何页面按 {{shortcut}} 即可在浮动面板中打开助手。"
   },
   "usage": {
     "title": "Token 用量",
@@ -538,54 +537,6 @@
       "cert-expiry-weekly": {
         "title": "每周证书到期",
         "description": "每周一 09:45 读取每台主机上 Let's Encrypt、Web 服务器和 Kubernetes 证书的到期时间，30 天内到期标为警告，7 天内为严重。"
-      },
-      "backup-freshness": {
-        "title": "备份新鲜度",
-        "description": "备份新鲜度检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "storage-health": {
-        "title": "SMART / RAID / ZFS 健康",
-        "description": "SMART / RAID / ZFS 健康检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "ssh-login-audit": {
-        "title": "SSH 登录审计",
-        "description": "SSH 登录审计检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "kernel-errors": {
-        "title": "OOM 与内核错误",
-        "description": "OOM 与内核错误检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "password-expiry": {
-        "title": "账户密码到期",
-        "description": "账户密码到期检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "log-growth": {
-        "title": "日志膨胀",
-        "description": "日志膨胀检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "docker-cleanup": {
-        "title": "Docker 镜像与卷清理",
-        "description": "Docker 镜像与卷清理检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "listening-ports": {
-        "title": "监听端口变化",
-        "description": "监听端口变化检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "cron-failures": {
-        "title": "cron 与定时任务失败",
-        "description": "cron 与定时任务失败检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "read-only-mounts": {
-        "title": "只读挂载检测",
-        "description": "只读挂载检测检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "kubernetes-health": {
-        "title": "Kubernetes 健康",
-        "description": "Kubernetes 健康检查，默认停用，可修改执行时间与目标主机。"
-      },
-      "gpu-health": {
-        "title": "GPU 健康",
-        "description": "GPU 健康检查，默认停用，可修改执行时间与目标主机。"
       }
     },
     "report": {
@@ -622,14 +573,8 @@
       "noticeProposed": "AI 方案待审批：{{title}}",
       "noticeExecuted": "AI 方案已执行：{{title}}",
       "noticeFailed": "AI 任务失败：{{title}}",
-      "confirmationExpired": "未确认：命令等待超过 24 小时，任务已结束。",
-      "confirmationFailed": "命令确认失败，此命令未执行。",
-      "actionsRecorded": "已执行的操作以命令记录为准。终止任务不会回滚此前的改动。",
       "noticeAssetsAnnotationFailed": "资产标注失败"
-    },
-    "noTasksHint": "启用一个预设，或在自动化里添加 AI 任务步骤，运行记录会显示在这里。",
-    "disable": "停用",
-    "configure": "创建自定义任务"
+    }
   },
   "assets": {
     "title": "资产",
