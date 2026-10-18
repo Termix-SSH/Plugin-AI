@@ -53,7 +53,9 @@ export type AssetService = ReturnType<typeof createAssetService>;
 export function createAssetService(
   ctx: PluginContext,
   repo: AssetRepository,
-  hooks: { afterCollect?: () => Promise<void> } = {},
+  hooks: {
+    afterCollect?: (outcomes: HostOutcome[], userId: string) => Promise<void>;
+  } = {},
 ) {
   let pendingFull: RunTrigger | null = null;
   const pendingHosts = new Set<number>();
@@ -86,7 +88,7 @@ export function createAssetService(
     if (result.timedOut) {
       return { ...outcome, error: `Timed out after ${limits.timeoutSec}s` };
     }
-    const { sections } = splitSections(result.output);
+    const { sections, complete } = splitSections(result.output);
     if (!Object.keys(sections).length) {
       const firstLine = result.output.trim().split("\n")[0] ?? "";
       return {
@@ -94,7 +96,7 @@ export function createAssetService(
         error: `No output (exit ${result.exitCode})${firstLine ? `: ${firstLine.slice(0, 200)}` : ""}`,
       };
     }
-    return { ...outcome, facts: parseSections(sections) };
+    return { ...outcome, facts: parseSections(sections), complete };
   }
 
   /** One run, over every host the collector sees or just `hostIds`. */
@@ -151,7 +153,7 @@ export function createAssetService(
           success: true,
         })
         .catch(() => undefined);
-      await hooks.afterCollect?.();
+      await hooks.afterCollect?.(outcomes, userId);
     } catch (error) {
       ctx.log.warn(`Asset collection failed: ${error}`);
       await repo.finishRun(runId, {

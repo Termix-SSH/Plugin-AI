@@ -1,6 +1,127 @@
 {
   "version": 1,
   "tables": {
+    "exposure_observations": {
+      "columns": {
+        "id": {
+          "type": "varchar",
+          "length": 64,
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hostId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "ownerId": {
+          "type": "varchar",
+          "length": 255,
+          "notNull": true
+        },
+        "source": {
+          "type": "varchar",
+          "length": 32,
+          "notNull": true
+        },
+        "at": {
+          "type": "timestamp",
+          "notNull": true
+        },
+        "payload": {
+          "type": "text",
+          "notNull": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_exposure_observation_source",
+          "columns": [
+            "hostId",
+            "ownerId",
+            "source"
+          ]
+        }
+      ]
+    },
+    "exposure_entries": {
+      "columns": {
+        "key": {
+          "type": "varchar",
+          "length": 64,
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hostId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "ownerId": {
+          "type": "varchar",
+          "length": 255,
+          "notNull": true
+        },
+        "source": {
+          "type": "varchar",
+          "length": 32,
+          "notNull": true
+        },
+        "payload": {
+          "type": "text",
+          "notNull": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_exposure_entry_source",
+          "columns": [
+            "hostId",
+            "ownerId",
+            "source"
+          ]
+        }
+      ]
+    },
+    "exposure_changes": {
+      "columns": {
+        "id": {
+          "type": "varchar",
+          "length": 64,
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hostId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "ownerId": {
+          "type": "varchar",
+          "length": 255,
+          "notNull": true
+        },
+        "at": {
+          "type": "timestamp",
+          "notNull": true
+        },
+        "noticeStatus": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "payload": {
+          "type": "text",
+          "notNull": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_exposure_notices",
+          "columns": [
+            "noticeStatus",
+            "ownerId"
+          ]
+        }
+      ]
+    },
     "providers": {
       "columns": {
         "id": {

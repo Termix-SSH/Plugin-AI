@@ -1,3 +1,7 @@
+import { createExposureExplainer } from "./exposure/explain.js";
+import { createExposureRepository } from "./exposure/repository.js";
+import { createExposureService } from "./exposure/service.js";
+import { registerExposureRoutes } from "./exposure/routes.js";
 import type { Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { hostImportNormalizer } from "./host-import.js";
@@ -84,9 +88,38 @@ export async function activate(ctx: PluginContext) {
     modelInfo,
     collector: () => assets.collector(),
   });
+  const exposureRepository = await createExposureRepository(ctx);
+  const exposure = createExposureService(
+    ctx,
+    exposureRepository,
+    assetRepository,
+  );
   const assets = createAssetService(ctx, assetRepository, {
-    afterCollect: () => annotation.afterCollect(),
+    afterCollect: async (outcomes, userId) => {
+      await exposure.collect(outcomes, userId);
+      await exposure.notify();
+      await annotation.afterCollect();
+    },
   });
+  registerExposureRoutes(
+    router,
+    ctx,
+    exposureRepository,
+    createExposureExplainer(ctx, repository),
+    () => assetRepository.listAssets(),
+  );
+  ctx.schedule.every(60_000, () =>
+    exposure
+      .notify()
+      .catch(() => ctx.log.warn("Exposure notification retry failed")),
+  );
+  ctx.schedule.every(86400_000, async () => {
+    const days = Number(await ctx.settings.get("exposureRetentionDays")) || 90;
+    await exposureRepository
+      .prune(Date.now(), Math.min(365, Math.max(7, days)))
+      .catch(() => ctx.log.warn("Exposure retention failed"));
+  });
+  ctx.disposables.add(() => exposure.close());
   registerAssetRoutes(router, ctx, assetRepository, assets, annotation);
   subscribeHostEvents(ctx, assets);
   ctx.schedule.every(60_000, () =>

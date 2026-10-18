@@ -1,3 +1,4 @@
+import { ExposureView } from "../exposure/ExposureView";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import {
@@ -137,7 +138,7 @@ export function AssetsView() {
   const [running, setRunning] = useState(false);
   const [annotationRuns, setAnnotationRuns] = useState<AnnotationRun[]>([]);
   const [annotating, setAnnotating] = useState(false);
-  const [mode, setMode] = useState<"table" | "graph">("table");
+  const [mode, setMode] = useState<"table" | "graph" | "exposure">("table");
   const [refreshKey, setRefreshKey] = useState(0);
   const [query, setQuery] = useState("");
   const [zone, setZone] = useState("");
@@ -328,12 +329,13 @@ export function AssetsView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-end gap-2 border-b border-border px-3 py-2">
-        <Segmented<"table" | "graph">
+        <Segmented<"table" | "graph" | "exposure">
           value={mode}
           onChange={setMode}
           options={[
             { value: "table", label: t("assets.modeTable") },
             { value: "graph", label: t("assets.modeGraph") },
+            { value: "exposure", label: t("exposure.title") },
           ]}
           className="mb-1"
         />
@@ -399,6 +401,9 @@ export function AssetsView() {
           {error}
         </p>
       )}
+      {mode === "exposure" && (
+        <ExposureView canManage={canManage} refreshKey={refreshKey} />
+      )}
       {mode === "graph" && (
         <GraphView
           rules={rules}
@@ -409,7 +414,7 @@ export function AssetsView() {
       )}
       <div
         className={
-          mode === "graph" ? "hidden" : "min-h-0 flex-1 overflow-y-auto"
+          mode !== "table" ? "hidden" : "min-h-0 flex-1 overflow-y-auto"
         }
       >
         <DataView

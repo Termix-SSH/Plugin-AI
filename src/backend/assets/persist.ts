@@ -28,6 +28,7 @@ export interface HostOutcome {
   address: string;
   facts?: CollectedHost["facts"];
   error?: string;
+  complete?: boolean;
 }
 
 type Rules = ReturnType<typeof compileRules>;

@@ -1,0 +1,37 @@
+[
+  {
+    "sample": 1,
+    "expected": 35,
+    "text": "udp UNCONN 0 128 0.0.0.0:5355 *:*\nudp UNCONN 0 128 0.0.0.0:51820 *:*\nudp UNCONN 0 128 127.0.0.1:53 *:*\nudp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 :::5355 *:*\nudp UNCONN 0 128 :::51820 *:*\nudp UNCONN 0 128 *:7890 *:*\nudp UNCONN 0 128 *:37662 *:*\nudp UNCONN 0 128 *:34665 *:*\nudp UNCONN 0 128 *:1053 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 0.0.0.0:22 *:*\ntcp LISTEN 0 128 0.0.0.0:5355 *:*\ntcp LISTEN 0 128 0.0.0.0:24018 *:*\ntcp LISTEN 0 128 0.0.0.0:24017 *:*\ntcp LISTEN 0 128 0.0.0.0:24014 *:*\ntcp LISTEN 0 128 0.0.0.0:24012 *:*\ntcp LISTEN 0 128 0.0.0.0:24011 *:*\ntcp LISTEN 0 128 0.0.0.0:24010 *:*\ntcp LISTEN 0 128 0.0.0.0:24009 *:*\ntcp LISTEN 0 128 0.0.0.0:24008 *:*\ntcp LISTEN 0 128 0.0.0.0:24007 *:*\ntcp LISTEN 0 128 0.0.0.0:24006 *:*\ntcp LISTEN 0 128 0.0.0.0:24005 *:*\ntcp LISTEN 0 128 0.0.0.0:24004 *:*\ntcp LISTEN 0 128 0.0.0.0:24003 *:*\ntcp LISTEN 0 128 0.0.0.0:24002 *:*\ntcp LISTEN 0 128 0.0.0.0:24001 *:*\ntcp LISTEN 0 128 127.0.0.1:53 *:*\ntcp LISTEN 0 128 *:7890 *:*\ntcp LISTEN 0 128 *:9100 *:*\ntcp LISTEN 0 128 *:9090 *:*\ntcp LISTEN 0 128 *:1053 *:*\ntcp LISTEN 0 128 :::22 *:*\ntcp LISTEN 0 128 :::5355 *:*"
+  },
+  {
+    "sample": 2,
+    "expected": 11,
+    "text": "udp UNCONN 0 128 127.0.0.1:53 *:*\nudp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 0.0.0.0:5355 *:*\nudp UNCONN 0 128 :::5355 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 10.20.0.3:8080 *:*\ntcp LISTEN 0 128 0.0.0.0:5355 *:*\ntcp LISTEN 0 128 0.0.0.0:22 *:*\ntcp LISTEN 0 128 127.0.0.1:53 *:*\ntcp LISTEN 0 128 :::5355 *:*\ntcp LISTEN 0 128 :::22 *:*"
+  },
+  {
+    "sample": 3,
+    "expected": 16,
+    "text": "udp UNCONN 0 128 127.0.0.1:53 *:*\nudp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 0.0.0.0:41641 *:*\nudp UNCONN 0 128 0.0.0.0:5355 *:*\nudp UNCONN 0 128 :::41641 *:*\nudp UNCONN 0 128 :::5355 *:*\ntcp LISTEN 0 128 127.0.0.1:53 *:*\ntcp LISTEN 0 128 0.0.0.0:5000 *:*\ntcp LISTEN 0 128 0.0.0.0:5355 *:*\ntcp LISTEN 0 128 0.0.0.0:22 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 127.0.0.1:3306 *:*\ntcp LISTEN 0 128 :::5000 *:*\ntcp LISTEN 0 128 :::5355 *:*\ntcp LISTEN 0 128 :::22 *:*\ntcp LISTEN 0 128 *:80 *:*"
+  },
+  {
+    "sample": 4,
+    "expected": 16,
+    "text": "udp UNCONN 0 128 0.0.0.0:5355 *:*\nudp UNCONN 0 128 127.0.0.1:53 *:*\nudp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 0.0.0.0:41641 *:*\nudp UNCONN 0 128 :::5355 *:*\nudp UNCONN 0 128 :::41641 *:*\ntcp LISTEN 0 128 127.0.0.1:53 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 0.0.0.0:5432 *:*\ntcp LISTEN 0 128 0.0.0.0:5355 *:*\ntcp LISTEN 0 128 127.0.0.1:8080 *:*\ntcp LISTEN 0 128 0.0.0.0:80 *:*\ntcp LISTEN 0 128 0.0.0.0:22 *:*\ntcp LISTEN 0 128 :::5432 *:*\ntcp LISTEN 0 128 :::5355 *:*\ntcp LISTEN 0 128 :::22 *:*"
+  },
+  {
+    "sample": 5,
+    "expected": 23,
+    "text": "udp UNCONN 0 128 *:28848 *:*\nudp UNCONN 0 128 *:443 *:*\ntcp LISTEN 0 128 127.0.0.1:2019 *:*\ntcp LISTEN 0 128 127.0.0.1:25 *:*\ntcp LISTEN 0 128 0.0.0.0:3080 *:*\ntcp LISTEN 0 128 0.0.0.0:3001 *:*\ntcp LISTEN 0 128 0.0.0.0:9443 *:*\ntcp LISTEN 0 128 0.0.0.0:9000 *:*\ntcp LISTEN 0 128 127.0.0.1:20241 *:*\ntcp LISTEN 0 128 10.20.0.5:18084 *:*\ntcp LISTEN 0 128 10.20.0.5:18010 *:*\ntcp LISTEN 0 128 10.20.0.5:18008 *:*\ntcp LISTEN 0 128 10.20.0.5:18018 *:*\ntcp LISTEN 0 128 *:80 *:*\ntcp LISTEN 0 128 *:22 *:*\ntcp LISTEN 0 128 *:443 *:*\ntcp LISTEN 0 128 :::3080 *:*\ntcp LISTEN 0 128 :::3001 *:*\ntcp LISTEN 0 128 ::1:25 *:*\ntcp LISTEN 0 128 :::9443 *:*\ntcp LISTEN 0 128 *:9100 *:*\ntcp LISTEN 0 128 :::9000 *:*\ntcp LISTEN 0 128 *:28848 *:*"
+  },
+  {
+    "sample": 6,
+    "expected": 62,
+    "text": "udp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 0.0.0.0:41641 *:*\nudp UNCONN 0 128 :::41641 *:*\ntcp LISTEN 0 128 127.0.0.1:8222 *:*\ntcp LISTEN 0 128 127.0.0.1:12400 *:*\ntcp LISTEN 0 128 127.0.0.1:12403 *:*\ntcp LISTEN 0 128 127.0.0.1:12404 *:*\ntcp LISTEN 0 128 127.0.0.1:12405 *:*\ntcp LISTEN 0 128 127.0.0.1:12406 *:*\ntcp LISTEN 0 128 127.0.0.1:12407 *:*\ntcp LISTEN 0 128 127.0.0.1:12408 *:*\ntcp LISTEN 0 128 127.0.0.1:12409 *:*\ntcp LISTEN 0 128 127.0.0.1:12410 *:*\ntcp LISTEN 0 128 127.0.0.1:12412 *:*\ntcp LISTEN 0 128 127.0.0.1:12413 *:*\ntcp LISTEN 0 128 127.0.0.1:12414 *:*\ntcp LISTEN 0 128 127.0.0.1:4222 *:*\ntcp LISTEN 0 128 127.0.0.1:12415 *:*\ntcp LISTEN 0 128 127.0.0.1:12416 *:*\ntcp LISTEN 0 128 127.0.0.1:12500 *:*\ntcp LISTEN 0 128 10.20.0.7:43636 *:*\ntcp LISTEN 0 128 0.0.0.0:28080 *:*\ntcp LISTEN 0 128 0.0.0.0:56730 *:*\ntcp LISTEN 0 128 0.0.0.0:56822 *:*\ntcp LISTEN 0 128 127.0.0.1:22400 *:*\ntcp LISTEN 0 128 127.0.0.1:22410 *:*\ntcp LISTEN 0 128 127.0.0.1:22411 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 0.0.0.0:8888 *:*\ntcp LISTEN 0 128 127.0.0.1:2380 *:*\ntcp LISTEN 0 128 0.0.0.0:28888 *:*\ntcp LISTEN 0 128 0.0.0.0:12349 *:*\ntcp LISTEN 0 128 0.0.0.0:12348 *:*\ntcp LISTEN 0 128 0.0.0.0:12345 *:*\ntcp LISTEN 0 128 0.0.0.0:12347 *:*\ntcp LISTEN 0 128 0.0.0.0:12346 *:*\ntcp LISTEN 0 128 10.20.0.7:5403 *:*\ntcp LISTEN 0 128 0.0.0.0:80 *:*\ntcp LISTEN 0 128 0.0.0.0:443 *:*\ntcp LISTEN 0 128 0.0.0.0:18081 *:*\ntcp LISTEN 0 128 0.0.0.0:18080 *:*\ntcp LISTEN 0 128 0.0.0.0:18083 *:*\ntcp LISTEN 0 128 0.0.0.0:22221 *:*\ntcp LISTEN 0 128 0.0.0.0:22220 *:*\ntcp LISTEN 0 128 127.0.0.1:40122 *:*\ntcp LISTEN 0 128 127.0.0.1:27821 *:*\ntcp LISTEN 0 128 127.0.0.1:28084 *:*\ntcp LISTEN 0 128 127.0.0.1:24019 *:*\ntcp LISTEN 0 128 127.0.0.1:24020 *:*\ntcp LISTEN 0 128 127.0.0.1:24021 *:*\ntcp LISTEN 0 128 *:6222 *:*\ntcp LISTEN 0 128 *:2379 *:*\ntcp LISTEN 0 128 :::56822 *:*\ntcp LISTEN 0 128 :::8888 *:*\ntcp LISTEN 0 128 fd00::8:61171 *:*\ntcp LISTEN 0 128 :::12349 *:*\ntcp LISTEN 0 128 :::12348 *:*\ntcp LISTEN 0 128 :::12345 *:*\ntcp LISTEN 0 128 :::12347 *:*\ntcp LISTEN 0 128 :::12346 *:*\ntcp LISTEN 0 128 :::80 *:*\ntcp LISTEN 0 128 :::443 *:*"
+  },
+  {
+    "sample": 7,
+    "expected": 30,
+    "text": "udp UNCONN 0 128 127.0.0.1:53 *:*\nudp UNCONN 0 128 127.0.0.1%lo:53 *:*\nudp UNCONN 0 128 0.0.0.0:8472 *:*\nudp UNCONN 0 128 0.0.0.0:41641 *:*\nudp UNCONN 0 128 0.0.0.0:5355 *:*\nudp UNCONN 0 128 :::41641 *:*\nudp UNCONN 0 128 :::5355 *:*\ntcp LISTEN 0 128 10.20.0.9:2380 *:*\ntcp LISTEN 0 128 10.20.0.9:2379 *:*\ntcp LISTEN 0 128 127.0.0.1:10010 *:*\ntcp LISTEN 0 128 0.0.0.0:5355 *:*\ntcp LISTEN 0 128 127.0.0.1:10256 *:*\ntcp LISTEN 0 128 127.0.0.1:10257 *:*\ntcp LISTEN 0 128 127.0.0.1:10258 *:*\ntcp LISTEN 0 128 127.0.0.1:10259 *:*\ntcp LISTEN 0 128 127.0.0.1:10248 *:*\ntcp LISTEN 0 128 127.0.0.1:10249 *:*\ntcp LISTEN 0 128 127.0.0.1:2380 *:*\ntcp LISTEN 0 128 127.0.0.1:2381 *:*\ntcp LISTEN 0 128 127.0.0.1:2382 *:*\ntcp LISTEN 0 128 127.0.0.1:2379 *:*\ntcp LISTEN 0 128 127.0.0.1%lo:53 *:*\ntcp LISTEN 0 128 127.0.0.1:6444 *:*\ntcp LISTEN 0 128 127.0.0.1:53 *:*\ntcp LISTEN 0 128 0.0.0.0:22 *:*\ntcp LISTEN 0 128 :::5355 *:*\ntcp LISTEN 0 128 *:9100 *:*\ntcp LISTEN 0 128 *:6443 *:*\ntcp LISTEN 0 128 *:10250 *:*\ntcp LISTEN 0 128 :::22 *:*"
+  }
+]

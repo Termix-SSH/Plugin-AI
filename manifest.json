@@ -345,6 +345,15 @@
           "labelKey": "settings.admin.assetsAnnotateModel.label",
           "default": "",
           "hidden": true
+        },
+        {
+          "key": "exposureRetentionDays",
+          "type": "number",
+          "labelKey": "settings.admin.exposureRetentionDays.label",
+          "descriptionKey": "settings.admin.exposureRetentionDays.description",
+          "default": 90,
+          "min": 7,
+          "max": 365
         }
       ],
       "user": [

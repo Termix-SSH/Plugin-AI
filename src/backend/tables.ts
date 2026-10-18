@@ -507,7 +507,64 @@ export const zones = defineTable("zones", {
   createdAt: timestamp().notNull().defaultNow(),
 });
 
+export const exposureObservations = defineTable(
+  "exposure_observations",
+  {
+    id: varchar(64).primaryKey(),
+    hostId: integer().notNull(),
+    ownerId: varchar(255).notNull(),
+    source: varchar(32).notNull(),
+    at: timestamp().notNull(),
+    payload: text().notNull(),
+  },
+  {
+    indexes: [
+      {
+        name: "idx_ai_exposure_observation_source",
+        columns: ["hostId", "ownerId", "source"],
+      },
+    ],
+  },
+);
+export const exposureEntries = defineTable(
+  "exposure_entries",
+  {
+    key: varchar(64).primaryKey(),
+    hostId: integer().notNull(),
+    ownerId: varchar(255).notNull(),
+    source: varchar(32).notNull(),
+    payload: text().notNull(),
+  },
+  {
+    indexes: [
+      {
+        name: "idx_ai_exposure_entry_source",
+        columns: ["hostId", "ownerId", "source"],
+      },
+    ],
+  },
+);
+export const exposureChanges = defineTable(
+  "exposure_changes",
+  {
+    id: varchar(64).primaryKey(),
+    hostId: integer().notNull(),
+    ownerId: varchar(255).notNull(),
+    at: timestamp().notNull(),
+    noticeStatus: varchar(16).notNull(),
+    payload: text().notNull(),
+  },
+  {
+    indexes: [
+      { name: "idx_ai_exposure_notices", columns: ["noticeStatus", "ownerId"] },
+    ],
+  },
+);
+
 export const tables = [
+  exposureObservations,
+  exposureEntries,
+  exposureChanges,
   providers,
   conversations,
   messages,
