@@ -1,7 +1,9 @@
-import { assertOk, joinUrl, readSseLines } from "./http.js";
+import { assertOk, firstCount, joinUrl, readSseLines } from "./http.js";
+import { createThinkSplitter } from "./think-tags.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
   ToolCall,
@@ -33,6 +35,11 @@ function toOpenAiMessages(request: ChatRequest): unknown[] {
       messages.push({
         role: "assistant",
         content: message.content || null,
+        // Reasoning endpoints (DeepSeek, GLM) want this run's thinking back
+        // with its tool calls; reasoningState is only set within the run.
+        ...(message.reasoningState?.length
+          ? (message.reasoningState[0] as object)
+          : {}),
         tool_calls: message.toolCalls.map((call) => ({
           id: call.id,
           type: "function",
@@ -73,33 +80,63 @@ export const openAiAdapter: ProviderAdapter = {
     };
     if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
 
-    const response = await config.fetch(url, {
-      method: "POST",
-      headers,
-      signal: request.signal,
-      body: JSON.stringify({
-        model: request.model,
-        messages: toOpenAiMessages(request),
-        stream: true,
-        ...(request.tools.length
-          ? {
-              tools: request.tools.map((tool) => ({
-                type: "function",
-                function: {
-                  name: tool.name,
-                  description: tool.description,
-                  parameters: tool.parameters,
-                },
-              })),
-            }
-          : {}),
-      }),
-    });
+    const body = {
+      model: request.model,
+      messages: toOpenAiMessages(request),
+      stream: true,
+      // Asks for a final usage chunk. A compatible server that rejects the
+      // option is asked again without it.
+      stream_options: { include_usage: true },
+      // OpenAI's own API refuses max_tokens for its reasoning models;
+      // compatible servers (vLLM, LM Studio, Groq, OpenRouter) know max_tokens.
+      ...(request.maxTokens
+        ? config.providerType === "openai"
+          ? { max_completion_tokens: request.maxTokens }
+          : { max_tokens: request.maxTokens }
+        : {}),
+      ...(request.tools.length
+        ? {
+            tools: request.tools.map((tool) => ({
+              type: "function",
+              function: {
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.parameters,
+              },
+            })),
+          }
+        : {}),
+    };
+    const post = (payload: object) =>
+      config.fetch(url, {
+        method: "POST",
+        headers,
+        signal: request.signal,
+        body: JSON.stringify(payload),
+      });
+
+    let response = await post(body);
+    if (response.status === 400 || response.status === 422) {
+      const detail = await response.text().catch(() => "");
+      if (/stream_options/i.test(detail)) {
+        const { stream_options: _dropped, ...rest } = body;
+        response = await post(rest);
+      } else {
+        response = new Response(detail, {
+          status: response.status,
+          statusText: response.statusText,
+        });
+      }
+    }
 
     await assertOk(response, "OpenAI");
 
     const partial = new Map<number, PartialCall>();
+    const think = createThinkSplitter();
     let stopReason: string | undefined;
+    let usage: { prompt_tokens?: number; completion_tokens?: number } | null =
+      null;
+    let reasoning = "";
 
     for await (const data of readSseLines(response)) {
       if (data === "[DONE]") break;
@@ -111,6 +148,10 @@ export const openAiAdapter: ProviderAdapter = {
         continue;
       }
 
+      // The usage chunk has no choices; some servers put usage on the last
+      // content chunk instead, or on every chunk as a running total.
+      if (frame.usage) usage = frame.usage;
+
       const choice = frame.choices?.[0];
       if (!choice) continue;
 
@@ -119,8 +160,16 @@ export const openAiAdapter: ProviderAdapter = {
       const delta = choice.delta;
       if (!delta) continue;
 
+      // DeepSeek and GLM send reasoning_content, OpenRouter and Ollama's
+      // OpenAI endpoint send reasoning.
+      const thought = delta.reasoning_content ?? delta.reasoning;
+      if (typeof thought === "string" && thought) {
+        reasoning += thought;
+        yield { type: "reasoning", text: thought };
+      }
+
       if (typeof delta.content === "string" && delta.content) {
-        yield { type: "text", text: delta.content };
+        yield* think.push(delta.content);
       }
 
       for (const call of delta.tool_calls ?? []) {
@@ -133,31 +182,83 @@ export const openAiAdapter: ProviderAdapter = {
       }
     }
 
+    yield* think.flush();
+
     for (const call of partial.values()) {
       if (!call.name) continue;
       yield { type: "tool_call", call: finalizeCall(call) };
+    }
+
+    if (reasoning) {
+      yield {
+        type: "reasoning_state",
+        blocks: [{ reasoning_content: reasoning }],
+      };
+    }
+    if (usage) {
+      yield {
+        type: "usage",
+        usage: {
+          promptTokens: Number(usage.prompt_tokens) || 0,
+          completionTokens: Number(usage.completion_tokens) || 0,
+        },
+      };
     }
 
     yield { type: "done", stopReason };
   },
 
   async listModels(config: ProviderConfig): Promise<string[]> {
-    const headers: Record<string, string> = {};
-    if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
-
-    const response = await config.fetch(joinUrl(baseFor(config), "models"), {
-      method: "GET",
-      headers,
-    });
-    await assertOk(response, "OpenAI");
-
-    const body: any = await response.json();
-    return (body.data ?? [])
+    return (await fetchModels(config))
       .map((entry: any) => entry.id)
       .filter((id: unknown): id is string => typeof id === "string")
       .sort();
   },
+
+  /**
+   * Read from the same model list. Servers name the window differently:
+   * vLLM and SGLang max_model_len, OpenRouter and LM Studio context_length,
+   * Groq and Together context_window.
+   */
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    const entry = (await fetchModels(config)).find(
+      (candidate: any) => candidate?.id === model,
+    );
+    if (!entry) return {};
+    return {
+      contextWindow: firstCount(
+        entry.max_model_len,
+        entry.context_length,
+        entry.top_provider?.context_length,
+        entry.context_window,
+        entry.max_context_length,
+        entry.input_token_limit,
+      ),
+      maxOutputTokens: firstCount(
+        entry.top_provider?.max_completion_tokens,
+        entry.max_completion_tokens,
+        entry.max_output_tokens,
+      ),
+    };
+  },
 };
+
+async function fetchModels(config: ProviderConfig): Promise<any[]> {
+  const headers: Record<string, string> = {};
+  if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
+
+  const response = await config.fetch(joinUrl(baseFor(config), "models"), {
+    method: "GET",
+    headers,
+  });
+  await assertOk(response, "OpenAI");
+
+  const body: any = await response.json();
+  return Array.isArray(body.data) ? body.data : [];
+}
 
 function finalizeCall(call: PartialCall): ToolCall {
   let args: Record<string, unknown> = {};

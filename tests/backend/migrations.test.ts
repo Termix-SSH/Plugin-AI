@@ -52,10 +52,13 @@ describe("ai adoption migration", () => {
       "p_ai_agent_events",
       "p_ai_agent_queue",
       "p_ai_agent_sessions",
+      "p_ai_cli_runs",
       "p_ai_conversations",
       "p_ai_messages",
+      "p_ai_ops_runs",
       "p_ai_proposals",
       "p_ai_providers",
+      "p_ai_usage",
     ]);
 
     const provider = db.sqlite
@@ -92,10 +95,13 @@ describe("ai adoption migration", () => {
       "p_ai_agent_events",
       "p_ai_agent_queue",
       "p_ai_agent_sessions",
+      "p_ai_cli_runs",
       "p_ai_conversations",
       "p_ai_messages",
+      "p_ai_ops_runs",
       "p_ai_proposals",
       "p_ai_providers",
+      "p_ai_usage",
     ]);
     const columns = (
       db.sqlite.prepare("PRAGMA table_info(p_ai_providers)").all() as Array<{

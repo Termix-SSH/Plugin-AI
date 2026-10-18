@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Stuur",
     "stop": "Stop",
     "save": "Stoor",
@@ -58,9 +57,7 @@
     "running": "loop",
     "approve": "Goedgekeur",
     "reject": "Verwerp",
-    "inputPlaceholder": "Vra oor jou bedieners, of beskryf 'n verandering om voor te stel",
     "selectProvider": "Kies 'n verskaffer",
-    "providerSettings": "Verskaffer-instellings",
     "addProvider": "Voeg verskaffer by",
     "editProvider": "Redigeer verskaffer",
     "removeProvider": "Verwyder verskaffer",
@@ -95,7 +92,6 @@
     "modelCustom": "Voer 'n modelnaam in",
     "modelRefresh": "Vernuwe lys",
     "modelPlaceholder": "Kies of tik 'n model",
-    "attachHint": "Tik @ om verwysing te maak na 'n gasheer, kodefragment of outomatisering. Veranderinge word voorgestel vir jou goedkeuring.",
     "runCommandTitle": "Voer opdrag uit",
     "assistant": "AI-assistent",
     "terminalPanelEmpty": "Vra die assistent oor hierdie gasheer. Enige ding wat die toestand verander, benodig eers jou goedkeuring.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Skakel dit aan",
     "aiEnableDesc": "Voeg 'n assistent by wat jou opstelling lees en veranderinge voorstel wat jy goedkeur. Benodig 'n verskaffer wat jy verskaf, soos 'n plaaslike Ollama.",
     "aiNote": "Niets word enige plek gestuur nie totdat jy 'n verskaffer byvoeg en 'n boodskap stuur."
-  },
-  "hosts": {
-    "docsLink": "Bekyk dokumentasie"
   },
   "agents": {
     "working": "Besig...",

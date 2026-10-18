@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Senden",
     "stop": "Stoppen",
     "save": "Speichern",
@@ -58,9 +57,7 @@
     "running": "läuft",
     "approve": "Genehmigen",
     "reject": "Ablehnen",
-    "inputPlaceholder": "Fragen Sie nach Ihren Servern oder beschreiben Sie eine Änderung, die vorgeschlagen werden soll",
     "selectProvider": "Wählen Sie einen Anbieter aus",
-    "providerSettings": "Anbieter-Einstellungen",
     "addProvider": "Anbieter hinzufügen",
     "editProvider": "Anbieter bearbeiten",
     "removeProvider": "Anbieter entfernen",
@@ -95,7 +92,6 @@
     "modelCustom": "Modellnamen eingeben",
     "modelRefresh": "Liste aktualisieren",
     "modelPlaceholder": "Modell auswählen oder eingeben",
-    "attachHint": "Tippe @, um einen Host, einen Snippet oder eine Automatisierung zu referenzieren. Änderungen werden dir zur Genehmigung vorgeschlagen.",
     "runCommandTitle": "Befehl ausführen",
     "assistant": "KI-Assistent",
     "terminalPanelEmpty": "Frag den Assistenten über diesen Host. Alles, was den Zustand verändert, benötigt zuerst deine Genehmigung.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Einschalten",
     "aiEnableDesc": "Fügt einen Assistenten hinzu, der deine Einrichtung liest und Änderungen vorschlägt, die du genehmigst. Benötigt einen von dir bereitgestellten Anbieter, wie z.B. ein lokales Ollama.",
     "aiNote": "Es wird nichts irgendwohin gesendet, bis du einen Anbieter hinzufügst und eine Nachricht sendest."
-  },
-  "hosts": {
-    "docsLink": "Dokumentation ansehen"
   },
   "agents": {
     "working": "Arbeite...",

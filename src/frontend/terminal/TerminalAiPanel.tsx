@@ -42,10 +42,9 @@ interface TerminalAiPanelProps {
 }
 
 /**
- * A slimmed-down version of AiPanel docked to a terminal tab. Same backend
- * (/ai/chat/stream, propose_run_command, ProposalCard) as the main assistant,
- * so it respects the same admin/user gates and never runs a command without
- * an explicit approve.
+ * The chat docked to a terminal tab. It uses /ai/chat/stream with its read
+ * and propose tools (propose_run_command, ProposalCard), so it respects the
+ * admin/user gates and never runs a command without an explicit approve.
  */
 export function TerminalAiPanel({
   hostLabel,

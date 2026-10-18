@@ -25,8 +25,8 @@ interface TerminalProposalCardProps {
 /**
  * A run_command proposal in the terminal-docked assistant runs in the user's
  * already-open session instead of a hidden pooled connection, so approving it
- * here is a different action from the main AiPanel's apply button. Every
- * other proposal kind still goes through the normal apply flow.
+ * here is a different action from ProposalCard's apply button. Every other
+ * proposal kind still goes through the normal apply flow.
  */
 export function TerminalProposalCard({
   proposal,

@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistan",
     "send": "Gönder",
     "stop": "Durdur",
     "save": "Kaydet",
@@ -58,9 +57,7 @@
     "running": "çalışıyor",
     "approve": "Onayla",
     "reject": "Reddet",
-    "inputPlaceholder": "Sunucularınız hakkında sorun veya önerilecek bir değişikliği açıklayın",
     "selectProvider": "Bir sağlayıcı seçin",
-    "providerSettings": "Sağlayıcı ayarları",
     "addProvider": "Sağlayıcı ekle",
     "editProvider": "Sağlayıcıyı düzenle",
     "removeProvider": "Sağlayıcıyı kaldır",
@@ -95,7 +92,6 @@
     "modelCustom": "Bir model adı girin",
     "modelRefresh": "Listeyi yenile",
     "modelPlaceholder": "Bir model seçin veya yazın",
-    "attachHint": "Bir ana bilgisayar, komut parçacığı veya otomasyona atıfta bulunmak için @ yazın. Değişiklikler onayınız için önerilir.",
     "runCommandTitle": "Komutu çalıştır",
     "assistant": "Yapay Zeka Asistanı",
     "terminalPanelEmpty": "Bu ana bilgisayar hakkında asistandan bilgi alın. Durum değiştiren her şey önce sizin onayınızı gerektirir.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Açın",
     "aiEnableDesc": "Kurulumunuzu okuyan ve onayladığınız değişiklikleri öneren bir asistan ekler. Yerel bir Ollama gibi sizin sağladığınız bir sağlayıcı gerektirir.",
     "aiNote": "Bir sağlayıcı ekleyip mesaj gönderene kadar hiçbir yerlere veri gönderilmez."
-  },
-  "hosts": {
-    "docsLink": "Dokümanları görüntüle"
   },
   "agents": {
     "working": "Çalışıyor...",

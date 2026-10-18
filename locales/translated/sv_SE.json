@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Skicka",
     "stop": "Stoppa",
     "save": "Spara",
@@ -58,9 +57,7 @@
     "running": "kör",
     "approve": "Godkänn",
     "reject": "Avvisa",
-    "inputPlaceholder": "Fråga om dina servrar eller beskriv en ändring att föreslå",
     "selectProvider": "Välj en leverantör",
-    "providerSettings": "Leverantörsinställningar",
     "addProvider": "Lägg till leverantör",
     "editProvider": "Redigera leverantör",
     "removeProvider": "Ta bort leverantör",
@@ -95,7 +92,6 @@
     "modelCustom": "Ange ett modellnamn",
     "modelRefresh": "Uppdatera lista",
     "modelPlaceholder": "Välj eller skriv en modell",
-    "attachHint": "Skriv @ för att referera till en värd, ett fragment eller en automatisering. Ändringar föreslås för att du ska godkänna dem.",
     "runCommandTitle": "Kör kommando",
     "assistant": "AI-assistent",
     "terminalPanelEmpty": "Fråga assistenten om denna värd. Allt som ändrar tillståndet kräver ditt godkännande först.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Aktivera den",
     "aiEnableDesc": "Lägger till en assistent som läser din konfiguration och föreslår ändringar som du godkänner. Kräver en leverantör som du tillhandahåller, till exempel en lokal Ollama.",
     "aiNote": "Inget skickas någonstans förrän du lägger till en leverantör och skickar ett meddelande."
-  },
-  "hosts": {
-    "docsLink": "Visa dokumentation"
   },
   "agents": {
     "working": "Arbetar...",

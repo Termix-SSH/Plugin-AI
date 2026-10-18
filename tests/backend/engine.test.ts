@@ -8,7 +8,8 @@ vi.mock("../../src/backend/providers/registry.js", () => ({
   getAdapter: () => ({ streamChat, listModels: async () => [] }),
 }));
 
-const { runAgent } = await import("../../src/backend/engine.js");
+const { MAX_REPLY_TOKENS, REPEAT_LIMIT, runAgent } =
+  await import("../../src/backend/engine.js");
 
 function chunks(...values: ChatChunk[]) {
   return (async function* () {
@@ -60,6 +61,23 @@ describe("runAgent", () => {
 
     expect(events.filter((e) => e.type === "token")).toHaveLength(1);
     expect(events.at(-1).type).toBe("done");
+  });
+
+  it("caps every reply, so a looping model cannot stream forever", async () => {
+    // In real use one call streamed 1.9 MB over 40 minutes.
+    streamChat.mockReturnValueOnce(chunks({ type: "done" }));
+    await collect();
+    expect(streamChat.mock.calls[0][1].maxTokens).toBe(MAX_REPLY_TOKENS);
+
+    streamChat.mockReturnValueOnce(chunks({ type: "done" }));
+    for await (const _ of runAgent({
+      ...BASE,
+      history: [],
+      maxReplyTokens: 2048,
+    })) {
+      // drain
+    }
+    expect(streamChat.mock.calls[1][1].maxTokens).toBe(2048);
   });
 
   it("runs a known tool and feeds the result back", async () => {
@@ -182,8 +200,76 @@ describe("runAgent", () => {
     });
   });
 
-  it("stops after too many tool turns", async () => {
+  it("has no step limit while the model makes progress", async () => {
+    let count = 0;
+    handler.mockImplementation(async () => ({ seen: count++ }));
+    let turn = 0;
+    streamChat.mockImplementation(() =>
+      turn++ < 30
+        ? chunks(
+            {
+              type: "tool_call",
+              call: { id: `c${turn}`, name: "list_hosts", arguments: {} },
+            },
+            { type: "done" },
+          )
+        : chunks({ type: "text", text: "all done" }, { type: "done" }),
+    );
+
+    const events = await collect();
+
+    expect(streamChat).toHaveBeenCalledTimes(31);
+    expect(events.some((e) => e.type === "error")).toBe(false);
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+
+  it("stops a loop that repeats the same call with the same result", async () => {
     handler.mockResolvedValue({ ok: true });
+    streamChat.mockImplementation(() =>
+      chunks(
+        {
+          type: "tool_call",
+          call: { id: "c", name: "list_hosts", arguments: { tag: "prod" } },
+        },
+        { type: "done" },
+      ),
+    );
+
+    const events = await collect();
+
+    expect(streamChat).toHaveBeenCalledTimes(REPEAT_LIMIT);
+    expect(events.at(-1)).toMatchObject({ type: "error" });
+    expect(events.at(-1).message).toContain("list_hosts");
+    expect(events.at(-1).message).toContain("same arguments");
+  });
+
+  it("does not count a repeat broken by different arguments", async () => {
+    handler.mockResolvedValue({ ok: true });
+    let turn = 0;
+    streamChat.mockImplementation(() =>
+      turn++ < 8
+        ? chunks(
+            {
+              type: "tool_call",
+              call: {
+                id: `c${turn}`,
+                name: "list_hosts",
+                arguments: { page: turn % 2 },
+              },
+            },
+            { type: "done" },
+          )
+        : chunks({ type: "text", text: "ok" }, { type: "done" }),
+    );
+
+    const events = await collect();
+
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+
+  it("takes the turn limit from the caller", async () => {
+    let count = 0;
+    handler.mockImplementation(async () => ({ seen: count++ }));
     streamChat.mockImplementation(() =>
       chunks(
         {
@@ -194,11 +280,20 @@ describe("runAgent", () => {
       ),
     );
 
-    const events = await collect();
+    const events: Array<{ type: string; message?: unknown }> = [];
+    for await (const event of runAgent({
+      ...BASE,
+      history: [],
+      maxTurns: 8,
+    })) {
+      events.push(event);
+    }
 
-    // A model that never stops calling tools must not spin forever.
-    expect(events.at(-1)).toMatchObject({ type: "error" });
-    expect(streamChat.mock.calls.length).toBeLessThanOrEqual(8);
+    expect(events.at(-1)).toMatchObject({
+      type: "error",
+      message: "The assistant used too many steps without finishing.",
+    });
+    expect(streamChat).toHaveBeenCalledTimes(8);
   });
 
   it("emits every message it adds so the caller can store the run", async () => {

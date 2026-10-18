@@ -27,6 +27,15 @@ const TOOL_LABELS: Record<string, string> = {
   propose_create_automation: "Create automation",
   propose_create_fleet: "Create fleet",
   propose_run_command: "Run command",
+  list_targets: "Reading targets",
+  run_command: "Running command",
+  get_host_facts: "Reading host facts",
+  termix: "Running Termix CLI",
+  set_targets: "Setting targets",
+  open_host_terminal: "Opening terminal",
+  open_tab: "Opening tab",
+  open_settings: "Opening settings",
+  open_plugin_view: "Opening view",
 };
 
 /** Readable names for the payload keys the propose tools emit. */
@@ -51,12 +60,6 @@ const FIELD_LABELS: Record<string, string> = {
   cooldownMinutes: "Cooldown (minutes)",
 };
 
-const MENTION_LABELS: Record<string, string> = {
-  host: "Host",
-  snippet: "Snippet",
-  automation: "Automation",
-};
-
 /**
  * Splits snake_case and camelCase into words and capitalises the first.
  * Used whenever an identifier has no explicit label, so something added later
@@ -77,8 +80,4 @@ export function toolLabel(name: string): string {
 
 export function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? humanize(key);
-}
-
-export function mentionLabel(kind: string): string {
-  return MENTION_LABELS[kind] ?? humanize(kind);
 }

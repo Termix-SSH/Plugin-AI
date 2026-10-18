@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asisten",
     "send": "Kirim",
     "stop": "Berhenti",
     "save": "Simpan",
@@ -58,9 +57,7 @@
     "running": "sedang berjalan",
     "approve": "Setujui",
     "reject": "Tolak",
-    "inputPlaceholder": "Tanyakan tentang server Anda, atau jelaskan perubahan untuk diusulkan",
     "selectProvider": "Pilih penyedia",
-    "providerSettings": "Pengaturan penyedia",
     "addProvider": "Tambah penyedia",
     "editProvider": "Edit penyedia",
     "removeProvider": "Hapus penyedia",
@@ -95,7 +92,6 @@
     "modelCustom": "Masukkan nama model",
     "modelRefresh": "Segarkan daftar",
     "modelPlaceholder": "Pilih atau ketik model",
-    "attachHint": "Ketik @ untuk merujuk pada host, snippet, atau otomatisasi. Perubahan akan diusulkan untuk Anda setujui.",
     "runCommandTitle": "Jalankan perintah",
     "assistant": "Asisten AI",
     "terminalPanelEmpty": "Tanyakan pada asisten tentang host ini. Perubahan apa pun yang mengubah status memerlukan persetujuan Anda terlebih dahulu.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Nyalakan",
     "aiEnableDesc": "Menambahkan asisten yang membaca konfigurasi Anda dan menyarankan perubahan yang Anda setujui. Membutuhkan penyedia yang Anda sediakan, seperti Ollama lokal.",
     "aiNote": "Tidak ada yang dikirim ke mana pun sampai Anda menambahkan penyedia dan mengirim pesan."
-  },
-  "hosts": {
-    "docsLink": "Lihat dokumentasi"
   },
   "agents": {
     "working": "Bekerja...",

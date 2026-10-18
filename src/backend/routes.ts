@@ -10,6 +10,8 @@ import {
   resolveAiAccess,
 } from "./gating.js";
 import { toChatHistory, toStoredMessage } from "./history.js";
+import type { ModelOverrides } from "./context-window.js";
+import { contextPlanFor, type ModelInfoCache } from "./model-info.js";
 import {
   createProviderFetch,
   describeProviderError,
@@ -24,9 +26,45 @@ import type { AiProviderType, ProviderConfig } from "./providers/types.js";
 import { isAiProviderType } from "./providers/types.js";
 import type { AiRepository } from "./repository.js";
 import { serviceAvailable } from "./services.js";
+import { openEventStream } from "./sse.js";
 import { availableTools } from "./tools/catalog.js";
 import { applyProposal } from "./tools/executor.js";
 import type { ToolDeps } from "./tools/types.js";
+
+/** Model turns a terminal panel run may take. */
+const TERMINAL_MAX_TURNS = 8;
+
+/** The largest context window a provider may be set to, in tokens. */
+const MAX_CONTEXT_WINDOW = 10_000_000;
+
+/** A context window override: null when empty, false when not sensible. */
+function parseContextWindow(raw: unknown): number | null | false {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1024 && value <= MAX_CONTEXT_WINDOW
+    ? value
+    : false;
+}
+
+/**
+ * Per-model overrides from a request body, replacing the stored ones:
+ * undefined when absent, false when invalid. A model whose window is empty
+ * is dropped, back to what the provider reports.
+ */
+function parseModelOverrides(raw: unknown): ModelOverrides | undefined | false {
+  if (raw === undefined) return undefined;
+  if (raw === null) return {};
+  if (typeof raw !== "object" || Array.isArray(raw)) return false;
+  const overrides: ModelOverrides = {};
+  for (const [model, value] of Object.entries(raw)) {
+    const contextWindow = parseContextWindow(
+      (value as { contextWindow?: unknown } | null)?.contextWindow,
+    );
+    if (contextWindow === false || !model.trim()) return false;
+    if (contextWindow) overrides[model.trim()] = { contextWindow };
+  }
+  return overrides;
+}
 
 function parseId(raw: unknown): number | null {
   const id = typeof raw === "string" ? parseInt(raw, 10) : Number(raw);
@@ -47,6 +85,7 @@ export function registerAiRoutes(
   router: Router,
   repository: AiRepository,
   ctx: PluginContext,
+  modelInfo: ModelInfoCache,
 ): void {
   const aiGate = createAiGate(ctx.settings, () => ctx.currentActor());
   const gate = aiGate as never;
@@ -220,6 +259,16 @@ export function registerAiRoutes(
    *                 type: string
    *               defaultModel:
    *                 type: string
+   *               modelOverrides:
+   *                 type: object
+   *                 description: >
+   *                   Per model id, a contextWindow in tokens that replaces
+   *                   what the provider reports.
+   *                 additionalProperties:
+   *                   type: object
+   *                   properties:
+   *                     contextWindow:
+   *                       type: integer
    *     responses:
    *       201:
    *         description: Provider created.
@@ -234,9 +283,13 @@ export function registerAiRoutes(
       const userId = actor(ctx);
       const { providerType, label, baseUrl, apiKey, defaultModel } =
         req.body ?? {};
+      const modelOverrides = parseModelOverrides(req.body?.modelOverrides);
 
       if (!isAiProviderType(providerType)) {
         return res.status(400).json({ error: "Unknown provider type" });
+      }
+      if (modelOverrides === false) {
+        return res.status(400).json({ error: "Invalid context window" });
       }
       if (typeof label !== "string" || !label.trim()) {
         return res.status(400).json({ error: "label is required" });
@@ -260,6 +313,7 @@ export function registerAiRoutes(
           apiKey: typeof apiKey === "string" ? apiKey.trim() : null,
           defaultModel:
             typeof defaultModel === "string" ? defaultModel.trim() : null,
+          modelOverrides,
         });
 
         await audit({
@@ -291,6 +345,33 @@ export function registerAiRoutes(
    *         required: true
    *         schema:
    *           type: integer
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               label:
+   *                 type: string
+   *               baseUrl:
+   *                 type: string
+   *               apiKey:
+   *                 type: string
+   *               defaultModel:
+   *                 type: string
+   *               enabled:
+   *                 type: boolean
+   *               modelOverrides:
+   *                 type: object
+   *                 description: >
+   *                   Replaces every override. Per model id, a contextWindow
+   *                   in tokens; null or a model left out goes back to what
+   *                   the provider reports.
+   *                 additionalProperties:
+   *                   type: object
+   *                   properties:
+   *                     contextWindow:
+   *                       type: integer
    *     responses:
    *       200:
    *         description: Provider updated.
@@ -313,6 +394,10 @@ export function registerAiRoutes(
       ) {
         return res.status(400).json({ error: "Unknown provider type" });
       }
+      const modelOverrides = parseModelOverrides(body.modelOverrides);
+      if (modelOverrides === false) {
+        return res.status(400).json({ error: "Invalid context window" });
+      }
 
       const text = (value: unknown) =>
         typeof value === "string" ? value.trim() : undefined;
@@ -328,10 +413,13 @@ export function registerAiRoutes(
             body.defaultModel === null
               ? null
               : (text(body.defaultModel) ?? undefined),
+          modelOverrides,
           enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
         });
         if (!updated)
           return res.status(404).json({ error: "Provider not found" });
+        // A new base URL or key can mean other models with other limits.
+        modelInfo.invalidate(id);
 
         await audit({
           action: "update_ai_provider",
@@ -381,6 +469,7 @@ export function registerAiRoutes(
         const deleted = await repository.deleteProvider(id, userId);
         if (!deleted)
           return res.status(404).json({ error: "Provider not found" });
+        modelInfo.invalidate(id);
 
         await audit({
           action: "delete_ai_provider",
@@ -526,6 +615,101 @@ export function registerAiRoutes(
         );
         ctx.log.warn(`Failed to list provider models: ${message}`);
         res.status(502).json({ error: message });
+      }
+    },
+  );
+
+  /**
+   * @openapi
+   * /plugin-api/ai/providers/{id}/context:
+   *   get:
+   *     summary: The context window of a provider's models, and where it came from
+   *     description: >
+   *       For the provider's default model, every model with an override,
+   *       every model the user has called through it, and any named in
+   *       models. source is override, provider (reported by the provider),
+   *       guess (from the model's family) or default (128k). refresh asks the
+   *       provider again instead of using what it said in the last six hours.
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: models
+   *         schema:
+   *           type: string
+   *         description: More model ids, comma separated.
+   *       - in: query
+   *         name: refresh
+   *         schema:
+   *           type: boolean
+   *     responses:
+   *       200:
+   *         description: One entry per model.
+   *       404:
+   *         description: Provider not found.
+   */
+  router.get(
+    "/providers/:id/context",
+    ctx.rbac.require("use") as never,
+    gate,
+    async (req: Request, res: Response) => {
+      const userId = actor(ctx);
+      const id = parseId(req.params.id);
+      if (!id) return res.status(400).json({ error: "Invalid provider id" });
+
+      try {
+        const provider = await repository.findProviderWithSecret(id, userId);
+        if (!provider)
+          return res.status(404).json({ error: "Provider not found" });
+        if (req.query.refresh === "1" || req.query.refresh === "true") {
+          modelInfo.invalidate(id);
+        }
+
+        const requested =
+          typeof req.query.models === "string"
+            ? req.query.models.split(",")
+            : [];
+        const models = [
+          ...new Set(
+            [
+              provider.defaultModel ?? "",
+              ...requested,
+              ...Object.keys(provider.modelOverrides),
+              ...(await repository.providerModels(id, userId)),
+            ]
+              .map((model) => model.trim())
+              .filter(Boolean),
+          ),
+        ];
+        const config = await providerConfig(provider);
+        res.json({
+          models: await Promise.all(
+            models.map(async (model) => {
+              const plan = await contextPlanFor(
+                modelInfo,
+                provider,
+                config,
+                model,
+              );
+              return {
+                model,
+                contextWindow: plan.contextWindow,
+                source: plan.source,
+                reservedOutput: plan.reservedOutput,
+                reportedWindow: plan.reported.contextWindow ?? null,
+                override: provider.modelOverrides[model]?.contextWindow ?? null,
+              };
+            }),
+          ),
+        });
+      } catch (err) {
+        logError("Failed to read context windows", err);
+        res.status(500).json({ error: "Failed to read context windows" });
       }
     },
   );
@@ -716,6 +900,8 @@ export function registerAiRoutes(
         let conversation = conversationId
           ? await repository.findConversation(Number(conversationId), userId)
           : null;
+        // An assistant conversation can run commands; it never continues here.
+        if (conversation?.mode === "ops") conversation = null;
         if (!conversation) {
           conversation = await repository.createConversation({
             userId,
@@ -737,41 +923,18 @@ export function registerAiRoutes(
         ).aiAccess ?? { allowReadOnlyCommands: false };
         const hosts = await ctx.hosts.list();
         const config = await providerConfig(provider);
+        const plan = await contextPlanFor(
+          modelInfo,
+          provider,
+          config,
+          chosenModel,
+        );
         const tools = availableTools(
           (service) => serviceAvailable(ctx.services, service),
           { allowReadOnlyCommands: access.allowReadOnlyCommands },
         );
 
-        // no-transform keeps core's compression from buffering the stream,
-        // and X-Accel-Buffering does the same for nginx.
-        res.writeHead(200, {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-store, no-transform",
-          Connection: "keep-alive",
-          "X-Accel-Buffering": "no",
-        });
-        res.flushHeaders?.();
-
-        const heartbeat = setInterval(() => {
-          try {
-            res.write(": keepalive\n\n");
-          } catch {
-            clearInterval(heartbeat);
-          }
-        }, 30000);
-
-        // req's own "close" already fired once express read the body, so the
-        // response is what tells us the client went away.
-        const abort = new AbortController();
-        res.on("close", () => {
-          clearInterval(heartbeat);
-          if (!res.writableFinished) abort.abort();
-        });
-
-        const send = (event: unknown) => {
-          if (res.writableEnded || res.destroyed) return;
-          res.write(`data: ${JSON.stringify(event)}\n\n`);
-        };
+        const { send, signal, stopHeartbeat } = openEventStream(res);
 
         send({ type: "conversation", conversationId: conversation.id });
 
@@ -795,7 +958,20 @@ export function registerAiRoutes(
               deps: toolDeps,
             },
             tools,
-            signal: abort.signal,
+            signal,
+            // The terminal panel keeps its short leash, and no compaction.
+            maxTurns: TERMINAL_MAX_TURNS,
+            contextWindow: plan.contextWindow,
+            compact: false,
+            source: "terminal",
+            onUsage: (usage) =>
+              repository.recordUsage({
+                userId,
+                providerId: provider.id,
+                model: chosenModel,
+                conversationId: conversation.id,
+                ...usage,
+              }),
           })) {
             if (event.type === "message") {
               // Every step is kept, tool results included, so the next message
@@ -832,7 +1008,7 @@ export function registerAiRoutes(
             send(event);
           }
         } finally {
-          clearInterval(heartbeat);
+          stopHeartbeat();
         }
         await repository.touchConversation(conversation.id);
 

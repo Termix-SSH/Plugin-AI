@@ -18,7 +18,9 @@
     "Can run safe read-only commands like df and uptime if you allow it",
     "Ask about a host right from its terminal",
     "Works with Ollama, Anthropic, OpenAI, Google Gemini and any OpenAI compatible endpoint",
-    "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider"
+    "Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider",
+    "One AI assistant, floating on every page or full screen in the AI tab, that manages Termix as you through the bundled Termix CLI and opens views for you",
+    "With the ai.ops.use permission, it also runs shell commands across the hosts, folders, tags or fleets you select"
   ],
   "engine": {
     "termix": ">=26.10.0",
@@ -36,7 +38,8 @@
     "network:serve",
     "ui:surface",
     "users:impersonate",
-    "events:core"
+    "events:core",
+    "process:spawn"
   ],
   "optionalDependencies": {
     "workspaces": "^1.0.0",
@@ -117,6 +120,18 @@
         "kind": "button"
       }
     ],
+    "dashboardCards": [
+      {
+        "id": "ai-usage",
+        "titleKey": "usage.cardTitle",
+        "icon": "ChartColumn"
+      }
+    ],
+    "keybindingActions": [
+      {
+        "id": "ai.toggleAssistant"
+      }
+    ],
     "permissions": [
       {
         "name": "use",
@@ -153,6 +168,18 @@
         "titleKey": "agents.permissionTitle",
         "descriptionKey": "agents.permissionDescription",
         "defaultRoles": ["admin"]
+      },
+      {
+        "name": "ops.use",
+        "titleKey": "permissions.ops.use.title",
+        "descriptionKey": "permissions.ops.use.description",
+        "defaultRoles": ["admin"]
+      },
+      {
+        "name": "usage.view_all",
+        "titleKey": "permissions.usage.view_all.title",
+        "descriptionKey": "permissions.usage.view_all.description",
+        "defaultRoles": ["admin"]
       }
     ],
     "settings": {
@@ -171,6 +198,36 @@
           "descriptionKey": "settings.admin.privateEndpoints.description",
           "requires": "globallyEnabled",
           "default": "localhost\n127.0.0.1\n::1\nhost.docker.internal"
+        },
+        {
+          "key": "opsConcurrency",
+          "type": "number",
+          "labelKey": "settings.admin.opsConcurrency.label",
+          "descriptionKey": "settings.admin.opsConcurrency.description",
+          "requires": "globallyEnabled",
+          "default": 8,
+          "min": 1,
+          "max": 64
+        },
+        {
+          "key": "opsCommandTimeout",
+          "type": "number",
+          "labelKey": "settings.admin.opsCommandTimeout.label",
+          "descriptionKey": "settings.admin.opsCommandTimeout.description",
+          "requires": "globallyEnabled",
+          "default": 120,
+          "min": 5,
+          "max": 600
+        },
+        {
+          "key": "opsOutputLimit",
+          "type": "number",
+          "labelKey": "settings.admin.opsOutputLimit.label",
+          "descriptionKey": "settings.admin.opsOutputLimit.description",
+          "requires": "globallyEnabled",
+          "default": 4000,
+          "min": 500,
+          "max": 20000
         }
       ],
       "user": [
@@ -194,6 +251,13 @@
           "type": "custom",
           "component": "providers",
           "permission": "manage_providers"
+        },
+        {
+          "key": "usage",
+          "type": "custom",
+          "component": "usage",
+          "permission": "use",
+          "requires": "enabled"
         }
       ],
       "host": {
@@ -210,7 +274,7 @@
         ]
       }
     },
-    "uses": ["terminal.sidePanel", "terminal.toolbar"]
+    "uses": ["terminal.sidePanel", "terminal.toolbar", "shell.overlay"]
   },
   "locales": "locales",
   "platforms": ["linux", "win32", "darwin"]

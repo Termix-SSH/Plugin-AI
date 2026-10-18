@@ -1,38 +1,27 @@
 import type { ComponentType } from "react";
 import { Bot, Sparkles } from "lucide-react";
-import type {
-  PanelProps,
-  TabProps,
-  TermixApp,
-} from "@termix-ssh/plugin-sdk/frontend";
+import type { TermixApp } from "@termix-ssh/plugin-sdk/frontend";
 import type {
   TerminalSidePanelProps,
   TerminalSlotApi,
 } from "./terminal/terminal-slot-types";
 import { AgentPanel } from "./agents/AgentPanel";
-import { AiPanel } from "./AiPanel";
 import { TerminalAiPanel } from "./terminal/TerminalAiPanel";
 import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
+import { UsageSetting } from "./settings/UsageSetting";
+import { UsageCard } from "./usage/UsageCard";
 import { AI_STATUS_CHANGED_EVENT, getAiStatus } from "./ai-api";
 import { setAiApp } from "./app-ref";
+import { AI_TAB_ID, AssistantOverlay } from "./assistant/AssistantOverlay";
+import { AssistantView } from "./assistant/AssistantView";
+import { defaultCombo, installHotkey, TOGGLE_ACTION } from "./assistant/hotkey";
+import { performClientAction } from "./assistant/shell";
+import { assistant } from "./assistant/store";
 
-/** The rail id the assistant registers under. */
-const AI_RAIL_ID = "ai";
 const ASSISTANT_ACTION = "ai.openWithContext";
 const SIDE_PANEL_ID = "ai.assistant";
-
-function AssistantPanel({ activeTabType }: PanelProps) {
-  return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <AiPanel activeTab={activeTabType ?? null} />
-    </div>
-  );
-}
-
-function AssistantTab() {
-  return <AiPanel />;
-}
+const USAGE_CARD_ID = "ai-usage";
 
 /** The assistant beside a terminal, in its "terminal.sidePanel" slot. */
 function TerminalSidePanel({
@@ -58,17 +47,65 @@ function TerminalSidePanel({
   );
 }
 
+const toggleAssistant = () => assistant.toggle();
+
+/**
+ * The floating assistant, for users who may use it: the ball and panel in
+ * the shell's overlay slot, gated on the toggle action's permission, and the
+ * key that opens it.
+ */
+function registerAssistant(app: TermixApp): (() => void)[] {
+  return [
+    app.registerAction(TOGGLE_ACTION, toggleAssistant, {
+      permission: "use",
+    }),
+    app.registerSlotContribution("shell.overlay", {
+      actionId: TOGGLE_ACTION,
+      titleKey: "assistant.title",
+      kind: "component",
+      component: AssistantOverlay as ComponentType<Record<string, unknown>>,
+    }),
+    app.registerKeybindingAction({
+      id: TOGGLE_ACTION,
+      titleKey: "assistant.toggle",
+      scope: "global",
+      run: toggleAssistant,
+    }),
+    app.registerKeybindingDefault({
+      id: TOGGLE_ACTION,
+      combo: defaultCombo(),
+      descriptionKey: "assistant.toggle",
+    }),
+    installHotkey(toggleAssistant),
+  ];
+}
+
 export function activate(app: TermixApp): void {
   setAiApp(app);
-  app.onDispose(() => setAiApp(null));
+  assistant.onClientAction((action) => performClientAction(app, action));
+  app.onDispose(() => {
+    assistant.reset();
+    setAiApp(null);
+  });
 
   let globallyEnabled = false;
   let userEnabled = false;
   let agentsAllowed = false;
+  let assistantAllowed = false;
+  void app.hasPermission("use").then((allowed) => {
+    if (disposed) return;
+    assistantAllowed = allowed;
+    applyStatus();
+  });
   void app.hasPermission("agents").then((allowed) => {
     if (disposed) return;
     agentsAllowed = allowed;
     applyStatus();
+  });
+  // A shell on hosts is extra; everything else the assistant does is
+  // bounded by the user's own permissions.
+  void app.hasPermission("ops.use").then((allowed) => {
+    if (!disposed) assistant.setHostShell(allowed);
   });
   const surface: (() => void)[] = [];
 
@@ -83,11 +120,11 @@ export function activate(app: TermixApp): void {
 
     surface.push(
       app.registerRailItem({
-        id: AI_RAIL_ID,
+        id: AI_TAB_ID,
         icon: Sparkles,
         titleKey: "nav.ai",
-        promotable: true,
-        rightDockable: true,
+        kind: "tab",
+        permission: "use",
         after: "macros",
         order: 40,
         // Off for everyone: not even a Navigation toggle.
@@ -96,19 +133,32 @@ export function activate(app: TermixApp): void {
     );
 
     if (!globallyEnabled) {
-      app.tabs.closeTab(AI_RAIL_ID);
+      app.tabs.closeTab(AI_TAB_ID);
       return;
     }
 
+    // The AI tab is the assistant's full view; the floating panel shares
+    // its conversations.
     surface.push(
-      app.registerTab(AI_RAIL_ID, AssistantTab as ComponentType<TabProps>, {
+      app.registerTab(AI_TAB_ID, AssistantView, {
         icon: Sparkles,
         titleKey: "nav.ai",
         singleton: true,
         hostless: true,
-        panelFrame: true,
       }),
     );
+    if (assistantAllowed) surface.push(...registerAssistant(app));
+    // Usage is behind the user's own opt-in, like every other AI route.
+    if (assistantAllowed && userEnabled) {
+      surface.push(
+        app.registerDashboardCard({
+          id: USAGE_CARD_ID,
+          titleKey: "usage.cardTitle",
+          defaultPanel: "side",
+          component: UsageCard,
+        }),
+      );
+    }
 
     surface.push(
       app.registerTab("ai-agents", AgentPanel, {
@@ -118,6 +168,7 @@ export function activate(app: TermixApp): void {
         persistent: true,
       }),
     );
+
     surface.push(
       app.registerHostAction({
         id: "ai-agents",
@@ -192,8 +243,6 @@ export function activate(app: TermixApp): void {
     clearSurface();
   });
 
-  app.registerPanel(AI_RAIL_ID, AssistantPanel);
-
   // Opens the docked assistant on the terminal it was clicked from, seeded
   // with what is on screen.
   app.registerAction(
@@ -206,6 +255,7 @@ export function activate(app: TermixApp): void {
   );
 
   app.registerSettingsComponent("providers", ProvidersSetting);
+  app.registerSettingsComponent("usage", UsageSetting);
 
   applyStatus();
   refresh();

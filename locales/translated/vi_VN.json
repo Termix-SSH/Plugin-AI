@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Trợ lý",
     "send": "Gửi",
     "stop": "Dừng",
     "save": "Lưu",
@@ -58,9 +57,7 @@
     "running": "đang chạy",
     "approve": "Phê duyệt",
     "reject": "Từ chối",
-    "inputPlaceholder": "Hỏi về máy chủ của bạn hoặc mô tả một thay đổi để đề xuất",
     "selectProvider": "Chọn nhà cung cấp",
-    "providerSettings": "Cài đặt nhà cung cấp",
     "addProvider": "Thêm nhà cung cấp",
     "editProvider": "Chỉnh sửa nhà cung cấp",
     "removeProvider": "Xóa nhà cung cấp",
@@ -95,7 +92,6 @@
     "modelCustom": "Nhập tên mô hình",
     "modelRefresh": "Làm mới danh sách",
     "modelPlaceholder": "Chọn hoặc nhập mô hình",
-    "attachHint": "Nhập @ để tham chiếu đến host, snippet hoặc automation. Các thay đổi sẽ được đề xuất để bạn phê duyệt.",
     "runCommandTitle": "Chạy lệnh",
     "assistant": "Trợ lý AI",
     "terminalPanelEmpty": "Hỏi trợ lý về host này. Bất kỳ thay đổi trạng thái nào đều cần sự phê duyệt của bạn trước.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Bật lên",
     "aiEnableDesc": "Thêm một trợ lý đọc cấu hình của bạn và đề xuất các thay đổi bạn phê duyệt. Cần một nhà cung cấp do bạn cung cấp, chẳng hạn như Ollama cục bộ.",
     "aiNote": "Không có dữ liệu nào được gửi đi cho đến khi bạn thêm nhà cung cấp và gửi tin nhắn."
-  },
-  "hosts": {
-    "docsLink": "Xem tài liệu"
   },
   "agents": {
     "working": "Đang xử lý...",

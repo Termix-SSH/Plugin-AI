@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistent",
     "send": "Send",
     "stop": "Stopp",
     "save": "Lagre",
@@ -58,9 +57,7 @@
     "running": "kjører",
     "approve": "Godkjenn",
     "reject": "Avvis",
-    "inputPlaceholder": "Spør om serverne dine, eller beskriv en endring som skal foreslås",
     "selectProvider": "Velg en leverandør",
-    "providerSettings": "Leverandørinnstillinger",
     "addProvider": "Legg til leverandør",
     "editProvider": "Rediger leverandør",
     "removeProvider": "Fjern leverandør",
@@ -95,7 +92,6 @@
     "modelCustom": "Skriv inn et modellnavn",
     "modelRefresh": "Oppdater liste",
     "modelPlaceholder": "Velg eller skriv inn en modell",
-    "attachHint": "Skriv @ for å referere til en vert, snutt eller automatisering. Endringer foreslås for at du skal godkjenne dem.",
     "runCommandTitle": "Kjør kommando",
     "assistant": "AI-assistent",
     "terminalPanelEmpty": "Spør assistenten om denne verten. Alt som endrer tilstand må godkjennes av deg først.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Slå den på",
     "aiEnableDesc": "Legger til en assistent som leser oppsettet ditt og foreslår endringer du godkjenner. Krever en leverandør du leverer, for eksempel en lokal Ollama.",
     "aiNote": "Ingenting sendes noen steder før du legger til en leverandør og sender en melding."
-  },
-  "hosts": {
-    "docsLink": "Vis dokumentasjon"
   },
   "agents": {
     "working": "Arbeider...",

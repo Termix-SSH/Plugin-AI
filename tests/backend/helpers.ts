@@ -5,6 +5,7 @@ import express, { type Router } from "express";
 import {
   createMockCtx,
   createTestDb,
+  type FakeProcessOptions,
   type MockPluginContext,
   type TestDb,
 } from "@termix-ssh/plugin-sdk/testing";
@@ -23,10 +24,16 @@ export const ALL_PERMISSIONS = [
 export interface TestServer {
   db: TestDb;
   mock: MockPluginContext;
+  /** Where the server listens, for a test that reads a stream itself. */
+  url: string;
   request: (
     method: string,
     path: string,
-    options?: { user?: string; body?: unknown },
+    options?: {
+      user?: string;
+      body?: unknown;
+      headers?: Record<string, string>;
+    },
     // Route bodies vary per test; asserting on them is the point.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) => Promise<{ status: number; body: any }>;
@@ -45,6 +52,8 @@ export async function startServer(
     permissions?: string[];
     services?: Record<string, object>;
     fetch?: (url: string, init?: unknown) => Promise<Response>;
+    sshClient?: unknown;
+    process?: FakeProcessOptions;
   } = {},
 ): Promise<TestServer> {
   const db = await createTestDb(pluginDir);
@@ -64,6 +73,8 @@ export async function startServer(
     permissions: options.permissions ?? ALL_PERMISSIONS,
     services: options.services,
     fetch: options.fetch as never,
+    sshClient: options.sshClient,
+    process: options.process,
     hosts: [
       {
         id: 1,
@@ -97,11 +108,17 @@ export async function startServer(
   return {
     db,
     mock,
-    async request(method, path, { user = "user-1", body: given } = {}) {
+    url: `http://127.0.0.1:${port}`,
+    async request(
+      method,
+      path,
+      { user = "user-1", body: given, headers = {} } = {},
+    ) {
       const body = method === "GET" ? undefined : given;
       const response = await fetch(`http://127.0.0.1:${port}${path}`, {
         method,
         headers: {
+          ...headers,
           "x-test-user": user,
           ...(body !== undefined ? { "content-type": "application/json" } : {}),
         },

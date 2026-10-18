@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Assistente",
     "send": "Invia",
     "stop": "Ferma",
     "save": "Salva",
@@ -58,9 +57,7 @@
     "running": "in esecuzione",
     "approve": "Approva",
     "reject": "Rifiuta",
-    "inputPlaceholder": "Chiedi informazioni sui tuoi server o descrivi una modifica da proporre",
     "selectProvider": "Seleziona un provider",
-    "providerSettings": "Impostazioni provider",
     "addProvider": "Aggiungi provider",
     "editProvider": "Modifica provider",
     "removeProvider": "Rimuovi provider",
@@ -95,7 +92,6 @@
     "modelCustom": "Inserisci un nome del modello",
     "modelRefresh": "Aggiorna lista",
     "modelPlaceholder": "Scegli o digita un modello",
-    "attachHint": "Digita @ per fare riferimento a un host, snippet o automazione. Le modifiche vengono proposte per la tua approvazione.",
     "runCommandTitle": "Esegui comando",
     "assistant": "Assistente AI",
     "terminalPanelEmpty": "Chiedi all'assistente informazioni su questo host. Qualsiasi modifica allo stato richiede prima la tua approvazione.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Attivalo",
     "aiEnableDesc": "Aggiunge un assistente che legge la tua configurazione e suggerisce modifiche da approvare. Richiede un provider fornito da te, come un'istanza locale di Ollama.",
     "aiNote": "Nessun dato viene inviato finché non aggiungi un provider e invii un messaggio."
-  },
-  "hosts": {
-    "docsLink": "Visualizza documentazione"
   },
   "agents": {
     "working": "In lavorazione...",

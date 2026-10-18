@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistentas",
     "send": "Siųsti",
     "stop": "Sustabdyti",
     "save": "Išsaugoti",
@@ -58,9 +57,7 @@
     "running": "vykdoma",
     "approve": "Patvirtinti",
     "reject": "Atmesti",
-    "inputPlaceholder": "Klauskite apie savo serverius arba aprašykite pakeitimą, kurį norite pasiūlyti",
     "selectProvider": "Pasirinkite tiekėją",
-    "providerSettings": "Tiekėjo nustatymai",
     "addProvider": "Pridėti tiekėją",
     "editProvider": "Redaguoti tiekėją",
     "removeProvider": "Pašalinti tiekėją",
@@ -95,7 +92,6 @@
     "modelCustom": "Įveskite modelio pavadinimą",
     "modelRefresh": "Atnaujinti sąrašą",
     "modelPlaceholder": "Pasirinkite arba įveskite modelį",
-    "attachHint": "Įveskite @ norėdami nuorodą į hostą, komandų fragmentą ar automatizaciją. Pakeitimai siūlomi jūsų patvirtinimui.",
     "runCommandTitle": "Vykdyti komandą",
     "assistant": "MI pagalbininkas",
     "terminalPanelEmpty": "Klauskite pagalbininko apie šį hostą. Bet kokie būsenos keitimai pirmiausia reikalauja jūsų patvirtinimo.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Įjungti",
     "aiEnableDesc": "Prideda pagalbininką, kuris skaito jūsų konfigūraciją ir siūlo pakeitimus, kuriuos jūs patvirtinate. Reikia tiekėjo, kurį pateikiate jūs, pvz., vietinio Ollama.",
     "aiNote": "Niekas nėra siunčiamas, kol nepridėsite tiekėjo ir neišsiųsite žinutės."
-  },
-  "hosts": {
-    "docsLink": "Peržiūrėti dokumentaciją"
   },
   "agents": {
     "working": "Dirba...",

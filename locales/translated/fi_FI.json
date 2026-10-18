@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Avustaja",
     "send": "Lähetä",
     "stop": "Pysäytä",
     "save": "Tallenna",
@@ -58,9 +57,7 @@
     "running": "käsittelyssä",
     "approve": "Hyväksy",
     "reject": "Hylkää",
-    "inputPlaceholder": "Kysy palvelimistasi tai kuvaile ehdotettavaa muutosta",
     "selectProvider": "Valitse palveluntarjoaja",
-    "providerSettings": "Palveluntarjoajan asetukset",
     "addProvider": "Lisää palveluntarjoaja",
     "editProvider": "Muokkaa palveluntarjoajaa",
     "removeProvider": "Poista palveluntarjoaja",
@@ -95,7 +92,6 @@
     "modelCustom": "Syötä mallin nimi",
     "modelRefresh": "Päivitä lista",
     "modelPlaceholder": "Valitse tai kirjoita malli",
-    "attachHint": "Kirjoita @ viitataksesi isäntään, koodinpätkään tai automaatioon. Muutokset ehdotetaan hyväksyttäväksesi.",
     "runCommandTitle": "Suorita komento",
     "assistant": "Teekohtainen avustaja",
     "terminalPanelEmpty": "Kysy avustajalta tästä isännästä. Kaikki tilaa muuttavat toimet vaativat ensin hyväksyntäsi.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Ota käyttöön",
     "aiEnableDesc": "Lisää avustaja, joka lukee asetuksesi ja ehdottaa muutoksia, jotka hyväksyt. Vaatii palveluntarjoajan, jonka tarjoat, kuten paikallisen Ollaman.",
     "aiNote": "Mitään ei lähetetä mihinkään, ennen kuin lisäät palveluntarjoajan ja lähetät viestin."
-  },
-  "hosts": {
-    "docsLink": "Näytä dokumentaatio"
   },
   "agents": {
     "working": "Työskentelee...",

@@ -23,6 +23,18 @@
         "title": "分享 API 金鑰",
         "description": "其他功能可能會使用儲存的 AI API 金鑰，但無法查看其內容。"
       }
+    },
+    "ops": {
+      "use": {
+        "title": "透過 AI 助理在主機上執行指令",
+        "description": "允許助理在你選擇的主機上執行任意 shell 指令。預設僅管理員擁有。"
+      }
+    },
+    "usage": {
+      "view_all": {
+        "title": "檢視所有人的 AI 用量",
+        "description": "檢視每位使用者的 AI 呼叫所用的 token，而不只是你自己的。預設僅管理員擁有。"
+      }
     }
   },
   "settings": {
@@ -40,6 +52,18 @@
       "privateEndpoints": {
         "label": "允許的私人 AI 主機",
         "description": "您私人網路上的主機，使用者可將提供者指向這些主機，例如自行架設的 Ollama。每行輸入一個主機。"
+      },
+      "opsConcurrency": {
+        "label": "AI 助理平行主機數",
+        "description": "助理的指令同時在多少台主機上執行。"
+      },
+      "opsCommandTimeout": {
+        "label": "AI 助理指令逾時（秒）",
+        "description": "指令在一台主機上執行多久後會被停止。助理最多可要求 600 秒。"
+      },
+      "opsOutputLimit": {
+        "label": "AI 助理每台主機輸出（字元）",
+        "description": "每台主機保留多少輸出。較長的輸出會保留開頭和結尾。"
       }
     },
     "host": {
@@ -50,7 +74,6 @@
     }
   },
   "ai": {
-    "title": "助理",
     "send": "傳送",
     "stop": "停止",
     "save": "儲存",
@@ -58,9 +81,7 @@
     "running": "執行中",
     "approve": "核准",
     "reject": "拒絕",
-    "inputPlaceholder": "詢問關於伺服器的問題，或描述要建議的變更",
     "selectProvider": "選擇提供者",
-    "providerSettings": "提供者設定",
     "addProvider": "新增提供者",
     "editProvider": "編輯提供者",
     "removeProvider": "移除提供者",
@@ -95,22 +116,32 @@
     "modelCustom": "輸入模型名稱",
     "modelRefresh": "重新整理列表",
     "modelPlaceholder": "選擇或輸入模型",
-    "attachHint": "輸入 @ 可參考主機、程式碼片段或自動化任務。所有變更都會先提出建議，供您批准。",
     "runCommandTitle": "執行指令",
     "assistant": "AI 助理",
     "terminalPanelEmpty": "向助理詢問關於此主機的問題。任何會變更狀態的操作都需要您先批准。",
     "terminalPanelPlaceholder": "詢問關於此主機的問題...",
-    "noProvidersConfigured": "尚未設定任何 AI 服務提供者。請在 AI 助理分頁中新增一個。",
+    "noProvidersConfigured": "尚未設定任何 AI 服務提供者。請在設定中新增一個。",
     "runsInOpenTerminal": "在您開啟的終端機工作階段中執行。",
     "runInTerminal": "執行",
     "terminalContextPrefill": "以下是我的終端機輸出：\n\n{{output}}\n\n",
     "secrets": {
       "shareApiKey": "允許其他功能使用您的 AI 服務提供者 API 金鑰來進行各自的請求。金鑰絕不會被複製，且您可以隨時撤銷此授權。"
     },
-    "removeProviderConfirm": "要移除服務提供者 {{name}} 嗎？"
+    "removeProviderConfirm": "要移除服務提供者 {{name}} 嗎？",
+    "contextWindows": "各模型的上下文視窗",
+    "contextWindowsHint": "供應商有回報就以其為準。為某個模型填寫 token 數可覆寫它，留空則使用供應商回報的值。重新整理會再次詢問供應商。",
+    "contextWindowValue": "上下文視窗：{{tokens}}（{{source}}）",
+    "contextOverride": "{{model}} 的上下文視窗覆寫值",
+    "contextSourceOverride": "由你設定",
+    "contextSourceProvider": "由供應商回報",
+    "contextSourceGuess": "依模型名稱推測",
+    "contextSourceDefault": "未知模型的預設值",
+    "contextLoadFailed": "無法讀取上下文視窗",
+    "contextRefresh": "重新整理",
+    "contextWindowInvalid": "上下文視窗需填寫一個整數 token 數，至少 1024。"
   },
   "nav": {
-    "ai": "AI"
+    "ai": "AI 助理"
   },
   "onboarding": {
     "aiTitle": "AI 助理",
@@ -120,9 +151,6 @@
     "aiEnableTitle": "開啟",
     "aiEnableDesc": "新增一個會讀取您的設定並建議變更（需您批准）的助理。需要您提供服務提供者，例如本機 Ollama。",
     "aiNote": "在您新增服務提供者並傳送訊息之前，不會將任何資料傳送至外部。"
-  },
-  "hosts": {
-    "docsLink": "查看說明文件"
   },
   "agents": {
     "working": "處理中...",
@@ -217,5 +245,102 @@
   "plugin": {
     "name": "AI 助手",
     "description": "讀取你的設定並提出修改建議供你核准的 AI 助理。"
+  },
+  "ops": {
+    "searchHosts": "搜尋主機",
+    "selectedCount": "已選擇 {{count}} 台",
+    "clear": "清除",
+    "fleets": "機群",
+    "folders": "資料夾",
+    "tags": "標籤",
+    "allHosts": "所有主機",
+    "noHosts": "沒有主機",
+    "newConversation": "新對話",
+    "sendHint_other": "將在 {{count}} 台主機上執行。指令會直接執行，不會事先詢問。",
+    "runCommand": "執行指令",
+    "hostFacts": "主機資訊",
+    "hostCount_other": "{{count}} 台主機",
+    "succeeded": "{{count}} 成功",
+    "failed": "{{count}} 失敗",
+    "exitCode": "結束碼 {{code}}",
+    "timedOut": "已逾時",
+    "stopped": "已停止",
+    "notRun": "未執行",
+    "cached": "已快取",
+    "duration": "{{seconds}} 秒",
+    "noOutput": "（無輸出）"
+  },
+  "assistant": {
+    "title": "AI 助理",
+    "moveHint": "拖曳可移動，按兩下可停靠到側邊。",
+    "toggle": "開啟或關閉 AI 助理",
+    "unread": "助理有新結果",
+    "close": "關閉",
+    "dock": "停靠到右側",
+    "float": "浮動",
+    "openTab": "開啟完整檢視",
+    "history": "對話",
+    "noConversations": "還沒有對話",
+    "untitled": "未命名",
+    "deleteConversation": "刪除對話",
+    "deleteConfirm": "刪除這個對話？",
+    "emptyTitle": "詢問或修改 Termix 中的任何內容",
+    "emptyHint": "助理以你的身分透過 Termix CLI 工作，並在目標主機上執行命令。輸入 @ 可以把主機、機群、資料夾或標籤加為目標。",
+    "inputPlaceholder": "向助理提問。輸入 @ 新增目標。",
+    "noTargets": "沒有目標主機。輸入 @ 新增。",
+    "sendHint": "修改和命令會直接執行，不再詢問。",
+    "removeTarget": "移除 {{name}}",
+    "kind": {
+      "host": "主機",
+      "fleet": "機群",
+      "folder": "資料夾",
+      "tag": "標籤"
+    },
+    "emptyHintBasic": "助理以你的身分、依你的權限透過 Termix CLI 工作。",
+    "inputPlaceholderBasic": "向助理提問。",
+    "sendHintBasic": "修改會直接執行，不再詢問。",
+    "thinking": "思考過程",
+    "thinkingActive": "正在思考...",
+    "compacted": "上下文已壓縮：較早的訊息已被摘要",
+    "compact": "壓縮對話",
+    "nothingToCompact": "對話還太短，暫時無需壓縮。",
+    "contextMeter": "上下文：最近一次呼叫使用了 {{window}} 個 token 中的 {{used}} 個",
+    "contextMeterSource": "視窗{{source}}。",
+    "contextMeterReserved": "為回覆預留 {{tokens}} 個 token。",
+    "todayTokens": "今日 {{tokens}}",
+    "todayTitle": "你今天使用的 token。點擊查看詳情。",
+    "usage": "Token 用量",
+    "conversationTokens": "{{tokens}} token"
+  },
+  "usage": {
+    "title": "Token 用量",
+    "settingDescription": "過去 30 天你的 AI 呼叫所用的 token。",
+    "cardTitle": "AI token 用量",
+    "today": "今日",
+    "week": "7 天",
+    "month": "30 天",
+    "mine": "我的",
+    "everyone": "所有使用者",
+    "mineCaption": "你在所有 AI 功能中使用的 token。",
+    "everyoneCaption": "所有使用者在所有 AI 功能中使用的 token。",
+    "byDay": "按天",
+    "byModel": "按模型",
+    "bySource": "按功能",
+    "byUser": "按使用者",
+    "model": "模型",
+    "feature": "功能",
+    "user": "使用者",
+    "calls": "呼叫次數",
+    "prompt": "輸入",
+    "completion": "輸出",
+    "total": "合計",
+    "empty": "過去 30 天沒有 AI 用量。",
+    "loadFailed": "無法載入用量",
+    "estimatedNote": "部分數字為估算值（約每四個字元一個 token），因為提供者沒有回報用量。",
+    "source": {
+      "assistant": "助理",
+      "terminal": "終端機面板",
+      "compaction": "上下文壓縮"
+    }
   }
 }

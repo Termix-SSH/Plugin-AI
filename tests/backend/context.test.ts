@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildSystemPrompt } from "../../src/backend/context.js";
+import {
+  buildAssistantSystemPrompt,
+  buildSystemPrompt,
+} from "../../src/backend/context.js";
 
 const BASE = { hostCount: 3, allowReadOnlyCommands: false };
 
@@ -43,5 +46,29 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt({ ...BASE, activeTab: "terminal" })).toContain(
       "currently looking at: terminal",
     );
+  });
+});
+
+describe("buildAssistantSystemPrompt", () => {
+  it("tells a host operator never to work around missing rights", () => {
+    // In real use, without sudo the assistant reached the host's network
+    // configuration through a privileged docker container.
+    const prompt = buildAssistantSystemPrompt({
+      targetCount: 1,
+      cli: true,
+      hostShell: true,
+    });
+    expect(prompt).toContain("Never work around it");
+    expect(prompt).toContain("privileged containers");
+    expect(prompt).toContain("routing, firewall or network configuration");
+  });
+
+  it("leaves host guidance out for users who cannot run commands", () => {
+    const prompt = buildAssistantSystemPrompt({
+      targetCount: 0,
+      cli: true,
+      hostShell: false,
+    });
+    expect(prompt).not.toContain("privileged containers");
   });
 });

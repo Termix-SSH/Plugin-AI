@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistent",
     "send": "Pošalji",
     "stop": "Zaustavi",
     "save": "Spremi",
@@ -58,9 +57,7 @@
     "running": "izvršava se",
     "approve": "Odobri",
     "reject": "Odbij",
-    "inputPlaceholder": "Pitajte o svojim poslužiteljima ili opišite promjenu za prijedlog",
     "selectProvider": "Odaberite pružatelja usluga",
-    "providerSettings": "Postavke pružatelja usluga",
     "addProvider": "Dodaj pružatelja usluga",
     "editProvider": "Uredi pružatelja usluga",
     "removeProvider": "Ukloni pružatelja usluga",
@@ -95,7 +92,6 @@
     "modelCustom": "Upišite ime modela",
     "modelRefresh": "Osvježi popis",
     "modelPlaceholder": "Odaberite ili upišite model",
-    "attachHint": "Upišite @ za referenciranje domaćina, isječka ili automatizacije. Promjene se predlažu na vaše odobrenje.",
     "runCommandTitle": "Pokreni naredbu",
     "assistant": "AI pomoćnik",
     "terminalPanelEmpty": "Pitajte pomoćnika o ovom domaćinu. Sve što mijenja stanje prvo zahtijeva vaše odobrenje.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Uključite ga",
     "aiEnableDesc": "Dodaje pomoćnika koji čita vašu postavku i predlaže promjene koje odobravate. Zahtijeva pružatelja usluga koji vi osiguravate, poput lokalnog Ollama.",
     "aiNote": "Ništa se ne šalje nigdje dok ne dodate pružatelja usluga i ne pošaljete poruku."
-  },
-  "hosts": {
-    "docsLink": "Pogledajte dokumentaciju"
   },
   "agents": {
     "working": "Radi se...",

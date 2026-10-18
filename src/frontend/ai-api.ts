@@ -49,8 +49,35 @@ export interface AiProvider {
   /** The first few characters only; the key itself never leaves the server. */
   apiKeyPrefix: string | null;
   defaultModel: string | null;
+  /** Per model id, a context window that replaces the provider's. */
+  modelOverrides: ModelOverrides;
   enabled: boolean;
   createdAt: string;
+}
+
+export type ModelOverrides = Record<string, { contextWindow?: number }>;
+
+/** Where a context window came from, best first. */
+export type ContextSource = "override" | "provider" | "guess" | "default";
+
+/** How each source reads, as translation keys. */
+export const CONTEXT_SOURCE_KEYS: Record<ContextSource, string> = {
+  override: "ai.contextSourceOverride",
+  provider: "ai.contextSourceProvider",
+  guess: "ai.contextSourceGuess",
+  default: "ai.contextSourceDefault",
+};
+
+/** One model's context window, as the server resolved it. */
+export interface ModelContext {
+  model: string;
+  contextWindow: number;
+  source: ContextSource;
+  /** Tokens kept free for the reply. */
+  reservedOutput: number;
+  /** What the provider reported, null when it said nothing. */
+  reportedWindow: number | null;
+  override: number | null;
 }
 
 interface AiConversation {
@@ -62,12 +89,14 @@ interface AiConversation {
   updatedAt: string;
 }
 
-interface AiMessage {
+export interface AiMessage {
   id: number;
   conversationId: number;
-  role: "user" | "assistant" | "tool";
+  /** summary marks where the conversation was compacted. */
+  role: "user" | "assistant" | "tool" | "summary";
   content: string;
   toolCalls: string | null;
+  reasoning?: string | null;
   createdAt: string;
 }
 
@@ -127,6 +156,7 @@ export async function updateAiProvider(
     baseUrl: string | null;
     apiKey: string | null;
     defaultModel: string | null;
+    modelOverrides: ModelOverrides;
     enabled: boolean;
   }>,
 ): Promise<AiProvider> {
@@ -175,6 +205,24 @@ export async function getAiProviderModels(id: number): Promise<string[]> {
     return (await api().get(`/providers/${id}/models`)).data.models;
   } catch (error) {
     throw apiError(error, "list provider models");
+  }
+}
+
+/**
+ * The context window of the provider's known models plus `models`; refresh
+ * asks the provider again.
+ */
+export async function getProviderContext(
+  id: number,
+  options: { models?: string[]; refresh?: boolean } = {},
+): Promise<ModelContext[]> {
+  try {
+    const query = new URLSearchParams();
+    if (options.models?.length) query.set("models", options.models.join(","));
+    if (options.refresh) query.set("refresh", "1");
+    return (await api().get(`/providers/${id}/context?${query}`)).data.models;
+  } catch (error) {
+    throw apiError(error, "read context windows");
   }
 }
 
@@ -253,5 +301,128 @@ export async function setAiOptIn(enabled: boolean): Promise<void> {
     throw apiError(error, "update the AI setting");
   } finally {
     notifyAiStatusChanged();
+  }
+}
+
+export interface OpsFleet {
+  id: number;
+  name: string;
+  hostIds: number[];
+}
+
+/** Fleets for the target picker; available is false without the plugin. */
+export async function getOpsFleets(): Promise<{
+  available: boolean;
+  fleets: OpsFleet[];
+}> {
+  try {
+    return (await api().get("/ops/fleets")).data;
+  } catch (error) {
+    throw apiError(error, "list fleets");
+  }
+}
+
+export interface AssistantConversation {
+  id: number;
+  title: string | null;
+  updatedAt: string;
+  targets: number[];
+  /** Every model call of the conversation, compaction included. */
+  totalTokens: number;
+  /** A run is going on in it on the server. */
+  running: boolean;
+}
+
+/** How much of the model's context the latest call took. */
+export interface ContextUse {
+  promptTokens: number;
+  contextWindow: number;
+  estimated: boolean;
+  contextSource?: ContextSource;
+  /** Tokens kept free for the reply. */
+  reservedOutput?: number;
+}
+
+/** The assistant's conversations, shared by the floating panel and the AI tab. */
+export async function listAssistantConversations(): Promise<
+  AssistantConversation[]
+> {
+  try {
+    return (await api().get("/ops/conversations")).data.conversations;
+  } catch (error) {
+    throw apiError(error, "list conversations");
+  }
+}
+
+export async function getAssistantConversation(id: number): Promise<{
+  conversation: AssistantConversation & { context: ContextUse | null };
+  messages: AiMessage[];
+}> {
+  try {
+    return (await api().get(`/ops/conversations/${id}`)).data;
+  } catch (error) {
+    throw apiError(error, "load the conversation");
+  }
+}
+
+export async function deleteAssistantConversation(id: number): Promise<void> {
+  try {
+    await api().delete(`/ops/conversations/${id}`);
+  } catch (error) {
+    throw apiError(error, "delete the conversation");
+  }
+}
+
+/** Stops the run going on in the conversation; resolves once it has ended. */
+export async function stopAssistantConversation(id: number): Promise<void> {
+  try {
+    await api().post(`/ops/conversations/${id}/stop`);
+  } catch (error) {
+    throw apiError(error, "stop the assistant");
+  }
+}
+
+/** Summarises the conversation's earlier part now, as it would when full. */
+export async function compactAssistantConversation(
+  id: number,
+  providerId: number,
+): Promise<{ compacted: boolean; context?: ContextUse }> {
+  try {
+    return (
+      await api().post(`/ops/conversations/${id}/compact`, { providerId })
+    ).data;
+  } catch (error) {
+    throw apiError(error, "compact the conversation");
+  }
+}
+
+export interface UsageTotals {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  calls: number;
+  estimated: boolean;
+}
+
+export interface UsageSummary {
+  scope: "me" | "all";
+  today: UsageTotals;
+  week: UsageTotals;
+  month: UsageTotals;
+  byDay: Array<{ day: string } & UsageTotals>;
+  byModel: Array<{ model: string } & UsageTotals>;
+  bySource: Array<{ source: string } & UsageTotals>;
+  byUser?: Array<{ userId: string } & UsageTotals>;
+}
+
+/** Token usage over 30 days; "all" needs ai.usage.view_all. */
+export async function getAiUsage(
+  scope: "me" | "all" = "me",
+): Promise<UsageSummary> {
+  try {
+    const offset = new Date().getTimezoneOffset();
+    return (await api().get(`/usage?scope=${scope}&offset=${offset}`)).data;
+  } catch (error) {
+    throw apiError(error, "load usage");
   }
 }

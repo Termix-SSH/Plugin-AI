@@ -50,7 +50,6 @@
     }
   },
   "ai": {
-    "title": "Asistent",
     "send": "Trimite",
     "stop": "Oprește",
     "save": "Salvează",
@@ -58,9 +57,7 @@
     "running": "se execută",
     "approve": "Aprobă",
     "reject": "Respinge",
-    "inputPlaceholder": "Întreabă despre serverele tale sau descrie o modificare de propus",
     "selectProvider": "Selectează un furnizor",
-    "providerSettings": "Setări furnizor",
     "addProvider": "Adaugă furnizor",
     "editProvider": "Editează furnizorul",
     "removeProvider": "Elimină furnizorul",
@@ -95,7 +92,6 @@
     "modelCustom": "Introduceți un nume de model",
     "modelRefresh": "Reîmprospătează lista",
     "modelPlaceholder": "Alegeți sau tastați un model",
-    "attachHint": "Tastați @ pentru a face referire la un gazdă, fragment sau automatizare. Modificările sunt propuse pentru aprobarea dumneavoastră.",
     "runCommandTitle": "Execută comanda",
     "assistant": "Asistent AI",
     "terminalPanelEmpty": "Întreabă asistentul despre această gazdă. Orice modificare de stare necesită aprobarea dumneavoastră prealabilă.",
@@ -120,9 +116,6 @@
     "aiEnableTitle": "Activează-l",
     "aiEnableDesc": "Adaugă un asistent care citește configurația dumneavoastră și sugerează modificări pe care le aprobați. Necesită un furnizor furnizat de dumneavoastră, cum ar fi un Ollama local.",
     "aiNote": "Nimic nu este trimis nicăieri până când nu adăugați un furnizor și trimiteți un mesaj."
-  },
-  "hosts": {
-    "docsLink": "Vezi documentația"
   },
   "agents": {
     "working": "Se lucrează...",

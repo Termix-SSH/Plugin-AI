@@ -1,7 +1,8 @@
-import { assertOk, readSseLines } from "./http.js";
+import { assertOk, firstCount, readSseLines } from "./http.js";
 import type {
   ChatChunk,
   ChatRequest,
+  ModelInfo,
   ProviderAdapter,
   ProviderConfig,
 } from "./types.js";
@@ -114,6 +115,9 @@ export const geminiAdapter: ProviderAdapter = {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: request.system }] },
         contents: toGeminiContents(request),
+        ...(request.maxTokens
+          ? { generationConfig: { maxOutputTokens: request.maxTokens } }
+          : {}),
         ...(request.tools.length
           ? {
               tools: [
@@ -134,6 +138,7 @@ export const geminiAdapter: ProviderAdapter = {
 
     let index = 0;
     let stopReason: string | undefined;
+    let usage: any = null;
 
     for await (const data of readSseLines(response)) {
       let frame: any;
@@ -143,13 +148,17 @@ export const geminiAdapter: ProviderAdapter = {
         continue;
       }
 
+      // A running total on each frame; the last one counts.
+      if (frame.usageMetadata) usage = frame.usageMetadata;
+
       const candidate = frame.candidates?.[0];
       if (!candidate) continue;
       if (candidate.finishReason) stopReason = candidate.finishReason;
 
       for (const part of candidate.content?.parts ?? []) {
         if (typeof part.text === "string" && part.text) {
-          yield { type: "text", text: part.text };
+          // A thought summary is a text part flagged thought: true.
+          yield { type: part.thought ? "reasoning" : "text", text: part.text };
         }
         if (part.functionCall?.name) {
           yield {
@@ -170,6 +179,19 @@ export const geminiAdapter: ProviderAdapter = {
       }
     }
 
+    if (usage) {
+      yield {
+        type: "usage",
+        usage: {
+          promptTokens: Number(usage.promptTokenCount) || 0,
+          // Thinking is billed as output alongside the answer.
+          completionTokens:
+            (Number(usage.candidatesTokenCount) || 0) +
+            (Number(usage.thoughtsTokenCount) || 0),
+        },
+      };
+    }
+
     yield { type: "done", stopReason };
   },
 
@@ -187,5 +209,24 @@ export const geminiAdapter: ProviderAdapter = {
       .map((entry: any) => String(entry.name ?? "").replace(/^models\//, ""))
       .filter((name: string) => name.length > 0)
       .sort();
+  },
+
+  async describeModel(
+    config: ProviderConfig,
+    model: string,
+  ): Promise<ModelInfo> {
+    if (!config.apiKey) return {};
+
+    const response = await config.fetch(
+      `${baseFor(config).replace(/\/+$/, "")}/models/${encodeURIComponent(model)}`,
+      { method: "GET", headers: { "x-goog-api-key": config.apiKey } },
+    );
+    await assertOk(response, "Gemini");
+
+    const body: any = await response.json();
+    return {
+      contextWindow: firstCount(body.inputTokenLimit),
+      maxOutputTokens: firstCount(body.outputTokenLimit),
+    };
   },
 };

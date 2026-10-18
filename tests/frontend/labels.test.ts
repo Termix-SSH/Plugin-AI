@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  fieldLabel,
-  humanize,
-  mentionLabel,
-  toolLabel,
-} from "../../src/frontend/labels";
+import { fieldLabel, humanize, toolLabel } from "../../src/frontend/labels";
 import { AI_TOOLS } from "../../src/backend/tools/catalog.js";
 
 describe("humanize", () => {
@@ -61,13 +56,5 @@ describe("toolLabel", () => {
       expect(label, tool.name).not.toContain("_");
       expect(label, tool.name).not.toBe(tool.name);
     }
-  });
-});
-
-describe("mentionLabel", () => {
-  it("capitalises the mention kinds", () => {
-    expect(mentionLabel("host")).toBe("Host");
-    expect(mentionLabel("snippet")).toBe("Snippet");
-    expect(mentionLabel("automation")).toBe("Automation");
   });
 });
