@@ -206,10 +206,10 @@ describe("submit_annotations checks", () => {
 
 describe("system names", () => {
   it("reuse the inventory's spelling", () => {
-    const known = ["OpenXDR", "SoulBind-Lite"];
+    const known = ["OpenXDR", "Shop-Lite"];
     expect(canonicalSystem("openxdr", known)).toBe("OpenXDR");
-    expect(canonicalSystem("soulbind lite", known)).toBe("SoulBind-Lite");
-    expect(canonicalSystem("Soulbind_Lite", known)).toBe("SoulBind-Lite");
+    expect(canonicalSystem("shop lite", known)).toBe("Shop-Lite");
+    expect(canonicalSystem("Shop_Lite", known)).toBe("Shop-Lite");
     expect(canonicalSystem("Sentry", known)).toBe("Sentry");
   });
 });
