@@ -31,6 +31,16 @@
         "title": "View everyone's AI usage",
         "description": "See the tokens every user's AI calls used, not only your own. Admins only by default."
       }
+    },
+    "assets": {
+      "view": {
+        "title": "View the asset inventory",
+        "description": "See the collected hosts, guests, containers, zones and connections. Admins only by default."
+      },
+      "manage": {
+        "title": "Manage the asset inventory",
+        "description": "Start collections, edit zone rules, pin zones and change the schedule. Collection reads hosts read-only. Admins only by default."
+      }
     }
   },
   "settings": {
@@ -76,6 +86,31 @@
       "autoOpsDailyTokens": {
         "label": "Daily AI token budget per user",
         "description": "Once a user has used this many tokens today (UTC), their AI tasks are skipped or stopped."
+      },
+      "assetsDailyCollect": {
+        "label": "Collect the asset inventory daily",
+        "description": "Reads every host the collector can connect to once a day with one read-only script."
+      },
+      "assetsCollectTime": {
+        "label": "Asset collection time (UTC)",
+        "description": "HH:MM, for example 03:00."
+      },
+      "assetsCollector": {
+        "label": "Asset collector"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "Annotate assets after each collection",
+        "description": "A model writes each changed asset's role, importance and business system, and the dependencies the facts show."
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "Token budget per asset annotation run",
+        "description": "A run stops once its model calls have used this many tokens; what it wrote stays."
+      },
+      "assetsAnnotateProvider": {
+        "label": "Asset annotation provider"
+      },
+      "assetsAnnotateModel": {
+        "label": "Asset annotation model"
       }
     },
     "host": {
@@ -362,7 +397,8 @@
     "source": {
       "assistant": "Assistant",
       "terminal": "Terminal panel",
-      "compaction": "Compaction"
+      "compaction": "Compaction",
+      "assets": "Asset annotation"
     }
   },
   "autoOps": {
@@ -534,7 +570,149 @@
       "noticeReported": "AI report: {{title}}",
       "noticeProposed": "AI plan awaiting approval: {{title}}",
       "noticeExecuted": "AI plan executed: {{title}}",
-      "noticeFailed": "AI task failed: {{title}}"
+      "noticeFailed": "AI task failed: {{title}}",
+      "noticeAssetsAnnotationFailed": "Asset annotation failed"
     }
+  },
+  "assets": {
+    "title": "Assets",
+    "search": "Search name, key or address",
+    "allZones": "All zones",
+    "showRemoved": "Show removed",
+    "collectNow": "Collect now",
+    "collecting": "Collecting…",
+    "collectFailed": "Could not start the collection",
+    "neverRun": "Not collected yet",
+    "lastRun": "Last collected {{time}}: {{ok}} of {{total}} hosts",
+    "lastRunFailed": "The collection at {{time}} failed",
+    "hostsFailed_one": "{{count}} host failed",
+    "hostsFailed_other": "{{count}} hosts failed",
+    "loadFailed": "Could not load the inventory",
+    "saveFailed": "Could not save",
+    "empty": "No assets yet",
+    "emptyHint": "Collect now to read every host the collector can connect to.",
+    "emptyHintView": "Someone with the ai.assets.manage permission has to collect first.",
+    "removed": "Removed",
+    "pinned": "Pinned",
+    "multiZone": "Multi-zone",
+    "multiZoneHint": "Has addresses in more than one zone, so it can reach both: a potential pivot.",
+    "columns": {
+      "name": "Name",
+      "kind": "Kind",
+      "zone": "Zone",
+      "ips": "Addresses",
+      "listening": "Ports",
+      "outbound": "Outbound",
+      "services": "Services",
+      "collected": "Last collected",
+      "role": "Role",
+      "importance": "Importance",
+      "system": "System"
+    },
+    "kind": {
+      "host": "Host",
+      "guest": "Guest",
+      "container": "Container",
+      "external": "External"
+    },
+    "zone": {
+      "internal": "Internal",
+      "dmz": "DMZ",
+      "external": "External",
+      "cloud": "Cloud",
+      "overlay": "Overlay"
+    },
+    "sections": {
+      "os": "Operating system",
+      "hostname": "Hostname",
+      "uptimeSec": "Uptime (seconds)",
+      "interfaces": "Interfaces",
+      "routes": "Routes",
+      "listening": "Listening ports",
+      "connections": "Established connections",
+      "services": "Running services",
+      "containers": "Containers",
+      "kubernetes": "Kubernetes",
+      "guests": "Proxmox guests",
+      "cloud": "Cloud",
+      "missing": "Sections with no output",
+      "guest": "Proxmox guest",
+      "container": "Container"
+    },
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "noEdges": "None",
+    "stale": "Not seen in the latest collection",
+    "pinZone": "Zone",
+    "rulesDecide": "Decided by the rules",
+    "settingsTitle": "Zones and schedule",
+    "scheduleTitle": "Collection",
+    "daily": "Collect daily",
+    "dailyHint": "Hosts are also collected again when they are added or changed.",
+    "time": "Time (UTC)",
+    "save": "Save",
+    "collector": "Collects as {{collector}}, reaching the hosts that account can connect to.",
+    "collectorMe": "you",
+    "collectorOther": "another manager",
+    "collectorNone": "nobody yet",
+    "collectAsMe": "Collect as me",
+    "zonesTitle": "Zone rules",
+    "zonesHint": "A rule maps a CIDR to a zone, ahead of the built-in ones. The most specific prefix wins, then the higher priority. Assets are zoned again when you save.",
+    "zoneName": "Name",
+    "zoneNameExample": "Data center LAN",
+    "zoneKind": "Kind",
+    "cidr": "CIDR",
+    "priority": "Priority",
+    "addZone": "Add rule",
+    "deleteZone": "Delete rule",
+    "cancelEdit": "Cancel",
+    "annotating": "Annotating…",
+    "neverAnnotated": "Not annotated yet",
+    "lastAnnotation": "Last annotated {{time}}: {{ok}} of {{total}} assets, {{tokens}} tokens",
+    "annotationFailed": "failed: {{reason}}",
+    "annotateNow": "Annotate now",
+    "annotateFailed": "Could not start the annotation",
+    "modeTable": "Table",
+    "modeGraph": "Graph",
+    "importance": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "importanceUnknown": "Not rated",
+    "importanceReason": "Why",
+    "sourceAi": "AI",
+    "sourceAiHint": "Written by the annotation; the next run may change it.",
+    "sourceUser": "Locked",
+    "sourceUserHint": "Set by a person; annotation runs leave it alone until it is unlocked.",
+    "unlock": "Unlock: let the annotation fill this in again",
+    "unlockField": "Unlock {{field}}",
+    "editAnnotation": "Edit",
+    "lockHint": "Fields you change are locked against later annotation runs.",
+    "factsTitle": "Facts",
+    "closePanel": "Close",
+    "impact": "Impact",
+    "clearImpact": "Clear",
+    "impactSummary_one": "If it fails, {{count}} asset goes down with it ({{critical}} critical, {{high}} high), {{weak}} more only connect to them.",
+    "impactSummary_other": "If it fails, {{count}} assets go down with it ({{critical}} critical, {{high}} high), {{weak}} more only connect to them.",
+    "impactTruncated": "Cut off at 6 hops or 300 assets.",
+    "impactDirect": "Directly",
+    "impactTransitive": "Through others",
+    "impactWeak": "Only connect to them",
+    "expandContainers": "Show containers",
+    "showExternal": "Show external addresses",
+    "graphCounts": "{{nodes}} assets, {{edges}} relations",
+    "graphTitle": "Asset graph",
+    "noZone": "No zone",
+    "annotationTitle": "AI annotation",
+    "annotateAfterCollect": "Annotate after each collection",
+    "annotateAfterCollectHint": "Only assets that changed since their last annotation, and their neighbours, are sent to the model.",
+    "annotateProvider": "Provider",
+    "annotateProviderDefault": "The collector's auto-ops choice",
+    "annotateModel": "Model",
+    "annotateModelDefault": "The provider's default model",
+    "annotationHint": "Annotation runs as the collector, with the collector's providers. Summaries hold no environment, command lines or external addresses.",
+    "annotateAll": "Annotate everything again"
   }
 }

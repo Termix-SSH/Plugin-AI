@@ -35,6 +35,16 @@
         "title": "查看所有人的 AI 用量",
         "description": "查看每个用户的 AI 调用所用的 token，而不只是你自己的。默认仅管理员拥有。"
       }
+    },
+    "assets": {
+      "view": {
+        "title": "查看资产清单",
+        "description": "查看采集到的主机、来宾、容器、区域和连接。默认仅管理员拥有。"
+      },
+      "manage": {
+        "title": "管理资产清单",
+        "description": "发起采集、编辑区域规则、固定区域和修改计划。采集只以只读方式读取主机。默认仅管理员拥有。"
+      }
     }
   },
   "settings": {
@@ -80,6 +90,31 @@
       "autoOpsDailyTokens": {
         "label": "每个用户每天的 AI token 预算",
         "description": "用户今天（UTC）用到这么多 token 后，其 AI 任务会被跳过或停止。"
+      },
+      "assetsDailyCollect": {
+        "label": "每天采集资产清单",
+        "description": "每天用一个只读脚本读取采集账号能连接的所有主机。"
+      },
+      "assetsCollectTime": {
+        "label": "资产采集时间（UTC）",
+        "description": "格式为 HH:MM，例如 03:00。"
+      },
+      "assetsCollector": {
+        "label": "资产采集账号"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "每次采集后标注资产",
+        "description": "由模型为每个有变动的资产写出作用、重要程度和所属业务系统，以及事实能证明的依赖关系。"
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "每次资产标注的 token 预算",
+        "description": "模型调用用满这么多 token 后运行停止，已写入的保留。"
+      },
+      "assetsAnnotateProvider": {
+        "label": "资产标注提供商"
+      },
+      "assetsAnnotateModel": {
+        "label": "资产标注模型"
       }
     },
     "host": {
@@ -364,7 +399,8 @@
     "source": {
       "assistant": "助手",
       "terminal": "终端面板",
-      "compaction": "上下文压缩"
+      "compaction": "上下文压缩",
+      "assets": "资产标注"
     }
   },
   "autoOps": {
@@ -536,7 +572,148 @@
       "noticeReported": "AI 报告：{{title}}",
       "noticeProposed": "AI 方案待审批：{{title}}",
       "noticeExecuted": "AI 方案已执行：{{title}}",
-      "noticeFailed": "AI 任务失败：{{title}}"
+      "noticeFailed": "AI 任务失败：{{title}}",
+      "noticeAssetsAnnotationFailed": "资产标注失败"
     }
+  },
+  "assets": {
+    "title": "资产",
+    "search": "搜索名称、键或地址",
+    "allZones": "全部区域",
+    "showRemoved": "显示已移除",
+    "collectNow": "立即采集",
+    "collecting": "采集中…",
+    "collectFailed": "无法开始采集",
+    "neverRun": "尚未采集",
+    "lastRun": "上次采集 {{time}}：{{total}} 台主机中 {{ok}} 台成功",
+    "lastRunFailed": "{{time}} 的采集失败",
+    "hostsFailed_other": "{{count}} 台失败",
+    "loadFailed": "无法加载资产清单",
+    "saveFailed": "无法保存",
+    "empty": "还没有资产",
+    "emptyHint": "点击立即采集，读取采集账号能连接的所有主机。",
+    "emptyHintView": "需要拥有 ai.assets.manage 权限的人先进行采集。",
+    "removed": "已移除",
+    "pinned": "已固定",
+    "multiZone": "跨区域",
+    "multiZoneHint": "在多个区域都有地址，能同时访问两边，是潜在的跳板。",
+    "columns": {
+      "name": "名称",
+      "kind": "类型",
+      "zone": "区域",
+      "ips": "地址",
+      "listening": "端口",
+      "outbound": "出站",
+      "services": "服务",
+      "collected": "上次采集",
+      "role": "作用",
+      "importance": "重要程度",
+      "system": "所属系统"
+    },
+    "kind": {
+      "host": "主机",
+      "guest": "来宾",
+      "container": "容器",
+      "external": "外部"
+    },
+    "zone": {
+      "internal": "内网",
+      "dmz": "DMZ",
+      "external": "外网",
+      "cloud": "云",
+      "overlay": "Overlay"
+    },
+    "sections": {
+      "os": "操作系统",
+      "hostname": "主机名",
+      "uptimeSec": "运行时间（秒）",
+      "interfaces": "网卡",
+      "routes": "路由",
+      "listening": "监听端口",
+      "connections": "已建立连接",
+      "services": "运行中的服务",
+      "containers": "容器",
+      "kubernetes": "Kubernetes",
+      "guests": "Proxmox 虚拟机与容器",
+      "cloud": "云",
+      "missing": "没有输出的部分",
+      "guest": "Proxmox 来宾",
+      "container": "容器"
+    },
+    "outgoing": "出向关系",
+    "incoming": "入向关系",
+    "noEdges": "无",
+    "stale": "最近一次采集未再出现",
+    "pinZone": "区域",
+    "rulesDecide": "由规则决定",
+    "settingsTitle": "区域与计划",
+    "scheduleTitle": "采集",
+    "daily": "每天采集",
+    "dailyHint": "主机新增或修改时也会重新采集。",
+    "time": "时间（UTC）",
+    "save": "保存",
+    "collector": "以{{collector}}的身份采集，只覆盖该账号能连接的主机。",
+    "collectorMe": "你",
+    "collectorOther": "另一位管理者",
+    "collectorNone": "（尚未设置）",
+    "collectAsMe": "改为以我的身份采集",
+    "zonesTitle": "区域规则",
+    "zonesHint": "规则把 CIDR 映射到区域，优先于内置规则。前缀最长的规则优先，其次是优先级高的。保存后会立即重新划分资产区域。",
+    "zoneName": "名称",
+    "zoneNameExample": "机房内网",
+    "zoneKind": "类型",
+    "cidr": "CIDR",
+    "priority": "优先级",
+    "addZone": "添加规则",
+    "deleteZone": "删除规则",
+    "cancelEdit": "取消",
+    "annotating": "正在标注…",
+    "neverAnnotated": "尚未标注",
+    "lastAnnotation": "上次标注 {{time}}：{{total}} 个资产中 {{ok}} 个，{{tokens}} tokens",
+    "annotationFailed": "失败：{{reason}}",
+    "annotateNow": "立即标注",
+    "annotateFailed": "无法开始标注",
+    "modeTable": "表格",
+    "modeGraph": "图谱",
+    "importance": {
+      "critical": "关键",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "importanceUnknown": "未评级",
+    "importanceReason": "理由",
+    "sourceAi": "AI",
+    "sourceAiHint": "由标注生成，下次运行可能会更新。",
+    "sourceUser": "已锁定",
+    "sourceUserHint": "由人工设置，解锁前标注运行不会改动。",
+    "unlock": "解锁：交还给标注重新填写",
+    "unlockField": "解锁{{field}}",
+    "editAnnotation": "编辑",
+    "lockHint": "你修改的字段会被锁定，之后的标注运行不会覆盖。",
+    "factsTitle": "事实",
+    "closePanel": "关闭",
+    "impact": "影响分析",
+    "clearImpact": "清除",
+    "impactSummary_one": "它挂了会波及 {{count}} 个资产（关键 {{critical}}，高 {{high}}），另有 {{weak}} 个只是连接到它们。",
+    "impactSummary_other": "它挂了会波及 {{count}} 个资产（关键 {{critical}}，高 {{high}}），另有 {{weak}} 个只是连接到它们。",
+    "impactTruncated": "已在 6 跳或 300 个资产处截断。",
+    "impactDirect": "直接",
+    "impactTransitive": "间接",
+    "impactWeak": "仅连接",
+    "expandContainers": "显示容器",
+    "showExternal": "显示外部地址",
+    "graphCounts": "{{nodes}} 个资产，{{edges}} 条关系",
+    "graphTitle": "资产图谱",
+    "noZone": "无区域",
+    "annotationTitle": "AI 标注",
+    "annotateAfterCollect": "每次采集后标注",
+    "annotateAfterCollectHint": "只把上次标注后有变动的资产及其相邻资产发给模型。",
+    "annotateProvider": "提供商",
+    "annotateProviderDefault": "采集人的自动运维选择",
+    "annotateModel": "模型",
+    "annotateModelDefault": "提供商的默认模型",
+    "annotationHint": "标注以采集人的身份、用采集人的提供商运行。摘要不含环境变量、命令行和外部地址。",
+    "annotateAll": "全部重新标注"
   }
 }

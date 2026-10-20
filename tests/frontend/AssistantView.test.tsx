@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   compact: vi.fn(),
   savePreferences: vi.fn(),
   openSingletonTab: vi.fn(),
+  hasPermission: vi.fn(),
 }));
 vi.mock("../../src/frontend/autoops/api", async (original) => ({
   ...(await original<object>()),
@@ -25,7 +26,7 @@ vi.mock("../../src/frontend/app-ref", () => ({
     fetch: mocks.fetch,
     tabs: { getLayout: () => null, openSingletonTab: mocks.openSingletonTab },
     confirm: async () => true,
-    hasPermission: async () => false,
+    hasPermission: mocks.hasPermission,
   }),
 }));
 vi.mock("../../src/frontend/ai-api", () => ({
@@ -94,6 +95,7 @@ beforeEach(() => {
   });
   mocks.fetch.mockResolvedValue(frames({ type: "done" }));
   mocks.savePreferences.mockResolvedValue({});
+  mocks.hasPermission.mockResolvedValue(false);
   assistant.setHostShell(true);
 });
 afterEach(() => {
@@ -124,6 +126,17 @@ it("sends the selected hosts and the page with every message", async () => {
     hostIds: [2],
   });
   expect(await screen.findByText("check disk space")).toBeTruthy();
+});
+
+it("offers the asset inventory to a holder of ai.assets.view", async () => {
+  await ready();
+  expect(screen.queryByText("assets.title")).toBeNull();
+  cleanup();
+  mocks.hasPermission.mockImplementation(
+    async (permission: string) => permission === "assets.view",
+  );
+  await ready();
+  expect(await screen.findByText("assets.title")).toBeTruthy();
 });
 
 it("saves the interface language for reports when the assistant opens", async () => {

@@ -779,6 +779,278 @@
           ]
         }
       ]
+    },
+    "assets": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "type": "varchar",
+          "length": 255,
+          "notNull": true,
+          "unique": true
+        },
+        "kind": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "hostId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "text",
+          "notNull": true
+        },
+        "ips": {
+          "type": "text",
+          "notNull": true,
+          "defaultValue": "[]"
+        },
+        "zone": {
+          "type": "varchar",
+          "length": 120
+        },
+        "zoneSource": {
+          "type": "varchar",
+          "length": 16
+        },
+        "multiZone": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": false
+        },
+        "facts": {
+          "type": "text"
+        },
+        "collectedAt": {
+          "type": "timestamp"
+        },
+        "removedAt": {
+          "type": "timestamp"
+        },
+        "role": {
+          "type": "text"
+        },
+        "roleSource": {
+          "type": "varchar",
+          "length": 16
+        },
+        "importance": {
+          "type": "varchar",
+          "length": 16
+        },
+        "importanceSource": {
+          "type": "varchar",
+          "length": 16
+        },
+        "importanceReason": {
+          "type": "text"
+        },
+        "system": {
+          "type": "varchar",
+          "length": 120
+        },
+        "systemSource": {
+          "type": "varchar",
+          "length": 16
+        },
+        "annotatedAt": {
+          "type": "timestamp"
+        },
+        "annotationFingerprint": {
+          "type": "varchar",
+          "length": 64
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_assets_host",
+          "columns": [
+            "hostId"
+          ]
+        },
+        {
+          "name": "idx_ai_assets_zone",
+          "columns": [
+            "zone"
+          ]
+        }
+      ]
+    },
+    "asset_edges": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fromAsset": {
+          "type": "integer",
+          "notNull": true
+        },
+        "toAsset": {
+          "type": "integer",
+          "notNull": true
+        },
+        "type": {
+          "type": "varchar",
+          "length": 32,
+          "notNull": true
+        },
+        "detail": {
+          "type": "text"
+        },
+        "evidence": {
+          "type": "text"
+        },
+        "source": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "firstSeen": {
+          "type": "timestamp",
+          "notNull": true
+        },
+        "lastSeen": {
+          "type": "timestamp",
+          "notNull": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_asset_edges_pair",
+          "columns": [
+            "fromAsset",
+            "toAsset",
+            "type"
+          ],
+          "unique": true
+        },
+        {
+          "name": "idx_ai_asset_edges_to",
+          "columns": [
+            "toAsset"
+          ]
+        }
+      ]
+    },
+    "asset_runs": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kind": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true,
+          "defaultValue": "collect"
+        },
+        "trigger": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "startedAt": {
+          "type": "timestamp",
+          "notNull": true
+        },
+        "finishedAt": {
+          "type": "timestamp"
+        },
+        "status": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "hostsTotal": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "hostsOk": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "hostsFailed": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "errorSummary": {
+          "type": "text"
+        },
+        "tokens": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_ai_asset_runs_started",
+          "columns": [
+            "startedAt"
+          ]
+        }
+      ]
+    },
+    "zones": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true
+        },
+        "kind": {
+          "type": "varchar",
+          "length": 16,
+          "notNull": true
+        },
+        "cidr": {
+          "type": "varchar",
+          "length": 64,
+          "notNull": true
+        },
+        "priority": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "createdBy": {
+          "type": "varchar",
+          "length": 255,
+          "notNull": true
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": []
     }
   }
 }

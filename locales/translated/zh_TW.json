@@ -35,6 +35,16 @@
         "title": "檢視所有人的 AI 用量",
         "description": "檢視每位使用者的 AI 呼叫所用的 token，而不只是你自己的。預設僅管理員擁有。"
       }
+    },
+    "assets": {
+      "view": {
+        "title": "檢視資產清單",
+        "description": "檢視採集到的主機、來賓、容器、區域和連線。預設僅管理員擁有。"
+      },
+      "manage": {
+        "title": "管理資產清單",
+        "description": "發起採集、編輯區域規則、固定區域和修改排程。採集只以唯讀方式讀取主機。預設僅管理員擁有。"
+      }
     }
   },
   "settings": {
@@ -80,6 +90,31 @@
       "autoOpsDailyTokens": {
         "label": "每個使用者每天的 AI token 預算",
         "description": "使用者今天（UTC）用到這麼多 token 後，其 AI 任務會被略過或停止。"
+      },
+      "assetsDailyCollect": {
+        "label": "每天採集資產清單",
+        "description": "每天用一個唯讀腳本讀取採集帳號能連線的所有主機。"
+      },
+      "assetsCollectTime": {
+        "label": "資產採集時間（UTC）",
+        "description": "格式為 HH:MM，例如 03:00。"
+      },
+      "assetsCollector": {
+        "label": "資產採集帳號"
+      },
+      "assetsAnnotateAfterCollect": {
+        "label": "每次採集後標註資產",
+        "description": "由模型為每個有變動的資產寫出作用、重要程度和所屬業務系統，以及事實能證明的相依關係。"
+      },
+      "assetsAnnotateRunTokens": {
+        "label": "每次資產標註的 token 預算",
+        "description": "模型呼叫用滿這麼多 token 後執行停止，已寫入的保留。"
+      },
+      "assetsAnnotateProvider": {
+        "label": "資產標註提供者"
+      },
+      "assetsAnnotateModel": {
+        "label": "資產標註模型"
       }
     },
     "host": {
@@ -364,7 +399,8 @@
     "source": {
       "assistant": "助理",
       "terminal": "終端機面板",
-      "compaction": "上下文壓縮"
+      "compaction": "上下文壓縮",
+      "assets": "資產標註"
     }
   },
   "autoOps": {
@@ -536,7 +572,148 @@
       "noticeReported": "AI 報告：{{title}}",
       "noticeProposed": "AI 方案待審批：{{title}}",
       "noticeExecuted": "AI 方案已執行：{{title}}",
-      "noticeFailed": "AI 任務失敗：{{title}}"
+      "noticeFailed": "AI 任務失敗：{{title}}",
+      "noticeAssetsAnnotationFailed": "資產標註失敗"
     }
+  },
+  "assets": {
+    "title": "資產",
+    "search": "搜尋名稱、鍵或位址",
+    "allZones": "全部區域",
+    "showRemoved": "顯示已移除",
+    "collectNow": "立即採集",
+    "collecting": "採集中…",
+    "collectFailed": "無法開始採集",
+    "neverRun": "尚未採集",
+    "lastRun": "上次採集 {{time}}：{{total}} 台主機中 {{ok}} 台成功",
+    "lastRunFailed": "{{time}} 的採集失敗",
+    "hostsFailed_other": "{{count}} 台失敗",
+    "loadFailed": "無法載入資產清單",
+    "saveFailed": "無法儲存",
+    "empty": "還沒有資產",
+    "emptyHint": "點擊立即採集，讀取採集帳號能連線的所有主機。",
+    "emptyHintView": "需要擁有 ai.assets.manage 權限的人先進行採集。",
+    "removed": "已移除",
+    "pinned": "已固定",
+    "multiZone": "跨區域",
+    "multiZoneHint": "在多個區域都有位址，能同時存取兩邊，是潛在的跳板。",
+    "columns": {
+      "name": "名稱",
+      "kind": "類型",
+      "zone": "區域",
+      "ips": "位址",
+      "listening": "連接埠",
+      "outbound": "出站",
+      "services": "服務",
+      "collected": "上次採集",
+      "role": "作用",
+      "importance": "重要程度",
+      "system": "所屬系統"
+    },
+    "kind": {
+      "host": "主機",
+      "guest": "來賓",
+      "container": "容器",
+      "external": "外部"
+    },
+    "zone": {
+      "internal": "內網",
+      "dmz": "DMZ",
+      "external": "外網",
+      "cloud": "雲端",
+      "overlay": "Overlay"
+    },
+    "sections": {
+      "os": "作業系統",
+      "hostname": "主機名稱",
+      "uptimeSec": "運行時間（秒）",
+      "interfaces": "網路介面",
+      "routes": "路由",
+      "listening": "監聽連接埠",
+      "connections": "已建立連線",
+      "services": "執行中的服務",
+      "containers": "容器",
+      "kubernetes": "Kubernetes",
+      "guests": "Proxmox 虛擬機與容器",
+      "cloud": "雲端",
+      "missing": "沒有輸出的部分",
+      "guest": "Proxmox 來賓",
+      "container": "容器"
+    },
+    "outgoing": "出向關係",
+    "incoming": "入向關係",
+    "noEdges": "無",
+    "stale": "最近一次採集未再出現",
+    "pinZone": "區域",
+    "rulesDecide": "由規則決定",
+    "settingsTitle": "區域與排程",
+    "scheduleTitle": "採集",
+    "daily": "每天採集",
+    "dailyHint": "主機新增或修改時也會重新採集。",
+    "time": "時間（UTC）",
+    "save": "儲存",
+    "collector": "以{{collector}}的身分採集，只涵蓋該帳號能連線的主機。",
+    "collectorMe": "你",
+    "collectorOther": "另一位管理者",
+    "collectorNone": "（尚未設定）",
+    "collectAsMe": "改為以我的身分採集",
+    "zonesTitle": "區域規則",
+    "zonesHint": "規則把 CIDR 對應到區域，優先於內建規則。前綴最長的規則優先，其次是優先順序高的。儲存後會立即重新劃分資產區域。",
+    "zoneName": "名稱",
+    "zoneNameExample": "機房內網",
+    "zoneKind": "類型",
+    "cidr": "CIDR",
+    "priority": "優先順序",
+    "addZone": "新增規則",
+    "deleteZone": "刪除規則",
+    "cancelEdit": "取消",
+    "annotating": "正在標註…",
+    "neverAnnotated": "尚未標註",
+    "lastAnnotation": "上次標註 {{time}}：{{total}} 個資產中 {{ok}} 個，{{tokens}} tokens",
+    "annotationFailed": "失敗：{{reason}}",
+    "annotateNow": "立即標註",
+    "annotateFailed": "無法開始標註",
+    "modeTable": "表格",
+    "modeGraph": "圖譜",
+    "importance": {
+      "critical": "關鍵",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "importanceUnknown": "未評級",
+    "importanceReason": "理由",
+    "sourceAi": "AI",
+    "sourceAiHint": "由標註產生，下次執行可能會更新。",
+    "sourceUser": "已鎖定",
+    "sourceUserHint": "由人工設定，解鎖前標註執行不會改動。",
+    "unlock": "解鎖：交還給標註重新填寫",
+    "unlockField": "解鎖{{field}}",
+    "editAnnotation": "編輯",
+    "lockHint": "你修改的欄位會被鎖定，之後的標註執行不會覆蓋。",
+    "factsTitle": "事實",
+    "closePanel": "關閉",
+    "impact": "影響分析",
+    "clearImpact": "清除",
+    "impactSummary_one": "它掛了會波及 {{count}} 個資產（關鍵 {{critical}}，高 {{high}}），另有 {{weak}} 個只是連線到它們。",
+    "impactSummary_other": "它掛了會波及 {{count}} 個資產（關鍵 {{critical}}，高 {{high}}），另有 {{weak}} 個只是連線到它們。",
+    "impactTruncated": "已在 6 跳或 300 個資產處截斷。",
+    "impactDirect": "直接",
+    "impactTransitive": "間接",
+    "impactWeak": "僅連線",
+    "expandContainers": "顯示容器",
+    "showExternal": "顯示外部位址",
+    "graphCounts": "{{nodes}} 個資產，{{edges}} 條關係",
+    "graphTitle": "資產圖譜",
+    "noZone": "無區域",
+    "annotationTitle": "AI 標註",
+    "annotateAfterCollect": "每次採集後標註",
+    "annotateAfterCollectHint": "只把上次標註後有變動的資產及其相鄰資產傳給模型。",
+    "annotateProvider": "提供者",
+    "annotateProviderDefault": "採集人的自動維運選擇",
+    "annotateModel": "模型",
+    "annotateModelDefault": "提供者的預設模型",
+    "annotationHint": "標註以採集人的身分、用採集人的提供者執行。摘要不含環境變數、命令列和外部位址。",
+    "annotateAll": "全部重新標註"
   }
 }
