@@ -99,6 +99,18 @@ let stopRequested = false;
 const conversationKey = (user: string) =>
   `termix-ai:assistant-conversation:${user}`;
 
+const providerKey = (user: string | null) =>
+  `termix-ai:assistant-provider:${user ?? ""}`;
+
+function rememberedProvider(): number | null {
+  try {
+    const id = Number(localStorage.getItem(providerKey(userKey)));
+    return Number.isInteger(id) && id > 0 ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 function set(patch: Partial<AssistantState>) {
   state = { ...state, ...patch };
   if (userKey && "conversationId" in patch)
@@ -131,12 +143,16 @@ function subscribe(listener: () => void) {
 
 async function loadProviders() {
   const providers = await getAiProviders().catch(() => []);
+  const known = (id: number | null) =>
+    id !== null && providers.some((entry) => entry.id === id);
   const current = state.providerId;
+  const saved = rememberedProvider();
   set({
     providers,
-    providerId:
-      current && providers.some((entry) => entry.id === current)
-        ? current
+    providerId: known(current)
+      ? current
+      : known(saved)
+        ? saved
         : (providers[0]?.id ?? null),
   });
 }
@@ -337,6 +353,11 @@ export const assistant = {
   },
   setProvider(providerId: number) {
     set({ providerId });
+    try {
+      localStorage.setItem(providerKey(userKey), String(providerId));
+    } catch {
+      // Storage may be off; the choice just is not remembered.
+    }
   },
 
   /** Where the browser does what a client_action frame asks. */

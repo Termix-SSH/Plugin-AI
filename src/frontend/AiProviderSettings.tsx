@@ -2,7 +2,7 @@ import { getErrorMessage } from "./errors";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { toast } from "sonner";
-import { Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { ChevronRight, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import {
   Button,
   Input,
@@ -29,6 +29,7 @@ import {
   CONTEXT_SOURCE_KEYS,
   type ModelContext,
   type ModelOverrides,
+  type ProviderAdvanced,
 } from "./ai-api";
 
 const PROVIDER_TYPES: Array<{
@@ -73,6 +74,148 @@ const PROVIDER_TYPES: Array<{
 
 const FORM = "flex flex-col gap-3 border-b border-border py-3";
 const FIELD = "flex flex-col gap-1.5";
+
+/** Only these provider types read the advanced settings. */
+function hasAdvanced(type: AiProviderType): boolean {
+  return type === "openai" || type === "openai_compatible";
+}
+
+/** The advanced settings as the form edits them; empty means the default. */
+type AdvancedFields = Record<keyof ProviderAdvanced, string>;
+
+/** Radix Select needs a non-empty value, so the default gets one. */
+const DEFAULT_CHOICE = "__default__";
+
+const ADVANCED_CHOICES: Array<{
+  key: "endpoint" | "reasoningEffort" | "reasoningSummary" | "verbosity";
+  labelKey: string;
+  hintKey?: string;
+  defaultKey: string;
+  options: Array<{ value: string; labelKey: string }>;
+}> = [
+  {
+    key: "endpoint",
+    labelKey: "ai.advancedEndpoint",
+    defaultKey: "ai.advancedAuto",
+    options: [
+      { value: "responses", labelKey: "ai.advancedEndpointResponses" },
+      { value: "chat", labelKey: "ai.advancedEndpointChat" },
+    ],
+  },
+  {
+    key: "reasoningEffort",
+    labelKey: "ai.advancedReasoningEffort",
+    defaultKey: "ai.advancedDefault",
+    options: [
+      { value: "none", labelKey: "ai.advancedNone" },
+      { value: "minimal", labelKey: "ai.advancedMinimal" },
+      { value: "low", labelKey: "ai.advancedLow" },
+      { value: "medium", labelKey: "ai.advancedMedium" },
+      { value: "high", labelKey: "ai.advancedHigh" },
+      { value: "xhigh", labelKey: "ai.advancedXhigh" },
+      { value: "max", labelKey: "ai.advancedMax" },
+    ],
+  },
+  {
+    key: "reasoningSummary",
+    labelKey: "ai.advancedReasoningSummary",
+    hintKey: "ai.advancedReasoningSummaryHint",
+    defaultKey: "ai.advancedDefaultAuto",
+    options: [
+      { value: "auto", labelKey: "ai.advancedAuto" },
+      { value: "concise", labelKey: "ai.advancedConcise" },
+      { value: "detailed", labelKey: "ai.advancedDetailed" },
+      { value: "off", labelKey: "ai.advancedOff" },
+    ],
+  },
+  {
+    key: "verbosity",
+    labelKey: "ai.advancedVerbosity",
+    defaultKey: "ai.advancedDefault",
+    options: [
+      { value: "low", labelKey: "ai.advancedLow" },
+      { value: "medium", labelKey: "ai.advancedMedium" },
+      { value: "high", labelKey: "ai.advancedHigh" },
+    ],
+  },
+];
+
+/** The ranges match what the server accepts. */
+const ADVANCED_NUMBERS: Array<{
+  key: "maxOutputTokens" | "temperature";
+  labelKey: string;
+  hintKey?: string;
+  errorKey: string;
+  min: number;
+  max: number;
+  step: number;
+  integer: boolean;
+}> = [
+  {
+    key: "maxOutputTokens",
+    labelKey: "ai.advancedMaxOutputTokens",
+    errorKey: "ai.advancedMaxOutputTokensInvalid",
+    min: 1,
+    max: 1_000_000,
+    step: 1,
+    integer: true,
+  },
+  {
+    key: "temperature",
+    labelKey: "ai.advancedTemperature",
+    hintKey: "ai.advancedTemperatureHint",
+    errorKey: "ai.advancedTemperatureInvalid",
+    min: 0,
+    max: 2,
+    step: 0.1,
+    integer: false,
+  },
+];
+
+/** The field's value as a number: null when empty, false when not valid. */
+function parseAdvancedNumber(
+  value: string,
+  range: { min: number; max: number; integer: boolean },
+): number | null | false {
+  if (!value.trim()) return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < range.min || number > range.max) {
+    return false;
+  }
+  return range.integer && !Number.isInteger(number) ? false : number;
+}
+
+function fromAdvanced(advanced: ProviderAdvanced): AdvancedFields {
+  return {
+    // Auto is what the server does without one, so it shows as the default.
+    endpoint: advanced.endpoint === "auto" ? "" : (advanced.endpoint ?? ""),
+    reasoningEffort: advanced.reasoningEffort ?? "",
+    reasoningSummary: advanced.reasoningSummary ?? "",
+    verbosity: advanced.verbosity ?? "",
+    maxOutputTokens: advanced.maxOutputTokens?.toString() ?? "",
+    temperature: advanced.temperature?.toString() ?? "",
+  };
+}
+
+const EMPTY_ADVANCED = fromAdvanced({});
+
+/**
+ * The settings the fields describe with only the ones that are set: null
+ * when none are, false when a number is not valid.
+ */
+function toAdvanced(fields: AdvancedFields): ProviderAdvanced | null | false {
+  const advanced: Record<string, string | number> = {};
+  for (const { key } of ADVANCED_CHOICES) {
+    if (fields[key]) advanced[key] = fields[key];
+  }
+  for (const spec of ADVANCED_NUMBERS) {
+    const number = parseAdvancedNumber(fields[spec.key], spec);
+    if (number === false) return false;
+    if (number !== null) advanced[spec.key] = number;
+  }
+  // The choices only hold values from their option lists.
+  return Object.keys(advanced).length ? (advanced as ProviderAdvanced) : null;
+}
 
 interface AiProviderSettingsProps {
   providers: AiProvider[];
@@ -298,6 +441,117 @@ function ContextWindowTable({
   );
 }
 
+/** Request settings for OpenAI-style providers, folded away until asked for. */
+function AdvancedSection({
+  id,
+  fields,
+  onChange,
+}: {
+  id: string;
+  fields: AdvancedFields;
+  onChange: (key: keyof AdvancedFields, value: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className={FIELD}>
+      <button
+        type="button"
+        className="flex items-center gap-1 self-start text-xs font-medium text-muted-foreground hover:text-foreground"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <ChevronRight
+          size={12}
+          className={
+            open ? "rotate-90 transition-transform" : "transition-transform"
+          }
+        />
+        {t("ai.advanced")}
+      </button>
+
+      {open && (
+        <div id={id} className="flex flex-col gap-3">
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            {t("ai.advancedHint")}
+          </p>
+
+          {ADVANCED_CHOICES.map((choice) => (
+            <div key={choice.key} className={FIELD}>
+              <Label htmlFor={`${id}-${choice.key}`}>
+                {t(choice.labelKey)}
+              </Label>
+              <Select
+                value={fields[choice.key] || DEFAULT_CHOICE}
+                onValueChange={(value) =>
+                  onChange(choice.key, value === DEFAULT_CHOICE ? "" : value)
+                }
+              >
+                <SelectTrigger
+                  id={`${id}-${choice.key}`}
+                  size="sm"
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={DEFAULT_CHOICE}>
+                    {t(choice.defaultKey)}
+                  </SelectItem>
+                  {choice.options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {t(option.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {choice.hintKey && (
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  {t(choice.hintKey)}
+                </p>
+              )}
+            </div>
+          ))}
+
+          {ADVANCED_NUMBERS.map((spec) => {
+            const invalid =
+              parseAdvancedNumber(fields[spec.key], spec) === false;
+            return (
+              <div key={spec.key} className={FIELD}>
+                <Label htmlFor={`${id}-${spec.key}`}>{t(spec.labelKey)}</Label>
+                <Input
+                  id={`${id}-${spec.key}`}
+                  type="number"
+                  inputMode={spec.integer ? "numeric" : "decimal"}
+                  min={spec.min}
+                  max={spec.max}
+                  step={spec.step}
+                  placeholder={t("ai.advancedDefault")}
+                  aria-invalid={invalid || undefined}
+                  value={fields[spec.key]}
+                  onChange={(event) => onChange(spec.key, event.target.value)}
+                />
+                {spec.hintKey && (
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    {t(spec.hintKey)}
+                  </p>
+                )}
+                {invalid && (
+                  <p className="text-[11px] leading-snug text-destructive">
+                    {t(spec.errorKey)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AiProviderEditForm({
   provider,
   onSaved,
@@ -318,11 +572,17 @@ function AiProviderEditForm({
       ]),
     ),
   );
+  const [advancedFields, setAdvancedFields] = useState(() =>
+    fromAdvanced(provider.advanced),
+  );
   const [models, setModels] = useState<string[]>([]);
   const [customModel, setCustomModel] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [detectWarning, setDetectWarning] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const showAdvanced = hasAdvanced(provider.providerType);
+  const advanced = showAdvanced ? toAdvanced(advancedFields) : null;
 
   const detectModels = useCallback(async () => {
     setDetecting(true);
@@ -357,6 +617,7 @@ function AiProviderEditForm({
       toast.error(t("ai.contextWindowInvalid"));
       return;
     }
+    if (advanced === false) return;
 
     setSaving(true);
     try {
@@ -364,6 +625,8 @@ function AiProviderEditForm({
         label: label.trim(),
         defaultModel: defaultModel.trim() || null,
         modelOverrides,
+        // Null when nothing is set, so earlier settings are cleared.
+        ...(showAdvanced && { advanced }),
       });
       toast.success(t("ai.providerUpdated"));
       onSaved();
@@ -413,10 +676,21 @@ function AiProviderEditForm({
         }
       />
 
+      {showAdvanced && (
+        <AdvancedSection
+          id={`ai-provider-advanced-${provider.id}`}
+          fields={advancedFields}
+          onChange={(key, value) =>
+            setAdvancedFields((current) => ({ ...current, [key]: value }))
+          }
+        />
+      )}
+
       <FormFooter
         saving={saving}
         saveLabel={t("ai.save")}
         cancelLabel={t("ai.cancel")}
+        disabled={advanced === false}
         onSave={() => void handleSave()}
         onCancel={onCancel}
       />
@@ -439,6 +713,7 @@ export function AiProviderSettings({
   const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
   const [apiKey, setApiKey] = useState("");
   const [defaultModel, setDefaultModel] = useState("");
+  const [advancedFields, setAdvancedFields] = useState(EMPTY_ADVANCED);
 
   const [models, setModels] = useState<string[]>([]);
   const [detecting, setDetecting] = useState(false);
@@ -446,6 +721,9 @@ export function AiProviderSettings({
   const [customModel, setCustomModel] = useState(false);
 
   const spec = PROVIDER_TYPES.find((entry) => entry.value === providerType)!;
+  const advanced = hasAdvanced(providerType)
+    ? toAdvanced(advancedFields)
+    : null;
 
   useEffect(() => {
     setBaseUrl(spec.defaultBaseUrl ?? "");
@@ -498,6 +776,7 @@ export function AiProviderSettings({
       toast.error(t("ai.labelRequired"));
       return;
     }
+    if (advanced === false) return;
     setSaving(true);
     try {
       const created = await createAiProvider({
@@ -506,11 +785,13 @@ export function AiProviderSettings({
         baseUrl: baseUrl.trim() || null,
         apiKey: apiKey.trim() || null,
         defaultModel: defaultModel.trim() || null,
+        ...(advanced && { advanced }),
       });
       setAdding(false);
       setLabel("");
       setApiKey("");
       setDefaultModel("");
+      setAdvancedFields(EMPTY_ADVANCED);
       onChanged(created.id);
       onAdded?.();
     } catch (error) {
@@ -687,10 +968,21 @@ export function AiProviderSettings({
             onRefresh={() => void detectModels()}
           />
 
+          {hasAdvanced(providerType) && (
+            <AdvancedSection
+              id="ai-provider-new-advanced"
+              fields={advancedFields}
+              onChange={(key, value) =>
+                setAdvancedFields((current) => ({ ...current, [key]: value }))
+              }
+            />
+          )}
+
           <FormFooter
             saving={saving}
             saveLabel={t("ai.save")}
             cancelLabel={t("ai.cancel")}
+            disabled={advanced === false}
             onSave={() => void handleAdd()}
             onCancel={() => setAdding(false)}
           />

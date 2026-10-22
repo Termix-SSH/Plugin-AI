@@ -121,11 +121,34 @@
       "enableAiAssistant": {
         "label": "Enable AI Assistant",
         "description": "Allow the AI assistant to help in this host's terminal. Off by default, and still needs AI enabled for your account."
+      },
+      "showPanel": {
+        "label": "Panel beside the terminal",
+        "description": "Offer a assistant panel next to this host's SSH terminal."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Auto-ops preferences"
+      },
+      "companionAutoOpen": {
+        "label": "Open the assistant panel with a terminal",
+        "description": "Show the assistant panel when a terminal opens on a host that has it."
+      },
+      "companionSide": {
+        "label": "Assistant panel side",
+        "description": "Where the panel sits next to the terminal.",
+        "right": "Right",
+        "left": "Left",
+        "bottom": "Bottom"
+      },
+      "companionSize": {
+        "label": "Assistant panel size",
+        "description": "Width, or height at the bottom, in pixels."
+      },
+      "companionEdgeButton": {
+        "label": "Assistant panel edge button",
+        "description": "Show a small button on the terminal edge to open the panel."
       }
     }
   },
@@ -195,7 +218,34 @@
     "contextSourceDefault": "default for unknown models",
     "contextLoadFailed": "Could not read the context windows",
     "contextRefresh": "Refresh",
-    "contextWindowInvalid": "Enter the context window as a whole number of tokens, at least 1024."
+    "contextWindowInvalid": "Enter the context window as a whole number of tokens, at least 1024.",
+    "advanced": "Advanced",
+    "advancedHint": "Leave a setting on Default to use the model's own.",
+    "advancedDefault": "Default",
+    "advancedDefaultAuto": "Default (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Endpoint",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Reasoning effort",
+    "advancedReasoningSummary": "Reasoning summary",
+    "advancedReasoningSummaryHint": "Responses API only.",
+    "advancedVerbosity": "Verbosity",
+    "advancedNone": "None",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Low",
+    "advancedMedium": "Medium",
+    "advancedHigh": "High",
+    "advancedXhigh": "Extra high",
+    "advancedMax": "Max",
+    "advancedConcise": "Concise",
+    "advancedDetailed": "Detailed",
+    "advancedOff": "Off",
+    "advancedMaxOutputTokens": "Max output tokens",
+    "advancedMaxOutputTokensInvalid": "Enter a whole number from 1 to 1,000,000.",
+    "advancedTemperature": "Temperature",
+    "advancedTemperatureHint": "OpenAI reasoning models accept this only with reasoning effort None, so with any other effort it is not sent.",
+    "advancedTemperatureInvalid": "Enter a number from 0 to 2."
   },
   "nav": {
     "ai": "AI assistant"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "Insufficient evidence to classify exposure",
     "reason_critical-asset": "Asset marked critical",
     "reason_manual": "Priority selected by a user"
+  },
+  "companion": {
+    "toggle": "Assistant panel"
   }
 }

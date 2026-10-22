@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Activar asistente de IA",
         "description": "Permite que el asistente de IA te ayude en la terminal de este host. Desactivado por defecto, y aún requiere que la IA esté activada en tu cuenta."
+      },
+      "showPanel": {
+        "label": "Panel junto al terminal",
+        "description": "Ofrece un panel de asistente junto al terminal SSH de este host."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Preferencias de operaciones automáticas"
+      },
+      "companionAutoOpen": {
+        "label": "Abrir el panel de asistente con un terminal",
+        "description": "Muestra el panel de asistente cuando se abre un terminal en un host que lo tenga."
+      },
+      "companionSide": {
+        "label": "Lado del panel de asistente",
+        "description": "Dónde se sitúa el panel junto al terminal.",
+        "right": "Derecha",
+        "left": "Izquierda",
+        "bottom": "Abajo"
+      },
+      "companionSize": {
+        "label": "Tamaño del panel de asistente",
+        "description": "Ancho, o alto en la parte inferior, en píxeles."
+      },
+      "companionEdgeButton": {
+        "label": "Botón del borde del panel de asistente",
+        "description": "Muestra un pequeño botón en el borde del terminal para abrir el panel."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "predeterminado para modelos desconocidos",
     "contextLoadFailed": "No se han podido leer las ventanas de contexto",
     "contextRefresh": "Actualizar",
-    "contextWindowInvalid": "Introduce la ventana de contexto como un número entero de tokens, al menos 1024."
+    "contextWindowInvalid": "Introduce la ventana de contexto como un número entero de tokens, al menos 1024.",
+    "advanced": "Avanzado",
+    "advancedHint": "Deja un ajuste en Predeterminado para usar el del modelo.",
+    "advancedDefault": "Predeterminado",
+    "advancedDefaultAuto": "Predeterminado (auto)",
+    "advancedAuto": "Automático",
+    "advancedEndpoint": "Punto de conexión",
+    "advancedEndpointResponses": "API de respuestas",
+    "advancedEndpointChat": "Completaciones de chat",
+    "advancedReasoningEffort": "Esfuerzo de razonamiento",
+    "advancedReasoningSummary": "Resumen de razonamiento",
+    "advancedReasoningSummaryHint": "Solo API de respuestas.",
+    "advancedVerbosity": "Verbosidad",
+    "advancedNone": "Ninguno",
+    "advancedMinimal": "Mínimo",
+    "advancedLow": "Bajo",
+    "advancedMedium": "Medio",
+    "advancedHigh": "Alto",
+    "advancedXhigh": "Muy alta",
+    "advancedMax": "Máx.",
+    "advancedConcise": "Conciso",
+    "advancedDetailed": "Detallado",
+    "advancedOff": "Desactivado",
+    "advancedMaxOutputTokens": "Tokens de salida máx.",
+    "advancedMaxOutputTokensInvalid": "Introduce un número entero entre 1 y 1.000.000.",
+    "advancedTemperature": "Temperatura",
+    "advancedTemperatureHint": "Los modelos de razonamiento de OpenAI solo aceptan este parámetro cuando el esfuerzo de razonamiento es «Ninguno»; con cualquier otro valor no se envía.",
+    "advancedTemperatureInvalid": "Introduce un número entre 0 y 2."
   },
   "nav": {
     "ai": "Asistente de IA"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Pruebas insuficientes para clasificar la exposición",
     "reason_critical-asset": "Activo marcado como crítico",
     "reason_manual": "Prioridad seleccionada por un usuario"
+  },
+  "companion": {
+    "toggle": "Panel del asistente"
   }
 }

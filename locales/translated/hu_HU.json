@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "AI Asszisztens engedélyezése",
         "description": "Lehetővé teszi az AI asszisztens segítségnyújtását ebben a hosztban. Alapértelmezés szerint ki van kapcsolva, és még mindig engedélyezve kell lennie az AI-nak a fiókodban."
+      },
+      "showPanel": {
+        "label": "Panel a terminál mellett",
+        "description": "Segédpanel megjelenítése a gazdagép SSH-terminálja mellett."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Automatikus műveletek beállításai"
+      },
+      "companionAutoOpen": {
+        "label": "Segédpanel megnyitása terminállal együtt",
+        "description": "A segédpanel megjelenítése, amikor egy olyan gazdagépen nyílik terminál, amelyik támogatja."
+      },
+      "companionSide": {
+        "label": "Segédpanel oldala",
+        "description": "Ahol a panel a terminál mellett helyezkedik el.",
+        "right": "Jobb",
+        "left": "Bal",
+        "bottom": "Alsó"
+      },
+      "companionSize": {
+        "label": "Segédpanel mérete",
+        "description": "Szélesség, vagy az alsó rész magassága pixelekben."
+      },
+      "companionEdgeButton": {
+        "label": "Asszisztens panel szélére helyezett gomb",
+        "description": "Egy kis gomb megjelenítése a terminál szélén a panel megnyitásához."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "ismeretlen modellek alapértelmezett értéke",
     "contextLoadFailed": "Nem sikerült beolvasni a kontextusablakokat",
     "contextRefresh": "Frissítés",
-    "contextWindowInvalid": "Adja meg a kontextusablakot egész token számként, legalább 1024."
+    "contextWindowInvalid": "Adja meg a kontextusablakot egész token számként, legalább 1024.",
+    "advanced": "Haladó",
+    "advancedHint": "Hagyja Alapértelmezett beállításon, ha a modell saját beállításait szeretné használni.",
+    "advancedDefault": "Alapértelmezett",
+    "advancedDefaultAuto": "Alapértelmezett (automatikus)",
+    "advancedAuto": "Automatikus",
+    "advancedEndpoint": "Végpont",
+    "advancedEndpointResponses": "Válaszok API",
+    "advancedEndpointChat": "Chat-kiegészítések",
+    "advancedReasoningEffort": "Gondolkodási erőfeszítés",
+    "advancedReasoningSummary": "Gondolkodási összefoglaló",
+    "advancedReasoningSummaryHint": "Csak a Válaszok API-hoz.",
+    "advancedVerbosity": "Részletesség",
+    "advancedNone": "Nincs",
+    "advancedMinimal": "Minimális",
+    "advancedLow": "Alacsony",
+    "advancedMedium": "Közepes",
+    "advancedHigh": "Magas",
+    "advancedXhigh": "Extrém magas",
+    "advancedMax": "Maximális",
+    "advancedConcise": "Tömör",
+    "advancedDetailed": "Részletes",
+    "advancedOff": "Kikapcsolva",
+    "advancedMaxOutputTokens": "Maximális kimeneti tokenek",
+    "advancedMaxOutputTokensInvalid": "Adj meg egy egész számot 1 és 1 000 000 között.",
+    "advancedTemperature": "Hőmérséklet",
+    "advancedTemperatureHint": "Az OpenAI gondolkodó modelljei ezt csak a 'None' (Nincs) gondolkodási erőfeszítéssel fogadják el, így bármely más beállítás esetén nem kerül elküldésre.",
+    "advancedTemperatureInvalid": "Adj meg egy számot 0 és 2 között."
   },
   "nav": {
     "ai": "AI-asszisztens"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Nem elegendő bizonyíték a kitérés besorolásához",
     "reason_critical-asset": "Az eszköz kritikusnak van jelölve",
     "reason_manual": "A prioritást egy felhasználó választotta"
+  },
+  "companion": {
+    "toggle": "Asszisztens panel"
   }
 }

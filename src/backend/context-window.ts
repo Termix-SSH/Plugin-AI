@@ -28,6 +28,11 @@ export const DEFAULT_CONTEXT_WINDOW = 128_000;
 const KNOWN_WINDOWS: Array<[RegExp, number]> = [
   [/claude/i, 200_000],
   [/gpt-4\.1/i, 1_000_000],
+  // OpenAI's model pages: the chat snapshots hold 128k, the small 5.4 and
+  // cyber models 400k, GPT-5.4 and later and every GPT-6 1.05M.
+  [/gpt-5(\.\d+)?-chat/i, 128_000],
+  [/gpt-5\.4-(mini|nano)|gpt-5\.6-cyber/i, 400_000],
+  [/gpt-5\.([4-9]|\d{2,})|gpt-6/i, 1_050_000],
   [/gpt-5/i, 400_000],
   [/gpt-4o|gpt-4-turbo/i, 128_000],
   [/\bo[134](-|$)/i, 200_000],

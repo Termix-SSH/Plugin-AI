@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Увімкнути помічника ШІ",
         "description": "Дозволити помічнику ШІ допомагати в терміналі цього хоста. Вимкнено за замовчуванням; також потрібно увімкнути ШІ для вашого облікового запису."
+      },
+      "showPanel": {
+        "label": "Панель поруч із терміналом",
+        "description": "Надавати панель помічника поруч із SSH-терміналом цього хоста."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Налаштування автоматичних операцій"
+      },
+      "companionAutoOpen": {
+        "label": "Відкривати панель помічника разом із терміналом",
+        "description": "Показувати панель помічника, коли термінал відкривається на хості, який її підтримує."
+      },
+      "companionSide": {
+        "label": "Розташування панелі помічника",
+        "description": "Де панель розміщується поруч із терміналом.",
+        "right": "Справа",
+        "left": "Зліва",
+        "bottom": "Знизу"
+      },
+      "companionSize": {
+        "label": "Розмір панелі помічника",
+        "description": "Ширина або висота внизу, у пікселях."
+      },
+      "companionEdgeButton": {
+        "label": "Кнопка на краю для панелі помічника",
+        "description": "Показувати маленьку кнопку на краю терміналу для відкриття панелі."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "за замовчуванням для невідомих моделей",
     "contextLoadFailed": "Не вдалося прочитати контекстні вікна",
     "contextRefresh": "Оновити",
-    "contextWindowInvalid": "Введіть контекстне вікно як ціле число токенів, не менше 1024."
+    "contextWindowInvalid": "Введіть контекстне вікно як ціле число токенів, не менше 1024.",
+    "advanced": "Розширені",
+    "advancedHint": "Залиште налаштування як «За замовчуванням», щоб використовувати значення моделі.",
+    "advancedDefault": "За замовчуванням",
+    "advancedDefaultAuto": "За замовчуванням (авто)",
+    "advancedAuto": "Авто",
+    "advancedEndpoint": "Кінцева точка",
+    "advancedEndpointResponses": "API відповідей",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Зусилля міркування",
+    "advancedReasoningSummary": "Підсумок міркування",
+    "advancedReasoningSummaryHint": "Тільки для API Responses.",
+    "advancedVerbosity": "Детальність",
+    "advancedNone": "Немає",
+    "advancedMinimal": "Мінімальна",
+    "advancedLow": "Низька",
+    "advancedMedium": "Середня",
+    "advancedHigh": "Висока",
+    "advancedXhigh": "Дуже високий",
+    "advancedMax": "Максимальний",
+    "advancedConcise": "Лаконічний",
+    "advancedDetailed": "Детальний",
+    "advancedOff": "Вимкнено",
+    "advancedMaxOutputTokens": "Макс. кількість токенів у відповіді",
+    "advancedMaxOutputTokensInvalid": "Введіть ціле число від 1 до 1 000 000.",
+    "advancedTemperature": "Температура",
+    "advancedTemperatureHint": "Моделі OpenAI з функцією міркування приймають це лише при зусиллях на міркування «Жодне», тому при будь-якому іншому зусиллі це не надсилається.",
+    "advancedTemperatureInvalid": "Введіть число від 0 до 2."
   },
   "nav": {
     "ai": "AI-асистент"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Недостатньо доказів для класифікації вразливості",
     "reason_critical-asset": "Актив позначено як критичний",
     "reason_manual": "Пріоритет обрано користувачем"
+  },
+  "companion": {
+    "toggle": "Панель помічника"
   }
 }

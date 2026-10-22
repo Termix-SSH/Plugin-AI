@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Aktifkan Asisten AI",
         "description": "Izinkan asisten AI membantu di terminal host ini. Dimatikan secara default, dan masih memerlukan AI diaktifkan untuk akun Anda."
+      },
+      "showPanel": {
+        "label": "Panel di samping terminal",
+        "description": "Tampilkan panel asisten di sebelah terminal SSH host ini."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Preferensi auto-ops"
+      },
+      "companionAutoOpen": {
+        "label": "Buka panel asisten bersama terminal",
+        "description": "Tampilkan panel asisten saat terminal terbuka pada host yang mendukungnya."
+      },
+      "companionSide": {
+        "label": "Posisi panel asisten",
+        "description": "Di mana panel berada di samping terminal.",
+        "right": "Kanan",
+        "left": "Kiri",
+        "bottom": "Bawah"
+      },
+      "companionSize": {
+        "label": "Ukuran panel asisten",
+        "description": "Lebar, atau tinggi di bagian bawah, dalam piksel."
+      },
+      "companionEdgeButton": {
+        "label": "Tombol tepi panel asisten",
+        "description": "Tampilkan tombol kecil di tepi terminal untuk membuka panel."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "default untuk model yang tidak dikenal",
     "contextLoadFailed": "Tidak dapat membaca jendela konteks",
     "contextRefresh": "Segarkan",
-    "contextWindowInvalid": "Masukkan jendela konteks sebagai bilangan bulat token, minimal 1024."
+    "contextWindowInvalid": "Masukkan jendela konteks sebagai bilangan bulat token, minimal 1024.",
+    "advanced": "Lanjutan",
+    "advancedHint": "Biarkan pengaturan pada Default untuk menggunakan pengaturan bawaan model.",
+    "advancedDefault": "Default",
+    "advancedDefaultAuto": "Default (otomatis)",
+    "advancedAuto": "Otomatis",
+    "advancedEndpoint": "Endpoint",
+    "advancedEndpointResponses": "API Respons",
+    "advancedEndpointChat": "Pelengkapan Chat",
+    "advancedReasoningEffort": "Usaha penalaran",
+    "advancedReasoningSummary": "Ringkasan penalaran",
+    "advancedReasoningSummaryHint": "Hanya API Respons.",
+    "advancedVerbosity": "Tingkat detail",
+    "advancedNone": "Tidak ada",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Rendah",
+    "advancedMedium": "Sedang",
+    "advancedHigh": "Tinggi",
+    "advancedXhigh": "Sangat tinggi",
+    "advancedMax": "Maks",
+    "advancedConcise": "Ringkas",
+    "advancedDetailed": "Terperinci",
+    "advancedOff": "Mati",
+    "advancedMaxOutputTokens": "Token keluaran maks",
+    "advancedMaxOutputTokensInvalid": "Masukkan bilangan bulat dari 1 hingga 1.000.000.",
+    "advancedTemperature": "Temperatur",
+    "advancedTemperatureHint": "Model penalaran OpenAI hanya menerima ini dengan upaya penalaran None, sehingga dengan upaya lain tidak akan dikirim.",
+    "advancedTemperatureInvalid": "Masukkan angka dari 0 hingga 2."
   },
   "nav": {
     "ai": "Asisten AI"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "Bukti tidak cukup untuk mengklasifikasikan eksposur",
     "reason_critical-asset": "Aset ditandai kritis",
     "reason_manual": "Prioritas dipilih oleh pengguna"
+  },
+  "companion": {
+    "toggle": "Panel asisten"
   }
 }

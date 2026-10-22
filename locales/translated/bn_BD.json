@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "এআই সহকারী সক্রিয় করুন",
         "description": "এই হোস্টের টার্মিনালে এআই সহকারীকে সাহায্য করতে দিন। ডিফল্টভাবে বন্ধ, এবং আপনার অ্যাকাউন্টের জন্য এআই সক্রিয় থাকতে হবে।"
+      },
+      "showPanel": {
+        "label": "টার্মিনালের পাশে প্যানেল",
+        "description": "এই হোস্টের SSH টার্মিনালের পাশে একটি সহায়ক প্যানেল প্রদান করুন।"
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "অটো-অপস পছন্দসমূহ"
+      },
+      "companionAutoOpen": {
+        "label": "টার্মিনালের সাথে সহায়ক প্যানেল খুলুন",
+        "description": "যে হোস্টে সহায়ক প্যানেল আছে, সেখানে টার্মিনাল খোলার সময় প্যানেলটি দেখান।"
+      },
+      "companionSide": {
+        "label": "সহায়ক প্যানেলের অবস্থান",
+        "description": "টার্মিনালের পাশে প্যানেলটি কোথায় থাকবে।",
+        "right": "ডানদিকে",
+        "left": "বামদিকে",
+        "bottom": "নিচে"
+      },
+      "companionSize": {
+        "label": "সহায়ক প্যানেলের আকার",
+        "description": "পিক্সেলে প্রস্থ, অথবা নিচের অবস্থানে উচ্চতা।"
+      },
+      "companionEdgeButton": {
+        "label": "সহায়ক প্যানেলের প্রান্ত বোতাম",
+        "description": "প্যানেল খোলার জন্য টার্মিনালের প্রান্তে একটি ছোট বোতাম দেখান।"
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "অজানা মডেলের জন্য ডিফল্ট",
     "contextLoadFailed": "কনটেক্সট উইন্ডো পড়া যায়নি",
     "contextRefresh": "রিফ্রেশ",
-    "contextWindowInvalid": "কনটেক্সট উইন্ডো টোকেনের পূর্ণ সংখ্যা হিসেবে লিখুন, কমপক্ষে ১০২৪।"
+    "contextWindowInvalid": "কনটেক্সট উইন্ডো টোকেনের পূর্ণ সংখ্যা হিসেবে লিখুন, কমপক্ষে ১০২৪।",
+    "advanced": "অ্যাডভান্সড",
+    "advancedHint": "মডেলের নিজস্ব সেটিংস ব্যবহার করতে কোনো সেটিংস ডিফল্ট রাখুন।",
+    "advancedDefault": "ডিফল্ট",
+    "advancedDefaultAuto": "ডিফল্ট (স্বয়ংক্রিয়)",
+    "advancedAuto": "স্বয়ংক্রিয়",
+    "advancedEndpoint": "এন্ডপয়েন্ট",
+    "advancedEndpointResponses": "রেসপন্স API",
+    "advancedEndpointChat": "চ্যাট কমপ্লিশন",
+    "advancedReasoningEffort": "যুক্তি প্রয়োগের মাত্রা",
+    "advancedReasoningSummary": "যুক্তির সারসংক্ষেপ",
+    "advancedReasoningSummaryHint": "শুধুমাত্র রেসপন্স API-এর জন্য।",
+    "advancedVerbosity": "বিস্তারিত মাত্রা",
+    "advancedNone": "কোনোটিই নয়",
+    "advancedMinimal": "ন্যূনতম",
+    "advancedLow": "কম",
+    "advancedMedium": "মাঝারি",
+    "advancedHigh": "বেশি",
+    "advancedXhigh": "অতিরিক্ত বেশি",
+    "advancedMax": "সর্বোচ্চ",
+    "advancedConcise": "সংক্ষিপ্ত",
+    "advancedDetailed": "বিস্তারিত",
+    "advancedOff": "বন্ধ",
+    "advancedMaxOutputTokens": "সর্বোচ্চ আউটপুট টোকেন",
+    "advancedMaxOutputTokensInvalid": "১ থেকে ১,০০০,০০০ এর মধ্যে একটি পূর্ণ সংখ্যা লিখুন।",
+    "advancedTemperature": "তাপমাত্রা",
+    "advancedTemperatureHint": "OpenAI-এর যুক্তিমূলক মডেলগুলো শুধুমাত্র যুক্তি প্রয়োগের মাত্রা 'কোনোটিই নয়' হলে এটি গ্রহণ করে, তাই অন্য কোনো মাত্রায় এটি পাঠানো হয় না।",
+    "advancedTemperatureInvalid": "০ থেকে ২ এর মধ্যে একটি সংখ্যা লিখুন।"
   },
   "nav": {
     "ai": "AI সহায়ক"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "এক্সপোজার শ্রেণিবদ্ধ করার জন্য পর্যাপ্ত প্রমাণ নেই",
     "reason_critical-asset": "অ্যাসেটকে গুরুত্বপূর্ণ হিসেবে চিহ্নিত করা হয়েছে",
     "reason_manual": "ব্যবহারকারী কর্তৃক অগ্রাধিকার নির্বাচিত হয়েছে"
+  },
+  "companion": {
+    "toggle": "সহায়ক প্যানেল"
   }
 }

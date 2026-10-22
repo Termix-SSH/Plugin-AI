@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Yapay Zeka Asistanını Etkinleştir",
         "description": "Bu ana bilgisayarın terminalinde yapay zeka asistanının yardımcı olmasına izin verin. Varsayılan olarak kapalıdır ve hesabınız için yapay zekanın etkinleştirilmiş olmasını gerektirir."
+      },
+      "showPanel": {
+        "label": "Terminalin yanında panel",
+        "description": "Bu sunucunun SSH terminalinin yanında bir asistan paneli sunun."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Otomatik işlem tercihleri"
+      },
+      "companionAutoOpen": {
+        "label": "Asistan panelini terminal ile aç",
+        "description": "Asistan paneli olan bir sunucuda terminal açıldığında asistan panelini göster."
+      },
+      "companionSide": {
+        "label": "Asistan paneli konumu",
+        "description": "Panelin terminalin yanında nerede yer alacağı.",
+        "right": "Sağ",
+        "left": "Sol",
+        "bottom": "Alt"
+      },
+      "companionSize": {
+        "label": "Asistan paneli boyutu",
+        "description": "Genişlik veya alt kısımdaki yükseklik (piksel cinsinden)."
+      },
+      "companionEdgeButton": {
+        "label": "Asistan paneli kenar düğmesi",
+        "description": "Paneli açmak için terminal kenarında küçük bir düğme göster."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "bilinmeyen modeller için varsayılan",
     "contextLoadFailed": "Bağlam pencereleri okunamadı",
     "contextRefresh": "Yenile",
-    "contextWindowInvalid": "Bağlam penceresini en az 1024 olan tam bir belirteç sayısı olarak girin."
+    "contextWindowInvalid": "Bağlam penceresini en az 1024 olan tam bir belirteç sayısı olarak girin.",
+    "advanced": "Gelişmiş",
+    "advancedHint": "Modelin kendi ayarlarını kullanmak için bir ayarı Varsayılan olarak bırakın.",
+    "advancedDefault": "Varsayılan",
+    "advancedDefaultAuto": "Varsayılan (otomatik)",
+    "advancedAuto": "Otomatik",
+    "advancedEndpoint": "Uç Nokta",
+    "advancedEndpointResponses": "Yanıtlar API'si",
+    "advancedEndpointChat": "Sohbet Tamamlamaları",
+    "advancedReasoningEffort": "Mantık yürütme çabası",
+    "advancedReasoningSummary": "Mantık yürütme özeti",
+    "advancedReasoningSummaryHint": "Yalnızca Yanıtlar API'si.",
+    "advancedVerbosity": "Ayrıntı düzeyi",
+    "advancedNone": "Yok",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Düşük",
+    "advancedMedium": "Orta",
+    "advancedHigh": "Yüksek",
+    "advancedXhigh": "Ekstra yüksek",
+    "advancedMax": "Maksimum",
+    "advancedConcise": "Özlü",
+    "advancedDetailed": "Detaylı",
+    "advancedOff": "Kapalı",
+    "advancedMaxOutputTokens": "Maksimum çıktı belirteci",
+    "advancedMaxOutputTokensInvalid": "1 ile 1.000.000 arasında bir tam sayı girin.",
+    "advancedTemperature": "Sıcaklık",
+    "advancedTemperatureHint": "OpenAI akıl yürütme modelleri bunu yalnızca akıl yürütme çabası Yok olduğunda kabul eder, bu nedenle başka bir çaba ile gönderilmez.",
+    "advancedTemperatureInvalid": "0 ile 2 arasında bir sayı girin."
   },
   "nav": {
     "ai": "Yapay zeka asistanı"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Maruziyeti sınıflandırmak için yetersiz kanıt",
     "reason_critical-asset": "Varlık kritik olarak işaretlendi",
     "reason_manual": "Öncelik kullanıcı tarafından seçildi"
+  },
+  "companion": {
+    "toggle": "Asistan paneli"
   }
 }

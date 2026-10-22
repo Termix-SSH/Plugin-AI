@@ -18,6 +18,8 @@ export interface TerminalSlotApi {
   sessionId: () => string | null;
   openSidePanel: (panelId: string, props?: Record<string, unknown>) => void;
   runCommand: (command: string) => void;
+  /** Present on newer terminals; carries the tab's instance id. */
+  getShareTarget?: () => { tabInstanceId?: string } | null;
 }
 
 /** What a "terminal.sidePanel" component is rendered with. */

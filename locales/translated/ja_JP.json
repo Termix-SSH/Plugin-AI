@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "AI アシスタントを有効にする",
         "description": "このホストのターミナルで AI アシスタントのサポートを有効にします。デフォルトではオフになっており、アカウントで AI が有効になっている必要があります。"
+      },
+      "showPanel": {
+        "label": "ターミナル横のパネル",
+        "description": "このホストの SSH ターミナルの横にアシスタントパネルを表示します。"
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "自動運用の設定"
+      },
+      "companionAutoOpen": {
+        "label": "ターミナルと一緒にアシスタントパネルを開く",
+        "description": "アシスタントパネルが設定されたホストでターミナルを開いたとき、アシスタントパネルを表示します。"
+      },
+      "companionSide": {
+        "label": "アシスタントパネルの位置",
+        "description": "ターミナルの横にパネルを表示する位置です。",
+        "right": "右",
+        "left": "左",
+        "bottom": "下"
+      },
+      "companionSize": {
+        "label": "アシスタントパネルのサイズ",
+        "description": "幅、または下部の高さ（ピクセル単位）。"
+      },
+      "companionEdgeButton": {
+        "label": "アシスタントパネルのエッジボタン",
+        "description": "パネルを開くための小さなボタンをターミナルのエッジに表示します。"
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "不明なモデルのデフォルト値",
     "contextLoadFailed": "コンテキストウィンドウを読み取れませんでした",
     "contextRefresh": "更新",
-    "contextWindowInvalid": "コンテキストウィンドウは 1024 以上の整数のトークン数として入力してください。"
+    "contextWindowInvalid": "コンテキストウィンドウは 1024 以上の整数のトークン数として入力してください。",
+    "advanced": "詳細設定",
+    "advancedHint": "モデルのデフォルト値を使用するには、設定を「デフォルト」のままにしてください。",
+    "advancedDefault": "デフォルト",
+    "advancedDefaultAuto": "デフォルト（自動）",
+    "advancedAuto": "自動",
+    "advancedEndpoint": "エンドポイント",
+    "advancedEndpointResponses": "レスポンス API",
+    "advancedEndpointChat": "チャット完了",
+    "advancedReasoningEffort": "推論の努力",
+    "advancedReasoningSummary": "推論の要約",
+    "advancedReasoningSummaryHint": "レスポンス API のみ対応。",
+    "advancedVerbosity": "詳細度",
+    "advancedNone": "なし",
+    "advancedMinimal": "最小",
+    "advancedLow": "低",
+    "advancedMedium": "中",
+    "advancedHigh": "高",
+    "advancedXhigh": "非常に高い",
+    "advancedMax": "最大",
+    "advancedConcise": "簡潔",
+    "advancedDetailed": "詳細",
+    "advancedOff": "オフ",
+    "advancedMaxOutputTokens": "最大出力トークン数",
+    "advancedMaxOutputTokensInvalid": "1 から 1,000,000 までの整数を入力してください。",
+    "advancedTemperature": "温度",
+    "advancedTemperatureHint": "OpenAI の推論モデルは、推論努力が「なし」の場合のみこのパラメータを受け付けるため、それ以外の努力レベルでは送信されません。",
+    "advancedTemperatureInvalid": "0 から 2 までの数値を入力してください。"
   },
   "nav": {
     "ai": "AI アシスタント"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "公開範囲を分類するには証拠が不十分です",
     "reason_critical-asset": "アセットは重要とマークされています",
     "reason_manual": "ユーザーが優先度を選択しました"
+  },
+  "companion": {
+    "toggle": "アシスタントパネル"
   }
 }

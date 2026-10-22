@@ -163,6 +163,9 @@
         "modelOverrides": {
           "type": "text"
         },
+        "advanced": {
+          "type": "text"
+        },
         "enabled": {
           "type": "boolean",
           "notNull": true,

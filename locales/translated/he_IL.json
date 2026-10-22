@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "הפעל עוזר AI",
         "description": "אפשר לעוזר ה-AI לעזור בטרמינל של מארח זה. כבוי כברירת מחדל, ועדיין דורש הפעלת AI לחשבון שלך."
+      },
+      "showPanel": {
+        "label": "פאנל ליד הטרמינל",
+        "description": "הצג פאנל עוזר ליד הטרמינל של SSH עבור מארח זה."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "העדפות פעולות אוטומטיות"
+      },
+      "companionAutoOpen": {
+        "label": "פתח את פאנל העוזר עם טרמינל",
+        "description": "הצג את פאנל העוזר כאשר טרמינל נפתח במארח שיש לו אותו."
+      },
+      "companionSide": {
+        "label": "צד פאנל העוזר",
+        "description": "איפה הפאנל ממוקם ליד הטרמינל.",
+        "right": "ימין",
+        "left": "שמאל",
+        "bottom": "תחתון"
+      },
+      "companionSize": {
+        "label": "גודל פאנל העוזר",
+        "description": "רוחב, או גובה בתחתית, בפיקסלים."
+      },
+      "companionEdgeButton": {
+        "label": "כפתור שוליים של לוח העוזר",
+        "description": "הצג כפתור קטן בשולי המסוף לפתיחת הלוח."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "ברירת מחדל למודלים לא ידועים",
     "contextLoadFailed": "לא ניתן לקרוא את חלונות הקשר",
     "contextRefresh": "רענון",
-    "contextWindowInvalid": "הזן את חלון ההקשר כמספר שלם של טוקנים, לפחות 1024."
+    "contextWindowInvalid": "הזן את חלון ההקשר כמספר שלם של טוקנים, לפחות 1024.",
+    "advanced": "מתקדם",
+    "advancedHint": "השאר הגדרה על ברירת מחדל כדי להשתמש בברירת המחדל של המודל.",
+    "advancedDefault": "ברירת מחדל",
+    "advancedDefaultAuto": "ברירת מחדל (אוטומטי)",
+    "advancedAuto": "אוטומטי",
+    "advancedEndpoint": "נקודת קצה",
+    "advancedEndpointResponses": "API לתגובות",
+    "advancedEndpointChat": "השלמות צ'אט",
+    "advancedReasoningEffort": "מאמץ הטיעון",
+    "advancedReasoningSummary": "סיכום הטיעון",
+    "advancedReasoningSummaryHint": "API של תגובות בלבד.",
+    "advancedVerbosity": "רמת פרטיות",
+    "advancedNone": "ללא",
+    "advancedMinimal": "מינימלי",
+    "advancedLow": "נמוך",
+    "advancedMedium": "בינוני",
+    "advancedHigh": "גבוה",
+    "advancedXhigh": "גבוה במיוחד",
+    "advancedMax": "מקסימום",
+    "advancedConcise": "תמציתי",
+    "advancedDetailed": "מפורט",
+    "advancedOff": "כבוי",
+    "advancedMaxOutputTokens": "מקסימום אסימוני פלט",
+    "advancedMaxOutputTokensInvalid": "הזן מספר שלם בין 1 ל-1,000,000.",
+    "advancedTemperature": "טמפרטורה",
+    "advancedTemperatureHint": "מודלי ההיגיון של OpenAI מקבלים זאת רק כאשר מאמץ ההיגיון מוגדר ל-None, ולכן עם כל מאמץ אחר הוא לא נשלח.",
+    "advancedTemperatureInvalid": "הזן מספר בין 0 ל-2."
   },
   "nav": {
     "ai": "עוזר AI"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "ראיות חסרות לסיווג החשיפה",
     "reason_critical-asset": "נכס מסומן כקריטי",
     "reason_manual": "עדיפות שנבחרה על ידי משתמש"
+  },
+  "companion": {
+    "toggle": "לוח עוזר"
   }
 }

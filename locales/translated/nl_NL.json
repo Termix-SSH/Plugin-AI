@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "AI-assistent inschakelen",
         "description": "Sta de AI-assistent toe om te helpen in de terminal van deze host. Standaard uitgeschakeld, en vereist nog steeds dat AI is ingeschakeld voor je account."
+      },
+      "showPanel": {
+        "label": "Paneel naast de terminal",
+        "description": "Een assistent-paneel tonen naast de SSH-terminal van deze host."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Auto-ops-voorkeuren"
+      },
+      "companionAutoOpen": {
+        "label": "Assistent-paneel openen met een terminal",
+        "description": "Het assistent-paneel tonen wanneer een terminal opent op een host die dit ondersteunt."
+      },
+      "companionSide": {
+        "label": "Positie assistent-paneel",
+        "description": "Waar het paneel naast de terminal wordt weergegeven.",
+        "right": "Rechts",
+        "left": "Links",
+        "bottom": "Onder"
+      },
+      "companionSize": {
+        "label": "Grootte assistent-paneel",
+        "description": "Breedte, of hoogte onderaan, in pixels."
+      },
+      "companionEdgeButton": {
+        "label": "Knop aan de rand voor assistent-paneel",
+        "description": "Een kleine knop tonen aan de rand van de terminal om het paneel te openen."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "standaard voor onbekende modellen",
     "contextLoadFailed": "Kon de contextvensters niet lezen",
     "contextRefresh": "Vernieuwen",
-    "contextWindowInvalid": "Voer het contextvenster in als een geheel aantal tokens, minimaal 1024."
+    "contextWindowInvalid": "Voer het contextvenster in als een geheel aantal tokens, minimaal 1024.",
+    "advanced": "Geavanceerd",
+    "advancedHint": "Zet een instelling op Standaard om de eigen instellingen van het model te gebruiken.",
+    "advancedDefault": "Standaard",
+    "advancedDefaultAuto": "Standaard (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Eindpunt",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Redeneerinspanning",
+    "advancedReasoningSummary": "Samenvatting redenering",
+    "advancedReasoningSummaryHint": "Alleen voor Responses API.",
+    "advancedVerbosity": "Uitvoerigheid",
+    "advancedNone": "Geen",
+    "advancedMinimal": "Minimaal",
+    "advancedLow": "Laag",
+    "advancedMedium": "Gemiddeld",
+    "advancedHigh": "Hoog",
+    "advancedXhigh": "Extra hoog",
+    "advancedMax": "Max",
+    "advancedConcise": "Concies",
+    "advancedDetailed": "Gedetailleerd",
+    "advancedOff": "Uit",
+    "advancedMaxOutputTokens": "Max. uitvoertokens",
+    "advancedMaxOutputTokensInvalid": "Voer een geheel getal in van 1 tot 1.000.000.",
+    "advancedTemperature": "Temperatuur",
+    "advancedTemperatureHint": "OpenAI-redeneermodellen accepteren dit alleen met redeneerinspanning Geen, dus bij elke andere inspanning wordt het niet verzonden.",
+    "advancedTemperatureInvalid": "Voer een getal in van 0 tot 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Onvoldoende bewijs om blootstelling te classificeren",
     "reason_critical-asset": "Actief gemarkeerd als kritiek",
     "reason_manual": "Prioriteit geselecteerd door een gebruiker"
+  },
+  "companion": {
+    "toggle": "Assistent-paneel"
   }
 }

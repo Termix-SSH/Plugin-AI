@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "เปิดใช้งานผู้ช่วย AI",
         "description": "อนุญาตให้ผู้ช่วย AI ช่วยเหลือในเทอร์มินัลของโฮสต์นี้ ปิดโดยค่าเริ่มต้น และยังคงต้องเปิดใช้งาน AI สำหรับบัญชีของคุณ"
+      },
+      "showPanel": {
+        "label": "แผงควบคุมข้างเทอร์มินัล",
+        "description": "แสดงแผงผู้ช่วยถัดจากเทอร์มินัล SSH ของโฮสต์นี้"
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "การตั้งค่าการทำงานอัตโนมัติ"
+      },
+      "companionAutoOpen": {
+        "label": "เปิดแผงผู้ช่วยพร้อมเทอร์มินัล",
+        "description": "แสดงแผงผู้ช่วยเมื่อเปิดเทอร์มินัลบนโฮสต์ที่มีฟีเจอร์นี้"
+      },
+      "companionSide": {
+        "label": "ตำแหน่งแผงผู้ช่วย",
+        "description": "ตำแหน่งของแผงควบคุมถัดจากเทอร์มินัล",
+        "right": "ขวา",
+        "left": "ซ้าย",
+        "bottom": "ด้านล่าง"
+      },
+      "companionSize": {
+        "label": "ขนาดแผงผู้ช่วย",
+        "description": "ความกว้าง หรือความสูงที่ด้านล่าง ในหน่วยพิกเซล"
+      },
+      "companionEdgeButton": {
+        "label": "ปุ่มขอบของแผงผู้ช่วย",
+        "description": "แสดงปุ่มขนาดเล็กที่ขอบเทอร์มินัลเพื่อเปิดแผง"
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "ค่าเริ่มต้นสำหรับโมเดลที่ไม่รู้จัก",
     "contextLoadFailed": "ไม่สามารถอ่านหน้าต่างบริบทได้",
     "contextRefresh": "รีเฟรช",
-    "contextWindowInvalid": "กรอกหน้าต่างบริบทเป็นจำนวนเต็มของโทเค็น อย่างน้อย 1024"
+    "contextWindowInvalid": "กรอกหน้าต่างบริบทเป็นจำนวนเต็มของโทเค็น อย่างน้อย 1024",
+    "advanced": "ขั้นสูง",
+    "advancedHint": "คงค่าเป็นค่าเริ่มต้นเพื่อใช้ค่าของโมเดลเอง",
+    "advancedDefault": "ค่าเริ่มต้น",
+    "advancedDefaultAuto": "ค่าเริ่มต้น (อัตโนมัติ)",
+    "advancedAuto": "อัตโนมัติ",
+    "advancedEndpoint": "จุดสิ้นสุด",
+    "advancedEndpointResponses": "API การตอบกลับ",
+    "advancedEndpointChat": "การเติมเต็มการสนทนา",
+    "advancedReasoningEffort": "ความพยายามในการให้เหตุผล",
+    "advancedReasoningSummary": "สรุปการให้เหตุผล",
+    "advancedReasoningSummaryHint": "เฉพาะ API การตอบกลับเท่านั้น",
+    "advancedVerbosity": "ระดับความละเอียด",
+    "advancedNone": "ไม่มี",
+    "advancedMinimal": "น้อยที่สุด",
+    "advancedLow": "ต่ำ",
+    "advancedMedium": "ปานกลาง",
+    "advancedHigh": "สูง",
+    "advancedXhigh": "สูงมาก",
+    "advancedMax": "สูงสุด",
+    "advancedConcise": "กระชับ",
+    "advancedDetailed": "ละเอียด",
+    "advancedOff": "ปิด",
+    "advancedMaxOutputTokens": "โทเค็นเอาต์พุตสูงสุด",
+    "advancedMaxOutputTokensInvalid": "ป้อนจำนวนเต็มตั้งแต่ 1 ถึง 1,000,000",
+    "advancedTemperature": "อุณหภูมิ",
+    "advancedTemperatureHint": "โมเดลการให้เหตุผลของ OpenAI จะยอมรับค่านี้เฉพาะเมื่อความพยายามในการให้เหตุผลเป็น None เท่านั้น ดังนั้นหากใช้ความพยายามอื่น ๆ ค่านี้จะไม่ถูกส่งไป",
+    "advancedTemperatureInvalid": "ป้อนตัวเลขตั้งแต่ 0 ถึง 2"
   },
   "nav": {
     "ai": "ผู้ช่วย AI"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "หลักฐานไม่เพียงพอที่จะจำแนกการเปิดเผย",
     "reason_critical-asset": "สินทรัพย์ถูกทำเครื่องหมายว่าสำคัญ",
     "reason_manual": "ลำดับความสำคัญที่ผู้ใช้เลือก"
+  },
+  "companion": {
+    "toggle": "แผงผู้ช่วย"
   }
 }

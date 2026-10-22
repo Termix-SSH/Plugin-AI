@@ -143,6 +143,8 @@ async function setup(
     await mock.actAs("user-1", () =>
       repository.createProvider("user-1", {
         providerType: "openai",
+        // The mock speaks Chat Completions; official OpenAI uses the Responses API.
+        baseUrl: "https://llm.example/v1",
         label: "Work",
         apiKey: "sk-test",
         defaultModel: "gpt-5",

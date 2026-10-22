@@ -45,6 +45,8 @@ export const providers = adoptLegacyTable(
       contextWindow: integer(),
       // JSON { "<model>": { "contextWindow": tokens } }, set by the user.
       modelOverrides: text(),
+      // JSON ProviderAdvanced, set by the user; empty means the model's defaults.
+      advanced: text(),
       enabled: boolean().notNull().default(true),
       createdAt: timestamp().notNull().defaultNow(),
       updatedAt: timestamp().notNull().defaultNow(),

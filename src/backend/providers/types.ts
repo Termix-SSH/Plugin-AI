@@ -95,11 +95,27 @@ export type ProviderFetch = (
   init: RequestInit,
 ) => Promise<Response>;
 
+export type ReasoningEffort =
+  "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+
+export interface ProviderAdvanced {
+  endpoint?: "auto" | "responses" | "chat";
+  reasoningEffort?: ReasoningEffort;
+  reasoningSummary?: "auto" | "concise" | "detailed" | "off";
+  verbosity?: "low" | "medium" | "high";
+  maxOutputTokens?: number;
+  temperature?: number;
+}
+
 export interface ProviderConfig {
   providerType: AiProviderType;
   baseUrl?: string | null;
   apiKey?: string | null;
+  /** The user's API settings; absent fields keep the model's defaults. */
+  advanced?: ProviderAdvanced;
   fetch: ProviderFetch;
+  /** Reports provider fallbacks to the server log. */
+  log?: { warn(message: string): void };
 }
 
 /** What a provider says about one of its models; what it leaves out is unknown. */

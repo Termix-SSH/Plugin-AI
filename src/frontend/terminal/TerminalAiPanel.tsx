@@ -39,6 +39,8 @@ interface TerminalAiPanelProps {
   initialContext?: string;
   onClose: () => void;
   onRunInTerminal: (command: string) => void;
+  /** Fills a side panel instead of floating over the terminal. */
+  embedded?: boolean;
 }
 
 /**
@@ -53,6 +55,7 @@ export function TerminalAiPanel({
   initialContext,
   onClose,
   onRunInTerminal,
+  embedded = false,
 }: TerminalAiPanelProps) {
   const { t } = useTranslation();
   const { state, send, stop } = useAiStream();
@@ -97,7 +100,7 @@ export function TerminalAiPanel({
   useLayoutEffect(() => {
     const panel = panelRef.current;
     const host = panel?.offsetParent as HTMLElement | null;
-    if (!panel || !host) return;
+    if (!panel || !host || embedded) return;
     const next = clampToolbarPosition(
       positionRef.current,
       panel.getBoundingClientRect(),
@@ -112,6 +115,7 @@ export function TerminalAiPanel({
   }, []);
 
   const handleDragPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (embedded) return;
     if (event.button !== 0 || event.pointerType === "touch") return;
     if ((event.target as HTMLElement).closest("button")) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -236,12 +240,22 @@ export function TerminalAiPanel({
   return (
     <div
       ref={panelRef}
-      className="absolute right-2 top-12 z-[120] flex max-h-[calc(100%-4rem)] w-[min(420px,calc(100vw-1rem))] flex-col border border-border bg-background shadow-xl"
-      style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+      className={
+        embedded
+          ? "flex h-full min-h-0 flex-col bg-background"
+          : "absolute right-2 top-12 z-[120] flex max-h-[calc(100%-4rem)] w-[min(420px,calc(100vw-1rem))] flex-col border border-border bg-background shadow-xl"
+      }
+      style={
+        embedded
+          ? undefined
+          : { transform: `translate(${position.x}px, ${position.y}px)` }
+      }
       onClick={(event) => event.stopPropagation()}
     >
       <div
-        className="flex cursor-grab items-center justify-between gap-2 border-b border-border px-3 py-2 active:cursor-grabbing"
+        className={`flex items-center justify-between gap-2 border-b border-border px-3 py-2 ${
+          embedded ? "" : "cursor-grab active:cursor-grabbing"
+        }`}
         onPointerDown={handleDragPointerDown}
         onPointerMove={handleDragPointerMove}
         onPointerUp={handleDragPointerEnd}
@@ -249,7 +263,9 @@ export function TerminalAiPanel({
         onLostPointerCapture={handleDragPointerEnd}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
+          {!embedded && (
+            <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
+          )}
           <Bot className="size-4 shrink-0 text-accent-brand" />
           <div className="min-w-0">
             <div className="truncate text-xs font-bold text-foreground">
@@ -272,16 +288,18 @@ export function TerminalAiPanel({
           >
             <Square className="size-3.5" />
           </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            onClick={onClose}
-            title={t("common.close")}
-          >
-            <X className="size-3.5" />
-          </Button>
+          {!embedded && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-7"
+              onClick={onClose}
+              title={t("common.close")}
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 

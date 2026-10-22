@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Aktiver AI-assistent",
         "description": "Tillat AI-assistenten å hjelpe til i terminalen for denne vertstjenesten. Av som standard, og krever fortsatt at AI er aktivert for kontoen din."
+      },
+      "showPanel": {
+        "label": "Panel ved siden av terminalen",
+        "description": "Vis et assistentpanel ved siden av SSH-terminalen for denne verten."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Innstillinger for automatisk drift"
+      },
+      "companionAutoOpen": {
+        "label": "Åpne assistentpanelet sammen med terminalen",
+        "description": "Vis assistentpanelet når en terminal åpnes på en vert som har det."
+      },
+      "companionSide": {
+        "label": "Plassering av assistentpanelet",
+        "description": "Hvor panelet vises i forhold til terminalen.",
+        "right": "Høyre",
+        "left": "Venstre",
+        "bottom": "Bunn"
+      },
+      "companionSize": {
+        "label": "Størrelse på assistentpanelet",
+        "description": "Bredde, eller høyde nederst, i piksler."
+      },
+      "companionEdgeButton": {
+        "label": "Kantknapp for assistentpanel",
+        "description": "Vis en liten knapp på terminalkanten for å åpne panelet."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "standard for ukjente modeller",
     "contextLoadFailed": "Kunne ikke lese kontekstvinduene",
     "contextRefresh": "Oppdater",
-    "contextWindowInvalid": "Skriv inn kontekstvinduet som et helt antall token, minst 1024."
+    "contextWindowInvalid": "Skriv inn kontekstvinduet som et helt antall token, minst 1024.",
+    "advanced": "Avansert",
+    "advancedHint": "La en innstilling stå på Standard for å bruke modellens egne verdier.",
+    "advancedDefault": "Standard",
+    "advancedDefaultAuto": "Standard (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Endepunkt",
+    "advancedEndpointResponses": "Svar-API",
+    "advancedEndpointChat": "Chatfullføringer",
+    "advancedReasoningEffort": "Resonnementinnsats",
+    "advancedReasoningSummary": "Resonnementssammendrag",
+    "advancedReasoningSummaryHint": "Kun Responses API.",
+    "advancedVerbosity": "Detaljnivå",
+    "advancedNone": "Ingen",
+    "advancedMinimal": "Minimalt",
+    "advancedLow": "Lavt",
+    "advancedMedium": "Medium",
+    "advancedHigh": "Høyt",
+    "advancedXhigh": "Ekstra høy",
+    "advancedMax": "Maks",
+    "advancedConcise": "Konsis",
+    "advancedDetailed": "Detaljert",
+    "advancedOff": "Av",
+    "advancedMaxOutputTokens": "Maks antall utdata-tokens",
+    "advancedMaxOutputTokensInvalid": "Skriv inn et heltall fra 1 til 1 000 000.",
+    "advancedTemperature": "Temperatur",
+    "advancedTemperatureHint": "OpenAI-resonnementmodeller aksepterer dette kun med resonnementinnsatsen «Ingen». Med alle andre innstillinger sendes den ikke.",
+    "advancedTemperatureInvalid": "Skriv inn et tall fra 0 til 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "forms",
     "reason_critical-asset": "forms",
     "reason_manual": "forms"
+  },
+  "companion": {
+    "toggle": "Assistentpanel"
   }
 }

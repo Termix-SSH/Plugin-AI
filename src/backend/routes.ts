@@ -22,7 +22,11 @@ import {
   REQUIRES_API_KEY,
   REQUIRES_BASE_URL,
 } from "./providers/registry.js";
-import type { AiProviderType, ProviderConfig } from "./providers/types.js";
+import type {
+  AiProviderType,
+  ProviderAdvanced,
+  ProviderConfig,
+} from "./providers/types.js";
 import { isAiProviderType } from "./providers/types.js";
 import type { AiRepository } from "./repository.js";
 import { serviceAvailable } from "./services.js";
@@ -64,6 +68,81 @@ function parseModelOverrides(raw: unknown): ModelOverrides | undefined | false {
     if (contextWindow) overrides[model.trim()] = { contextWindow };
   }
   return overrides;
+}
+
+/** Advanced settings replace the stored ones; null clears them. */
+function parseAdvanced(raw: unknown): ProviderAdvanced | undefined | false {
+  if (raw === undefined) return undefined;
+  if (raw === null) return {};
+  if (typeof raw !== "object" || Array.isArray(raw)) return false;
+  const advanced: ProviderAdvanced = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const empty = value === undefined || value === null || value === "";
+    switch (key) {
+      case "endpoint":
+        if (empty) break;
+        if (value !== "auto" && value !== "responses" && value !== "chat")
+          return false;
+        advanced.endpoint = value;
+        break;
+      case "reasoningEffort":
+        if (empty) break;
+        if (
+          value !== "none" &&
+          value !== "minimal" &&
+          value !== "low" &&
+          value !== "medium" &&
+          value !== "high" &&
+          value !== "xhigh" &&
+          value !== "max"
+        )
+          return false;
+        advanced.reasoningEffort = value;
+        break;
+      case "reasoningSummary":
+        if (empty) break;
+        if (
+          value !== "auto" &&
+          value !== "concise" &&
+          value !== "detailed" &&
+          value !== "off"
+        )
+          return false;
+        advanced.reasoningSummary = value;
+        break;
+      case "verbosity":
+        if (empty) break;
+        if (value !== "low" && value !== "medium" && value !== "high")
+          return false;
+        advanced.verbosity = value;
+        break;
+      case "maxOutputTokens":
+        if (empty) break;
+        if (
+          typeof value !== "number" ||
+          !Number.isInteger(value) ||
+          value < 1 ||
+          value > 1_000_000
+        )
+          return false;
+        advanced.maxOutputTokens = value;
+        break;
+      case "temperature":
+        if (empty) break;
+        if (
+          typeof value !== "number" ||
+          !Number.isFinite(value) ||
+          value < 0 ||
+          value > 2
+        )
+          return false;
+        advanced.temperature = value;
+        break;
+      default:
+        return false;
+    }
+  }
+  return advanced;
 }
 
 function parseId(raw: unknown): number | null {
@@ -112,13 +191,16 @@ export function registerAiRoutes(
     providerType: string;
     baseUrl: string | null;
     apiKey: string | null;
+    advanced?: ProviderAdvanced;
   }): Promise<ProviderConfig> {
     const allowlist = await readPrivateAllowlist(ctx.settings);
     return {
       providerType: input.providerType as ProviderConfig["providerType"],
       baseUrl: input.baseUrl,
       apiKey: input.apiKey,
+      advanced: input.advanced,
       fetch: createProviderFetch(ctx.fetch, allowlist),
+      log: ctx.log,
     };
   }
 
@@ -269,6 +351,32 @@ export function registerAiRoutes(
    *                   properties:
    *                     contextWindow:
    *                       type: integer
+   *               advanced:
+   *                 type: object
+   *                 nullable: true
+   *                 additionalProperties: false
+   *                 description: Optional provider request settings. Null clears them.
+   *                 properties:
+   *                   endpoint:
+   *                     type: string
+   *                     enum: [auto, responses, chat]
+   *                   reasoningEffort:
+   *                     type: string
+   *                     enum: [none, minimal, low, medium, high, xhigh, max]
+   *                   reasoningSummary:
+   *                     type: string
+   *                     enum: [auto, concise, detailed, off]
+   *                   verbosity:
+   *                     type: string
+   *                     enum: [low, medium, high]
+   *                   maxOutputTokens:
+   *                     type: integer
+   *                     minimum: 1
+   *                     maximum: 1000000
+   *                   temperature:
+   *                     type: number
+   *                     minimum: 0
+   *                     maximum: 2
    *     responses:
    *       201:
    *         description: Provider created.
@@ -284,12 +392,16 @@ export function registerAiRoutes(
       const { providerType, label, baseUrl, apiKey, defaultModel } =
         req.body ?? {};
       const modelOverrides = parseModelOverrides(req.body?.modelOverrides);
+      const advanced = parseAdvanced(req.body?.advanced);
 
       if (!isAiProviderType(providerType)) {
         return res.status(400).json({ error: "Unknown provider type" });
       }
       if (modelOverrides === false) {
         return res.status(400).json({ error: "Invalid context window" });
+      }
+      if (advanced === false) {
+        return res.status(400).json({ error: "Invalid advanced settings" });
       }
       if (typeof label !== "string" || !label.trim()) {
         return res.status(400).json({ error: "label is required" });
@@ -314,6 +426,7 @@ export function registerAiRoutes(
           defaultModel:
             typeof defaultModel === "string" ? defaultModel.trim() : null,
           modelOverrides,
+          advanced,
         });
 
         await audit({
@@ -372,9 +485,37 @@ export function registerAiRoutes(
    *                   properties:
    *                     contextWindow:
    *                       type: integer
+   *               advanced:
+   *                 type: object
+   *                 nullable: true
+   *                 additionalProperties: false
+   *                 description: Replaces every advanced setting. Null clears them.
+   *                 properties:
+   *                   endpoint:
+   *                     type: string
+   *                     enum: [auto, responses, chat]
+   *                   reasoningEffort:
+   *                     type: string
+   *                     enum: [none, minimal, low, medium, high, xhigh, max]
+   *                   reasoningSummary:
+   *                     type: string
+   *                     enum: [auto, concise, detailed, off]
+   *                   verbosity:
+   *                     type: string
+   *                     enum: [low, medium, high]
+   *                   maxOutputTokens:
+   *                     type: integer
+   *                     minimum: 1
+   *                     maximum: 1000000
+   *                   temperature:
+   *                     type: number
+   *                     minimum: 0
+   *                     maximum: 2
    *     responses:
    *       200:
    *         description: Provider updated.
+   *       400:
+   *         description: Invalid request body.
    *       404:
    *         description: Provider not found.
    */
@@ -395,8 +536,12 @@ export function registerAiRoutes(
         return res.status(400).json({ error: "Unknown provider type" });
       }
       const modelOverrides = parseModelOverrides(body.modelOverrides);
+      const advanced = parseAdvanced(body.advanced);
       if (modelOverrides === false) {
         return res.status(400).json({ error: "Invalid context window" });
+      }
+      if (advanced === false) {
+        return res.status(400).json({ error: "Invalid advanced settings" });
       }
 
       const text = (value: unknown) =>
@@ -414,6 +559,7 @@ export function registerAiRoutes(
               ? null
               : (text(body.defaultModel) ?? undefined),
           modelOverrides,
+          advanced,
           enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
         });
         if (!updated)

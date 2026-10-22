@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Activar l'assistent d'IA",
         "description": "Permet que l'assistent d'IA ajudi al terminal d'aquest host. Desactivat per defecte, i encara cal que l'IA estigui activada per al teu compte."
+      },
+      "showPanel": {
+        "label": "Panell al costat del terminal",
+        "description": "Mostra un panell d'assistent al costat del terminal SSH d'aquest amfitrió."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Preferències d'operacions automàtiques"
+      },
+      "companionAutoOpen": {
+        "label": "Obre el panell d'assistent amb un terminal",
+        "description": "Mostra el panell d'assistent quan s'obre un terminal en un amfitrió que el tingui."
+      },
+      "companionSide": {
+        "label": "Posició del panell d'assistent",
+        "description": "On es troba el panell al costat del terminal.",
+        "right": "Dreta",
+        "left": "Esquerra",
+        "bottom": "Inferior"
+      },
+      "companionSize": {
+        "label": "Mida del panell d'assistent",
+        "description": "Amplada, o alçada si és a la part inferior, en píxels."
+      },
+      "companionEdgeButton": {
+        "label": "Botó lateral del panell d'assistent",
+        "description": "Mostra un botó petit al costat del terminal per obrir el panell."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "predeterminat per a models desconeguts",
     "contextLoadFailed": "No s'han pogut llegir les finestres de context",
     "contextRefresh": "Refresca",
-    "contextWindowInvalid": "Introdueix la finestra de context com un nombre sencer de tokens, d'almenys 1024."
+    "contextWindowInvalid": "Introdueix la finestra de context com un nombre sencer de tokens, d'almenys 1024.",
+    "advanced": "Avançat",
+    "advancedHint": "Deixa una configuració a Predeterminat per utilitzar la pròpia del model.",
+    "advancedDefault": "Predeterminat",
+    "advancedDefaultAuto": "Predeterminat (automàtic)",
+    "advancedAuto": "Automàtic",
+    "advancedEndpoint": "Punt d'accés",
+    "advancedEndpointResponses": "API de respostes",
+    "advancedEndpointChat": "Completions de xat",
+    "advancedReasoningEffort": "Esforç de raonament",
+    "advancedReasoningSummary": "Resum de raonament",
+    "advancedReasoningSummaryHint": "Només per a l'API de respostes.",
+    "advancedVerbosity": "Verbositat",
+    "advancedNone": "Cap",
+    "advancedMinimal": "Mínima",
+    "advancedLow": "Baixa",
+    "advancedMedium": "Mitjana",
+    "advancedHigh": "Alta",
+    "advancedXhigh": "Molt alta",
+    "advancedMax": "Màxima",
+    "advancedConcise": "Concisa",
+    "advancedDetailed": "Detallada",
+    "advancedOff": "Desactivat",
+    "advancedMaxOutputTokens": "Tokens de sortida màxims",
+    "advancedMaxOutputTokensInvalid": "Introdueix un nombre enter de 1 a 1.000.000.",
+    "advancedTemperature": "Temperatura",
+    "advancedTemperatureHint": "Els models de raonament d'OpenAI accepten això només amb l'esforç de raonament Cap, per la qual cosa amb qualsevol altre esforç no s'envia.",
+    "advancedTemperatureInvalid": "Introdueix un nombre de 0 a 2."
   },
   "nav": {
     "ai": "Assistent d'IA"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Evidència insuficient per classificar l'exposició",
     "reason_critical-asset": "Actiu marcat com a crític",
     "reason_manual": "Prioritat seleccionada per un usuari"
+  },
+  "companion": {
+    "toggle": "Panell d'assistent"
   }
 }

@@ -112,6 +112,8 @@ export async function prepare(server: TestServer, user = "user-1") {
     user,
     body: {
       providerType: "openai",
+      // The mock speaks Chat Completions; official OpenAI uses the Responses API.
+      baseUrl: "https://llm.example/v1",
       label: "Work",
       apiKey: "sk-test",
       defaultModel: "gpt-5",

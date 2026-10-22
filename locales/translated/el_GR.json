@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Ενεργοποίηση Βοηθού ΤΝ",
         "description": "Να επιτρέπεται στον βοηθό Τεχνητής Νοημοσύνης να βοηθά στον τερματικό αυτού του διακομιστή. Απενεργοποιημένο από προεπιλογή, και απαιτεί επίσης ενεργοποιημένη την ΤΝ για τον λογαριασμό σας."
+      },
+      "showPanel": {
+        "label": "Πίνακας δίπλα στο τερματικό",
+        "description": "Προσφέρει έναν πίνακα βοηθού δίπλα στο τερματικό SSH αυτού του host."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Προτιμήσεις αυτόματων εργασιών"
+      },
+      "companionAutoOpen": {
+        "label": "Άνοιγμα πίνακα βοηθού με τερματικό",
+        "description": "Εμφάνιση του πίνακα βοηθού όταν ανοίγει ένα τερματικό σε έναν host που το υποστηρίζει."
+      },
+      "companionSide": {
+        "label": "Θέση πίνακα βοηθού",
+        "description": "Πού βρίσκεται ο πίνακας δίπλα στο τερματικό.",
+        "right": "Δεξιά",
+        "left": "Αριστερά",
+        "bottom": "Κάτω"
+      },
+      "companionSize": {
+        "label": "Μέγεθος πίνακα βοηθού",
+        "description": "Πλάτος, ή ύψος αν είναι κάτω, σε pixels."
+      },
+      "companionEdgeButton": {
+        "label": "Κουμπί άκρης πίνακα βοηθού",
+        "description": "Εμφάνιση ενός μικρού κουμπιού στην άκρη του τερματικού για άνοιγμα του πίνακα."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "προεπιλογή για άγνωστα μοντέλα",
     "contextLoadFailed": "Αδυναμία ανάγνωσης των παραθύρων ngữ cảnh",
     "contextRefresh": "Ανανέωση",
-    "contextWindowInvalid": "Εισάγετε το παράθυρο ngữ境的 ως ακέραιο αριθμό tokens, τουλάχιστον 1024."
+    "contextWindowInvalid": "Εισάγετε το παράθυρο ngữ境的 ως ακέραιο αριθμό tokens, τουλάχιστον 1024.",
+    "advanced": "Για προχωρημένους",
+    "advancedHint": "Αφήστε μια ρύθμιση στο Προεπιλογή για να χρησιμοποιήσετε την προεπιλογή του μοντέλου.",
+    "advancedDefault": "Προεπιλογή",
+    "advancedDefaultAuto": "Προεπιλογή (αυτόματο)",
+    "advancedAuto": "Αυτόματο",
+    "advancedEndpoint": "Σημείο πρόσβασης",
+    "advancedEndpointResponses": "API Απαντήσεων",
+    "advancedEndpointChat": "Ολοκληρώσεις Συνομιλίας",
+    "advancedReasoningEffort": "Προσπάθεια σκέψης",
+    "advancedReasoningSummary": "Σύνοψη σκέψης",
+    "advancedReasoningSummaryHint": "Μόνο για API Απαντήσεων.",
+    "advancedVerbosity": "Λεπτομέρεια",
+    "advancedNone": "Κανένα",
+    "advancedMinimal": "Ελάχιστη",
+    "advancedLow": "Χαμηλή",
+    "advancedMedium": "Μέτρια",
+    "advancedHigh": "Υψηλή",
+    "advancedXhigh": "Εξαιρετικά υψηλή",
+    "advancedMax": "Μέγιστη",
+    "advancedConcise": "Συνοπτική",
+    "advancedDetailed": "Αναλυτική",
+    "advancedOff": "Ανενεργό",
+    "advancedMaxOutputTokens": "Μέγιστα tokens εξόδου",
+    "advancedMaxOutputTokensInvalid": "Εισάγετε έναν ακέραιο αριθμό από 1 έως 1.000.000.",
+    "advancedTemperature": "Θερμοκρασία",
+    "advancedTemperatureHint": "Τα μοντέλα σκέψης της OpenAI δέχονται αυτό μόνο με προσπάθεια σκέψης Κανένα, οπότε με οποιαδήποτε άλλη προσπάθεια δεν στέλνεται.",
+    "advancedTemperatureInvalid": "Εισάγετε έναν αριθμό από 0 έως 2."
   },
   "nav": {
     "ai": "Βοηθός AI"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Ανεπαρκείς αποδείξεις για ταξινόμηση έκθεσης",
     "reason_critical-asset": "Περιουσιακό στοιχείο σημειωμένο ως κρίσιμο",
     "reason_manual": "Προτεραιότητα επιλεγμένη από χρήστη"
+  },
+  "companion": {
+    "toggle": "Πίνακας βοηθού"
   }
 }

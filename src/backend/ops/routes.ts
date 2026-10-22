@@ -162,10 +162,12 @@ export function registerOpsRoutes(
     providerType: provider.providerType as ProviderConfig["providerType"],
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey,
+    advanced: provider.advanced,
     fetch: createProviderFetch(
       ctx.fetch,
       await readPrivateAllowlist(ctx.settings),
     ),
+    log: ctx.log,
   });
 
   /** The window and budget of a provider's model, from what it reports. */

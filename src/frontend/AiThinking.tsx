@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
 import { Brain, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { SafeMarkdown } from "./markdown";
 
 /**
  * What the model thought before the text that follows it. Collapsed, so it
@@ -34,8 +35,8 @@ export function AiThinking({
         {t(active ? "assistant.thinkingActive" : "assistant.thinking")}
       </button>
       {open && (
-        <div className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap break-words border-l border-border pl-3 leading-relaxed">
-          {content}
+        <div className="mt-1 max-h-64 overflow-y-auto break-words border-l border-border pl-3 leading-relaxed [&_a]:underline [&_code]:font-mono [&_li]:my-0 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_pre]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-none [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4">
+          <SafeMarkdown>{content}</SafeMarkdown>
         </div>
       )}
     </div>

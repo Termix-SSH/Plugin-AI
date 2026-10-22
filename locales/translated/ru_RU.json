@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Включить помощника ИИ",
         "description": "Разрешить помощнику ИИ помогать в терминале этого хоста. По умолчанию отключено; также требуется включение ИИ для вашего аккаунта."
+      },
+      "showPanel": {
+        "label": "Панель рядом с терминалом",
+        "description": "Предлагать панель помощника рядом с SSH-терминалом этого хоста."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Настройки автоматических операций"
+      },
+      "companionAutoOpen": {
+        "label": "Открывать панель помощника вместе с терминалом",
+        "description": "Показывать панель помощника при открытии терминала на хосте, где она доступна."
+      },
+      "companionSide": {
+        "label": "Расположение панели помощника",
+        "description": "Где панель располагается относительно терминала.",
+        "right": "Справа",
+        "left": "Слева",
+        "bottom": "Снизу"
+      },
+      "companionSize": {
+        "label": "Размер панели помощника",
+        "description": "Ширина, или высота при расположении снизу, в пикселях."
+      },
+      "companionEdgeButton": {
+        "label": "Кнопка на краю панели помощника",
+        "description": "Показывать небольшую кнопку на краю терминала для открытия панели."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "значение по умолчанию для неизвестных моделей",
     "contextLoadFailed": "Не удалось прочитать окна контекста",
     "contextRefresh": "Обновить",
-    "contextWindowInvalid": "Введите окно контекста как целое число токенов, не менее 1024."
+    "contextWindowInvalid": "Введите окно контекста как целое число токенов, не менее 1024.",
+    "advanced": "Расширенные",
+    "advancedHint": "Оставьте значение «По умолчанию», чтобы использовать настройки самой модели.",
+    "advancedDefault": "По умолчанию",
+    "advancedDefaultAuto": "По умолчанию (авто)",
+    "advancedAuto": "Авто",
+    "advancedEndpoint": "Эндпоинт",
+    "advancedEndpointResponses": "API ответов",
+    "advancedEndpointChat": "Завершение чата",
+    "advancedReasoningEffort": "Усилия рассуждений",
+    "advancedReasoningSummary": "Сводка рассуждений",
+    "advancedReasoningSummaryHint": "Только для API ответов.",
+    "advancedVerbosity": "Подробность",
+    "advancedNone": "Нет",
+    "advancedMinimal": "Минимальная",
+    "advancedLow": "Низкая",
+    "advancedMedium": "Средняя",
+    "advancedHigh": "Высокая",
+    "advancedXhigh": "Очень высокая",
+    "advancedMax": "Максимальная",
+    "advancedConcise": "Лаконичный",
+    "advancedDetailed": "Подробный",
+    "advancedOff": "Выкл.",
+    "advancedMaxOutputTokens": "Макс. количество выходных токенов",
+    "advancedMaxOutputTokensInvalid": "Введите целое число от 1 до 1 000 000.",
+    "advancedTemperature": "Температура",
+    "advancedTemperatureHint": "Модели рассуждений OpenAI принимают это значение только при усилиях рассуждений «Нет», поэтому при любом другом значении оно не отправляется.",
+    "advancedTemperatureInvalid": "Введите число от 0 до 2."
   },
   "nav": {
     "ai": "ИИ-помощник"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Недостаточно доказательств для классификации экспозиции",
     "reason_critical-asset": "Актив помечен как критический",
     "reason_manual": "Приоритет выбран пользователем"
+  },
+  "companion": {
+    "toggle": "Панель помощника"
   }
 }

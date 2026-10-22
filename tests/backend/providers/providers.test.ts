@@ -64,7 +64,12 @@ describe("openAiAdapter", () => {
 
     const chunks = await collect(
       openAiAdapter.streamChat(
-        { fetch: providerFetch, providerType: "openai" },
+        {
+          fetch: providerFetch,
+          providerType: "openai",
+          // The mock speaks Chat Completions; official OpenAI uses Responses API.
+          baseUrl: "https://llm.example/v1",
+        },
         REQUEST,
       ),
     );
@@ -87,7 +92,12 @@ describe("openAiAdapter", () => {
 
     const chunks = await collect(
       openAiAdapter.streamChat(
-        { fetch: providerFetch, providerType: "openai" },
+        {
+          fetch: providerFetch,
+          providerType: "openai",
+          // The mock speaks Chat Completions; official OpenAI uses Responses API.
+          baseUrl: "https://llm.example/v1",
+        },
         REQUEST,
       ),
     );
@@ -111,7 +121,12 @@ describe("openAiAdapter", () => {
 
     const chunks = await collect(
       openAiAdapter.streamChat(
-        { fetch: providerFetch, providerType: "openai" },
+        {
+          fetch: providerFetch,
+          providerType: "openai",
+          // The mock speaks Chat Completions; official OpenAI uses Responses API.
+          baseUrl: "https://llm.example/v1",
+        },
         REQUEST,
       ),
     );
@@ -305,7 +320,12 @@ describe("assertOk error messages", () => {
     await expect(
       collect(
         openAiAdapter.streamChat(
-          { fetch: providerFetch, providerType: "openai" },
+          {
+            fetch: providerFetch,
+            providerType: "openai",
+            // The mock speaks Chat Completions; official OpenAI uses Responses API.
+            baseUrl: "https://llm.example/v1",
+          },
           REQUEST,
         ),
       ),
@@ -323,7 +343,12 @@ describe("assertOk error messages", () => {
     await expect(
       collect(
         openAiAdapter.streamChat(
-          { fetch: providerFetch, providerType: "openai" },
+          {
+            fetch: providerFetch,
+            providerType: "openai",
+            // The mock speaks Chat Completions; official OpenAI uses Responses API.
+            baseUrl: "https://llm.example/v1",
+          },
           REQUEST,
         ),
       ),
@@ -338,7 +363,12 @@ describe("assertOk error messages", () => {
     await expect(
       collect(
         openAiAdapter.streamChat(
-          { fetch: providerFetch, providerType: "openai" },
+          {
+            fetch: providerFetch,
+            providerType: "openai",
+            // The mock speaks Chat Completions; official OpenAI uses Responses API.
+            baseUrl: "https://llm.example/v1",
+          },
           REQUEST,
         ),
       ),
@@ -351,7 +381,12 @@ describe("assertOk error messages", () => {
     await expect(
       collect(
         openAiAdapter.streamChat(
-          { fetch: providerFetch, providerType: "openai" },
+          {
+            fetch: providerFetch,
+            providerType: "openai",
+            // The mock speaks Chat Completions; official OpenAI uses Responses API.
+            baseUrl: "https://llm.example/v1",
+          },
           REQUEST,
         ),
       ),
@@ -386,7 +421,12 @@ describe("the reply ceiling", () => {
     providerFetch.mockResolvedValue(streamingResponse(["data: [DONE]\n\n"]));
     const openai = await body(
       openAiAdapter.streamChat(
-        { fetch: providerFetch, providerType: "openai" },
+        {
+          fetch: providerFetch,
+          providerType: "openai",
+          // The mock speaks Chat Completions; official OpenAI uses Responses API.
+          baseUrl: "https://llm.example/v1",
+        },
         capped,
       ),
     );

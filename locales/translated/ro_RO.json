@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Activează asistentul IA",
         "description": "Permite asistentului de IA să te ajute în terminalul acestei gazde. Dezactivat implicit și necesită totuși activarea IA pentru contul tău."
+      },
+      "showPanel": {
+        "label": "Panou lângă terminal",
+        "description": "Afișează un panou asistent lângă terminalul SSH al acestui gazdă."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Preferințe operațiuni automate"
+      },
+      "companionAutoOpen": {
+        "label": "Deschide panoul asistent împreună cu un terminal",
+        "description": "Afișează panoul asistent când se deschide un terminal pe o gazdă care îl are configurat."
+      },
+      "companionSide": {
+        "label": "Poziția panoului asistent",
+        "description": "Unde se află panoul față de terminal.",
+        "right": "Dreapta",
+        "left": "Stânga",
+        "bottom": "Jos"
+      },
+      "companionSize": {
+        "label": "Dimensiunea panoului asistent",
+        "description": "Lățime, sau înălțime în partea de jos, în pixeli."
+      },
+      "companionEdgeButton": {
+        "label": "Buton de margine pentru panoul asistentului",
+        "description": "Afișează un buton mic pe marginea terminalului pentru a deschide panoul."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "implicit pentru modele necunoscute",
     "contextLoadFailed": "Nu s-au putut citi ferestrele de context",
     "contextRefresh": "Reîmprospătează",
-    "contextWindowInvalid": "Introdu fereastra de context ca un număr întreg de tokeni, cel puțin 1024."
+    "contextWindowInvalid": "Introdu fereastra de context ca un număr întreg de tokeni, cel puțin 1024.",
+    "advanced": "Avansat",
+    "advancedHint": "Lasă o setare pe Implicit pentru a folosi cea a modelului.",
+    "advancedDefault": "Implicit",
+    "advancedDefaultAuto": "Implicit (automat)",
+    "advancedAuto": "Automat",
+    "advancedEndpoint": "Punct de acces",
+    "advancedEndpointResponses": "API pentru răspunsuri",
+    "advancedEndpointChat": "Completări chat",
+    "advancedReasoningEffort": "Efort de raționament",
+    "advancedReasoningSummary": "Rezumat raționament",
+    "advancedReasoningSummaryHint": "Doar pentru API-ul Responses.",
+    "advancedVerbosity": "Verbilitate",
+    "advancedNone": "Niciuna",
+    "advancedMinimal": "Minimală",
+    "advancedLow": "Scăzută",
+    "advancedMedium": "Medie",
+    "advancedHigh": "Ridicată",
+    "advancedXhigh": "Foarte mare",
+    "advancedMax": "Maxim",
+    "advancedConcise": "Concis",
+    "advancedDetailed": "Detaliat",
+    "advancedOff": "Oprit",
+    "advancedMaxOutputTokens": "Token-uri de ieșire maxime",
+    "advancedMaxOutputTokensInvalid": "Introduceți un număr întreg între 1 și 1.000.000.",
+    "advancedTemperature": "Temperatură",
+    "advancedTemperatureHint": "Modelele de raționament OpenAI acceptă acest parametru doar cu efortul de raționament setat pe None, deci nu este trimis cu orice alt efort.",
+    "advancedTemperatureInvalid": "Introduceți un număr între 0 și 2."
   },
   "nav": {
     "ai": "Asistent AI"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Dovezi insuficiente pentru a clasifica expunerea",
     "reason_critical-asset": "Activ marcat ca critic",
     "reason_manual": "Prioritate selectată de un utilizator"
+  },
+  "companion": {
+    "toggle": "Panou asistent"
   }
 }

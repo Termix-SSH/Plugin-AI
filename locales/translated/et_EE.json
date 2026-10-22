@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Luba AI-assistent",
         "description": "Luba AI-assistendil aidata selle hosti terminaaliga. Vaikimisi välja lülitatud ja vajab endiselt AI lubamist sinu kontole."
+      },
+      "showPanel": {
+        "label": "Paneel terminali kõrval",
+        "description": "Kuvab abistaja paneeli selle hosti SSH terminali kõrval."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Automaatse töö eelistused"
+      },
+      "companionAutoOpen": {
+        "label": "Ava abistaja paneel koos terminaliga",
+        "description": "Kuva abistaja paneel, kui terminal avaneb hostil, millel see on saadaval."
+      },
+      "companionSide": {
+        "label": "Abistaja paneeli asukoht",
+        "description": "Kus paneel terminali kõrval asub.",
+        "right": "Parem",
+        "left": "Vasak",
+        "bottom": "Alumine"
+      },
+      "companionSize": {
+        "label": "Abistaja paneeli suurus",
+        "description": "Laius või alumisel asukohal kõrgus pikslites."
+      },
+      "companionEdgeButton": {
+        "label": "Abistaja paneeli servanupp",
+        "description": "Kuva terminali serval väike nupp paneeli avamiseks."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "vaikimisi tundmatute mudelite jaoks",
     "contextLoadFailed": "Kontekstiakeni lugemine ei õnnestunud",
     "contextRefresh": "Värskenda",
-    "contextWindowInvalid": "Sisestage kontekstiaken täisarvulise tokenite arvuna, vähemalt 1024."
+    "contextWindowInvalid": "Sisestage kontekstiaken täisarvulise tokenite arvuna, vähemalt 1024.",
+    "advanced": "Täpsemad seaded",
+    "advancedHint": "Jäta seade vaikeväärtusele, et kasutada mudeli enda seadeid.",
+    "advancedDefault": "Vaikimisi",
+    "advancedDefaultAuto": "Vaikimisi (automaatne)",
+    "advancedAuto": "Automaatne",
+    "advancedEndpoint": "Lõpp-punkt",
+    "advancedEndpointResponses": "Vastuste API",
+    "advancedEndpointChat": "Vestluse täiendused",
+    "advancedReasoningEffort": "Järelduste jõupingutus",
+    "advancedReasoningSummary": "Järelduste kokkuvõte",
+    "advancedReasoningSummaryHint": "Ainult Vastuste API.",
+    "advancedVerbosity": "Üksikasjalikkus",
+    "advancedNone": "Puudub",
+    "advancedMinimal": "Minimaalne",
+    "advancedLow": "Madal",
+    "advancedMedium": "Keskmine",
+    "advancedHigh": "Kõrge",
+    "advancedXhigh": "Eriti kõrge",
+    "advancedMax": "Maksimaalne",
+    "advancedConcise": "Lühike",
+    "advancedDetailed": "Üksikasjalik",
+    "advancedOff": "Väljas",
+    "advancedMaxOutputTokens": "Maksimaalne väljundtokenite arv",
+    "advancedMaxOutputTokensInvalid": "Sisesta täisarv vahemikus 1 kuni 1 000 000.",
+    "advancedTemperature": "Temperatuur",
+    "advancedTemperatureHint": "OpenAI järeldusmudelid aktsepteerivad seda ainult siis, kui järelduste jõupingutus on puuduv, seega muu jõupingutuse korral seda ei saadeta.",
+    "advancedTemperatureInvalid": "Sisesta number vahemikus 0 kuni 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Avatuse klassifitseerimiseks pole piisavalt tõendeid",
     "reason_critical-asset": "Vara on märgistatud kriitiliseks",
     "reason_manual": "Prioriteedi valis kasutaja"
+  },
+  "companion": {
+    "toggle": "Abistaja paneel"
   }
 }

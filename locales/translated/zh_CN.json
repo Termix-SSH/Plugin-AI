@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "启用 AI 助手",
         "description": "允许 AI 助手在此主机的终端中提供帮助。默认关闭，且仍需为您的账户启用 AI。"
+      },
+      "showPanel": {
+        "label": "终端旁边的面板",
+        "description": "在此主机的 SSH 终端旁提供助手面板。"
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "值守偏好"
+      },
+      "companionAutoOpen": {
+        "label": "随终端打开助手面板",
+        "description": "当在启用了该功能的主机上打开终端时，显示助手面板。"
+      },
+      "companionSide": {
+        "label": "助手面板位置",
+        "description": "面板相对于终端的位置。",
+        "right": "右侧",
+        "left": "左侧",
+        "bottom": "底部"
+      },
+      "companionSize": {
+        "label": "助手面板大小",
+        "description": "宽度（或位于底部时的高度），单位为像素。"
+      },
+      "companionEdgeButton": {
+        "label": "助手面板边缘按钮",
+        "description": "在终端边缘显示一个小按钮，用于打开面板。"
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "未知模型的默认值",
     "contextLoadFailed": "无法读取上下文窗口",
     "contextRefresh": "刷新",
-    "contextWindowInvalid": "上下文窗口需填写一个整数 token 数，至少 1024。"
+    "contextWindowInvalid": "上下文窗口需填写一个整数 token 数，至少 1024。",
+    "advanced": "高级",
+    "advancedHint": "将设置保留为“默认”以使用模型自身的设置。",
+    "advancedDefault": "默认",
+    "advancedDefaultAuto": "默认（自动）",
+    "advancedAuto": "自动",
+    "advancedEndpoint": "端点",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "推理力度",
+    "advancedReasoningSummary": "推理摘要",
+    "advancedReasoningSummaryHint": "仅限 Responses API。",
+    "advancedVerbosity": "详细程度",
+    "advancedNone": "无",
+    "advancedMinimal": "最少",
+    "advancedLow": "低",
+    "advancedMedium": "中",
+    "advancedHigh": "高",
+    "advancedXhigh": "极高",
+    "advancedMax": "最高",
+    "advancedConcise": "简洁",
+    "advancedDetailed": "详细",
+    "advancedOff": "关闭",
+    "advancedMaxOutputTokens": "最大输出 tokens 数",
+    "advancedMaxOutputTokensInvalid": "请输入 1 到 1,000,000 之间的整数。",
+    "advancedTemperature": "温度",
+    "advancedTemperatureHint": "OpenAI 推理模型仅在推理力度为“无”时接受此参数，因此若使用其他力度则不会发送该参数。",
+    "advancedTemperatureInvalid": "请输入 0 到 2 之间的数字。"
   },
   "nav": {
     "ai": "AI 助手"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "证据不足，尚不能判定暴露范围",
     "reason_critical-asset": "资产被标为关键资产",
     "reason_manual": "用户指定的优先级"
+  },
+  "companion": {
+    "toggle": "助手面板"
   }
 }

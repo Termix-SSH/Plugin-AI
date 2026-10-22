@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Hidupkan Pembantu AI",
         "description": "Benarkan pembantu AI membantu dalam terminal hos ini. Dimatikan secara lalai, dan masih memerlukan AI dihidupkan untuk akaun anda."
+      },
+      "showPanel": {
+        "label": "Panel di sebelah terminal",
+        "description": "Menawarkan panel pembantu di sebelah terminal SSH hos ini."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Keutamaan auto-ops"
+      },
+      "companionAutoOpen": {
+        "label": "Buka panel pembantu bersama terminal",
+        "description": "Paparkan panel pembantu apabila terminal dibuka pada hos yang menyokongnya."
+      },
+      "companionSide": {
+        "label": "Sisi panel pembantu",
+        "description": "Di mana panel diletakkan bersebelahan dengan terminal.",
+        "right": "Kanan",
+        "left": "Kiri",
+        "bottom": "Bawah"
+      },
+      "companionSize": {
+        "label": "Saiz panel pembantu",
+        "description": "Lebar, atau tinggi di bahagian bawah, dalam piksel."
+      },
+      "companionEdgeButton": {
+        "label": "Butang tepi panel pembantu",
+        "description": "Paparkan butang kecil di tepi terminal untuk membuka panel."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "lalai untuk model yang tidak diketahui",
     "contextLoadFailed": "Tidak dapat membaca tetingkap konteks",
     "contextRefresh": "Segarkan",
-    "contextWindowInvalid": "Masukkan tetingkap konteks sebagai nombor bulat token, sekurang-kurangnya 1024."
+    "contextWindowInvalid": "Masukkan tetingkap konteks sebagai nombor bulat token, sekurang-kurangnya 1024.",
+    "advanced": "Lanjutan",
+    "advancedHint": "Biarkan tetapan pada Lalai untuk menggunakan nilai model sendiri.",
+    "advancedDefault": "Lalai",
+    "advancedDefaultAuto": "Lalai (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Hujung titik",
+    "advancedEndpointResponses": "API Respons",
+    "advancedEndpointChat": "Penyiapan Sembang",
+    "advancedReasoningEffort": "Usaha penalaran",
+    "advancedReasoningSummary": "Ringkasan penalaran",
+    "advancedReasoningSummaryHint": "API Respons sahaja.",
+    "advancedVerbosity": "Kehalusan",
+    "advancedNone": "Tiada",
+    "advancedMinimal": "Minimum",
+    "advancedLow": "Rendah",
+    "advancedMedium": "Sederhana",
+    "advancedHigh": "Tinggi",
+    "advancedXhigh": "Sangat tinggi",
+    "advancedMax": "Maks",
+    "advancedConcise": "Ringkas",
+    "advancedDetailed": "Terperinci",
+    "advancedOff": "Mati",
+    "advancedMaxOutputTokens": "Token output maksimum",
+    "advancedMaxOutputTokensInvalid": "Masukkan nombor bulat dari 1 hingga 1,000,000.",
+    "advancedTemperature": "Suhu",
+    "advancedTemperatureHint": "Model penalaran OpenAI hanya menerima ini dengan usaha penalaran Tiada, jadi ia tidak dihantar dengan mana-mana usaha lain.",
+    "advancedTemperatureInvalid": "Masukkan nombor dari 0 hingga 2."
   },
   "nav": {
     "ai": "Pembantu AI"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "Bukti tidak mencukupi untuk mengklasifikasikan pendedahan",
     "reason_critical-asset": "Aset ditandakan kritikal",
     "reason_manual": "Keutamaan dipilih oleh pengguna"
+  },
+  "companion": {
+    "toggle": "Panel pembantu"
   }
 }

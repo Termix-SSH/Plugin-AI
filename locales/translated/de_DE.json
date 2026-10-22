@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "KI-Assistent aktivieren",
         "description": "Dem KI-Assistenten erlauben, im Terminal dieses Hosts zu helfen. Standardmäßig deaktiviert und erfordert weiterhin, dass KI für Ihr Konto aktiviert ist."
+      },
+      "showPanel": {
+        "label": "Panel neben dem Terminal",
+        "description": "Ein Assistenten-Panel neben dem SSH-Terminal dieses Hosts anzeigen."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Einstellungen für Automatisierung"
+      },
+      "companionAutoOpen": {
+        "label": "Assistenten-Panel mit Terminal öffnen",
+        "description": "Das Assistenten-Panel anzeigen, wenn ein Terminal auf einem Host geöffnet wird, der dieses Feature unterstützt."
+      },
+      "companionSide": {
+        "label": "Position des Assistenten-Panels",
+        "description": "Wo das Panel neben dem Terminal angezeigt wird.",
+        "right": "Rechts",
+        "left": "Links",
+        "bottom": "Unten"
+      },
+      "companionSize": {
+        "label": "Größe des Assistenten-Panels",
+        "description": "Breite (oder Höhe, wenn unten platziert) in Pixeln."
+      },
+      "companionEdgeButton": {
+        "label": "Kantenschalter für Assistenten-Panel",
+        "description": "Eine kleine Schaltfläche am Rand des Terminals anzeigen, um das Panel zu öffnen."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "Standard für unbekannte Modelle",
     "contextLoadFailed": "Kontextfenster konnten nicht gelesen werden",
     "contextRefresh": "Aktualisieren",
-    "contextWindowInvalid": "Geben Sie das Kontextfenster als ganze Zahl von Tokens ein, mindestens 1024."
+    "contextWindowInvalid": "Geben Sie das Kontextfenster als ganze Zahl von Tokens ein, mindestens 1024.",
+    "advanced": "Erweitert",
+    "advancedHint": "Lassen Sie eine Einstellung auf Standard, um die eigenen Werte des Modells zu verwenden.",
+    "advancedDefault": "Standard",
+    "advancedDefaultAuto": "Standard (automatisch)",
+    "advancedAuto": "Automatisch",
+    "advancedEndpoint": "Endpunkt",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Denkaufwand",
+    "advancedReasoningSummary": "Denkzusammenfassung",
+    "advancedReasoningSummaryHint": "Nur für die Responses API.",
+    "advancedVerbosity": "Ausführlichkeit",
+    "advancedNone": "Keine",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Niedrig",
+    "advancedMedium": "Mittel",
+    "advancedHigh": "Hoch",
+    "advancedXhigh": "Sehr hoch",
+    "advancedMax": "Maximum",
+    "advancedConcise": "Knapp",
+    "advancedDetailed": "Ausführlich",
+    "advancedOff": "Aus",
+    "advancedMaxOutputTokens": "Maximale Ausgabe-Token",
+    "advancedMaxOutputTokensInvalid": "Geben Sie eine ganze Zahl von 1 bis 1.000.000 ein.",
+    "advancedTemperature": "Temperatur",
+    "advancedTemperatureHint": "OpenAI-Reasoning-Modelle akzeptieren dies nur, wenn der Denkaufwand auf Keine gesetzt ist. Bei jedem anderen Wert wird er nicht gesendet.",
+    "advancedTemperatureInvalid": "Geben Sie eine Zahl von 0 bis 2 ein."
   },
   "nav": {
     "ai": "KI-Assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Unzureichende Beweise zur Klassifizierung der Exposition",
     "reason_critical-asset": "Asset als kritisch markiert",
     "reason_manual": "Priorität vom Benutzer ausgewählt"
+  },
+  "companion": {
+    "toggle": "Assistenten-Panel"
   }
 }

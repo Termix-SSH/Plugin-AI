@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "تفعيل مساعد الذكاء الاصطناعي",
         "description": "اسمح لمساعد الذكاء الاصطناعي بالمساعدة في طرفية هذا المضيف. معطل افتراضياً، ولا يزال يتطلب تمكين الذكاء الاصطناعي لحسابك."
+      },
+      "showPanel": {
+        "label": "لوحة بجانب الطرفية",
+        "description": "عرض لوحة المساعد بجانب طرفية SSH الخاصة بهذا المضيف."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "تفضيلات العمليات التلقائية"
+      },
+      "companionAutoOpen": {
+        "label": "فتح لوحة المساعد مع الطرفية",
+        "description": "عرض لوحة المساعد عند فتح طرفية على مضيف يدعمها."
+      },
+      "companionSide": {
+        "label": "موقع لوحة المساعد",
+        "description": "المكان الذي تظهر فيه اللوحة بجانب الطرفية.",
+        "right": "يمين",
+        "left": "يسار",
+        "bottom": "أسفل"
+      },
+      "companionSize": {
+        "label": "حجم لوحة المساعد",
+        "description": "العرض، أو الارتفاع عند الوضع السفلي، بالبكسل."
+      },
+      "companionEdgeButton": {
+        "label": "زر حافة لوحة المساعد",
+        "description": "عرض زر صغير على حافة الطرفية لفتح اللوحة."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "الافتراضي للنماذج غير المعروفة",
     "contextLoadFailed": "تعذر قراءة نوافذ السياق",
     "contextRefresh": "تحديث",
-    "contextWindowInvalid": "أدخل نافذة السياق كعدد صحيح من الرموز، على الأقل 1024."
+    "contextWindowInvalid": "أدخل نافذة السياق كعدد صحيح من الرموز، على الأقل 1024.",
+    "advanced": "متقدم",
+    "advancedHint": "اترك الإعداد على الافتراضي لاستخدام إعدادات النموذج الخاصة به.",
+    "advancedDefault": "افتراضي",
+    "advancedDefaultAuto": "افتراضي (تلقائي)",
+    "advancedAuto": "تلقائي",
+    "advancedEndpoint": "نقطة النهاية",
+    "advancedEndpointResponses": "واجهة برمجة الاستجابات",
+    "advancedEndpointChat": "إكمال الدردشة",
+    "advancedReasoningEffort": "جهد الاستدلال",
+    "advancedReasoningSummary": "ملخص الاستدلال",
+    "advancedReasoningSummaryHint": "واجهة برمجة الاستجابات فقط.",
+    "advancedVerbosity": "مستوى التفصيل",
+    "advancedNone": "بدون",
+    "advancedMinimal": "حد أدنى",
+    "advancedLow": "منخفض",
+    "advancedMedium": "متوسط",
+    "advancedHigh": "مرتفع",
+    "advancedXhigh": "مرتفع جداً",
+    "advancedMax": "أقصى",
+    "advancedConcise": "موجز",
+    "advancedDetailed": "مفصل",
+    "advancedOff": "إيقاف",
+    "advancedMaxOutputTokens": "الحد الأقصى لرموز الإخراج",
+    "advancedMaxOutputTokensInvalid": "أدخل رقماً صحيحاً من 1 إلى 1,000,000.",
+    "advancedTemperature": "درجة الحرارة",
+    "advancedTemperatureHint": "تقبل نماذج الاستدلال من OpenAI هذا الإعداد فقط عندما يكون جهد الاستدلال \"بدون\"، لذا لن يُرسل مع أي جهد آخر.",
+    "advancedTemperatureInvalid": "أدخل رقماً من 0 إلى 2."
   },
   "nav": {
     "ai": "مساعد الذكاء الاصطناعي"
@@ -820,5 +870,8 @@
     "reason_exposure-unknown": "أدلة غير كافية لتصنيف التعرض",
     "reason_critical-asset": "تم تحديد الأصل على أنه حرج",
     "reason_manual": "الأولوية التي اختارها المستخدم"
+  },
+  "companion": {
+    "toggle": "لوحة المساعد"
   }
 }

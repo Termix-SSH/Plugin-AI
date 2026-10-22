@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Omogući AI asistenta",
         "description": "Dopusti AI asistentu da pomaže u terminalu ovog poslužitelja. Isključeno prema zadanim postavkama i i dalje zahtijeva da je AI omogućen za vaš račun."
+      },
+      "showPanel": {
+        "label": "Panel pored terminala",
+        "description": "Prikaži panel asistenta pored SSH terminala za ovog hosta."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Postavke auto-opsa"
+      },
+      "companionAutoOpen": {
+        "label": "Otvori panel asistenta s terminalom",
+        "description": "Prikaži panel asistenta kada se otvori terminal na hostu koji ga ima."
+      },
+      "companionSide": {
+        "label": "Pozicija panela asistenta",
+        "description": "Gdje se panel nalazi pored terminala.",
+        "right": "Desno",
+        "left": "Lijevo",
+        "bottom": "Dolje"
+      },
+      "companionSize": {
+        "label": "Veličina panela asistenta",
+        "description": "Širina, ili visina ako je na dnu, u pikselima."
+      },
+      "companionEdgeButton": {
+        "label": "Gumb na rubu za panel asistenta",
+        "description": "Prikaži mali gumb na rubu terminala za otvaranje panela."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "zadano za nepoznate modele",
     "contextLoadFailed": "Nije moguće pročitati kontekstualne prozore",
     "contextRefresh": "Osvježi",
-    "contextWindowInvalid": "Unesite kontekstni prozor kao cijeli broj tokena, najmanje 1024."
+    "contextWindowInvalid": "Unesite kontekstni prozor kao cijeli broj tokena, najmanje 1024.",
+    "advanced": "Napredno",
+    "advancedHint": "Ostavite postavku na Zadano da biste koristili zadane vrijednosti modela.",
+    "advancedDefault": "Zadano",
+    "advancedDefaultAuto": "Zadano (auto)",
+    "advancedAuto": "Automatski",
+    "advancedEndpoint": "Krajnja točka",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Intenzitet razmišljanja",
+    "advancedReasoningSummary": "Sažetak razmišljanja",
+    "advancedReasoningSummaryHint": "Samo Responses API.",
+    "advancedVerbosity": "Razina detaljnosti",
+    "advancedNone": "Nijedna",
+    "advancedMinimal": "Minimalna",
+    "advancedLow": "Niska",
+    "advancedMedium": "Srednja",
+    "advancedHigh": "Visoka",
+    "advancedXhigh": "Izuzetno visoka",
+    "advancedMax": "Maksimalna",
+    "advancedConcise": "Sazeto",
+    "advancedDetailed": "Detaljno",
+    "advancedOff": "Isključeno",
+    "advancedMaxOutputTokens": "Maksimalan broj izlaznih tokena",
+    "advancedMaxOutputTokensInvalid": "Unesite cijeli broj od 1 do 1.000.000.",
+    "advancedTemperature": "Temperatura",
+    "advancedTemperatureHint": "OpenAI modeli za razmišljanje prihvaćaju ovo samo kada je intenzitet razmišljanja postavljen na Nijedna, pa se s bilo kojim drugim intenzitetom ne šalje.",
+    "advancedTemperatureInvalid": "Unesite broj od 0 do 2."
   },
   "nav": {
     "ai": "AI asistent"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Nedovoljno dokaza za klasifikaciju izloženosti",
     "reason_critical-asset": "Imovina označena kao kritična",
     "reason_manual": "Prioritet odabran od strane korisnika"
+  },
+  "companion": {
+    "toggle": "Panel asistenta"
   }
 }

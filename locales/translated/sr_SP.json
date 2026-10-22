@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Укључи AI помоћника",
         "description": "Дозволи AI помоћнику да помаже у терминалу овог хоста. Искључено по подразумеваном, и још увек захтева укључен AI за ваш налог."
+      },
+      "showPanel": {
+        "label": "Панел поред терминала",
+        "description": "Понуди панел асистента поред SSH терминала овог хоста."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Подешавања аутоматских операција"
+      },
+      "companionAutoOpen": {
+        "label": "Отвори панел асистента са терминалом",
+        "description": "Прикажи панел асистента када се терминал отвори на хосту који га има."
+      },
+      "companionSide": {
+        "label": "Позиција панела асистента",
+        "description": "Где се панел налази поред терминала.",
+        "right": "Десно",
+        "left": "Лево",
+        "bottom": "Доле"
+      },
+      "companionSize": {
+        "label": "Величина панела асистента",
+        "description": "Ширина, или висина ако је доле, у пикселима."
+      },
+      "companionEdgeButton": {
+        "label": "Дугме на ивици за панел асистента",
+        "description": "Прикажи мало дугме на ивици терминала за отварање панела."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "подразумевано за непознате моделе",
     "contextLoadFailed": "Није могуће прочитати контекстне прозоре",
     "contextRefresh": "Освежи",
-    "contextWindowInvalid": "Унесите контекстни прозор као цео број токена, најмање 1024."
+    "contextWindowInvalid": "Унесите контекстни прозор као цео број токена, најмање 1024.",
+    "advanced": "Напредно",
+    "advancedHint": "Оставите подешавање на Подразумевано да бисте користили оно које модел сам користи.",
+    "advancedDefault": "Подразумевано",
+    "advancedDefaultAuto": "Подразумевано (аутоматски)",
+    "advancedAuto": "Аутоматски",
+    "advancedEndpoint": "Крајња тачка",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Напор размишљања",
+    "advancedReasoningSummary": "Резиме размишљања",
+    "advancedReasoningSummaryHint": "Само Responses API.",
+    "advancedVerbosity": "Детаљност",
+    "advancedNone": "Ништа",
+    "advancedMinimal": "Минимално",
+    "advancedLow": "Ниско",
+    "advancedMedium": "Средње",
+    "advancedHigh": "Високо",
+    "advancedXhigh": "Веома високо",
+    "advancedMax": "Максимално",
+    "advancedConcise": "Сажето",
+    "advancedDetailed": "Детаљно",
+    "advancedOff": "Искључено",
+    "advancedMaxOutputTokens": "Максималан број излазних токена",
+    "advancedMaxOutputTokensInvalid": "Унесите цео број од 1 до 1.000.000.",
+    "advancedTemperature": "Температура",
+    "advancedTemperatureHint": "OpenAI модели за размишљање прихватају ово само када је напор размишљања постављен на Ништа, па се са било којим другим напором не шаље.",
+    "advancedTemperatureInvalid": "Унесите број од 0 до 2."
   },
   "nav": {
     "ai": "AI асистент"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Недовољни докази за класификацију изложености",
     "reason_critical-asset": "Ресурс је означен као критичан",
     "reason_manual": "Приоритет је изабрао корисник"
+  },
+  "companion": {
+    "toggle": "Панел асистента"
   }
 }

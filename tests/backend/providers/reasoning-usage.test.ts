@@ -50,6 +50,51 @@ const COMPATIBLE = {
   baseUrl: "https://glm.example/v1",
 };
 
+describe("openAiAdapter reasoning effort", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("asks again with reasoning off when tools need it", async () => {
+    providerFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+            },
+          }),
+          { status: 400 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        streamingResponse([
+          sse({ choices: [{ delta: { content: "ok" } }] }),
+          "data: [DONE]\n",
+        ]),
+      );
+    const chunks = await collect(
+      openAiAdapter.streamChat(
+        {
+          fetch: providerFetch,
+          providerType: "openai",
+          // The mock speaks Chat Completions; official OpenAI uses Responses API.
+          baseUrl: "https://llm.example/v1",
+        },
+        {
+          ...REQUEST,
+          model: "gpt-5.6-terra",
+          tools: [{ name: "run", description: "d", parameters: {} }],
+        },
+      ),
+    );
+    expect(joined(chunks, "text")).toBe("ok");
+    expect(providerFetch).toHaveBeenCalledTimes(2);
+    const retry = JSON.parse(providerFetch.mock.calls[1][1].body);
+    expect(retry.reasoning_effort).toBe("none");
+    expect(retry.stream_options).toEqual({ include_usage: true });
+  });
+});
+
 describe("openAiAdapter usage and reasoning", () => {
   beforeEach(() => vi.clearAllMocks());
 

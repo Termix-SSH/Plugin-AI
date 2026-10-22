@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Ota tekoälyavustaja käyttöön",
         "description": "Salli tekoälyavustajan auttaa tämän palvelimen pääteikkunassa. Oletuksena pois päältä, ja edellyttää myös tekoälyn olevan käytössä tililläsi."
+      },
+      "showPanel": {
+        "label": "Paneeli terminaalin vieressä",
+        "description": "Tarjoa avustajan paneeli tämän isäntäpalvelimen SSH-terminaalin vieressä."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Automaattitoimintojen asetukset"
+      },
+      "companionAutoOpen": {
+        "label": "Avaa avustajan paneeli terminaalin kanssa",
+        "description": "Näytä avustajan paneeli, kun terminaali avautuu isäntäpalvelimella, jossa se on käytössä."
+      },
+      "companionSide": {
+        "label": "Avustajan paneelin sijainti",
+        "description": "Missä paneeli sijaitsee terminaalin vieressä.",
+        "right": "Oikealla",
+        "left": "Vasemmalla",
+        "bottom": "Alareunassa"
+      },
+      "companionSize": {
+        "label": "Avustajan paneelin koko",
+        "description": "Leveys tai alareunan korkeus pikseleinä."
+      },
+      "companionEdgeButton": {
+        "label": "Avustajan paneelin reunapainike",
+        "description": "Näytä pieni painike terminaalin reunassa paneelin avaamiseksi."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "oletus tuntemattomille malleille",
     "contextLoadFailed": "Kontekstikokojen lukeminen epäonnistui",
     "contextRefresh": "Päivitä",
-    "contextWindowInvalid": "Syötä kontekstikkokoona kokonaisluku tokenina, vähintään 1024."
+    "contextWindowInvalid": "Syötä kontekstikkokoona kokonaisluku tokenina, vähintään 1024.",
+    "advanced": "Lisäasetukset",
+    "advancedHint": "Jätä asetus oletusarvoon käyttääksesi mallin omia arvoja.",
+    "advancedDefault": "Oletus",
+    "advancedDefaultAuto": "Oletus (automaattinen)",
+    "advancedAuto": "Automaattinen",
+    "advancedEndpoint": "Päätepiste",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Pohdintatyö",
+    "advancedReasoningSummary": "Pohdinnan yhteenveto",
+    "advancedReasoningSummaryHint": "Vain Responses API.",
+    "advancedVerbosity": "Yksityiskohtaisuus",
+    "advancedNone": "Ei mitään",
+    "advancedMinimal": "Minimaalinen",
+    "advancedLow": "Matala",
+    "advancedMedium": "Keskitaso",
+    "advancedHigh": "Korkea",
+    "advancedXhigh": "Erittäin korkea",
+    "advancedMax": "Maksimiarvo",
+    "advancedConcise": "Tiivis",
+    "advancedDetailed": "Yksityiskohtainen",
+    "advancedOff": "Pois päältä",
+    "advancedMaxOutputTokens": "Maksimimäärä tuotettavia tokenia",
+    "advancedMaxOutputTokensInvalid": "Syötä kokonaisluku väliltä 1–1 000 000.",
+    "advancedTemperature": "Lämpötila",
+    "advancedTemperatureHint": "OpenAI:n pohdintamallit hyväksyvät tämän vain, kun pohdintatyö on arvo Ei mitään, joten muilla arvoilla sitä ei lähetetä.",
+    "advancedTemperatureInvalid": "Syötä luku väliltä 0–2."
   },
   "nav": {
     "ai": "Te keinoinen avustaja"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Riittämättömät todisteet altistuksen luokitteluun",
     "reason_critical-asset": "Väline merkitty kriittiseksi",
     "reason_manual": "Käyttäjän valitsema prioriteetti"
+  },
+  "companion": {
+    "toggle": "Avustajan paneeli"
   }
 }

@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Aktiveer AI-assistent",
         "description": "Laat die AI-assistent help in hierdie gasheer se terminaal. Standaard af, en benodig steeds AI geaktiveer vir jou rekening."
+      },
+      "showPanel": {
+        "label": "Paneel langs die terminaal",
+        "description": "Bied 'n assistent-paneel langs hierdie gasheer se SSH-terminaal."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Outo-bediensvoorkeure"
+      },
+      "companionAutoOpen": {
+        "label": "Open die assistent-paneel met 'n terminaal",
+        "description": "Wys die assistent-paneel wanneer 'n terminaal oopmaak op 'n gasheer wat dit het."
+      },
+      "companionSide": {
+        "label": "Assistent-paneel kant",
+        "description": "Waar die paneel langs die terminaal sit.",
+        "right": "Reg",
+        "left": "Links",
+        "bottom": "Onder"
+      },
+      "companionSize": {
+        "label": "Assistent-paneel grootte",
+        "description": "Wyde, of hoogte aan die onderkant, in pixels."
+      },
+      "companionEdgeButton": {
+        "label": "Assistent-paneel randknoppie",
+        "description": "Wys 'n klein knoppie op die terminaalrand om die paneel oop te maak."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "verstek vir onbekende modelle",
     "contextLoadFailed": "Kon nie die kontekstvensters lees nie",
     "contextRefresh": "Verfris",
-    "contextWindowInvalid": "Voer die kontekstvenster in as 'n heelgetal van tokens, ten minste 1024."
+    "contextWindowInvalid": "Voer die kontekstvenster in as 'n heelgetal van tokens, ten minste 1024.",
+    "advanced": "Gevorderd",
+    "advancedHint": "Laat 'n instelling op Verstek om die model se eie te gebruik.",
+    "advancedDefault": "Verstek",
+    "advancedDefaultAuto": "Verstek (outo)",
+    "advancedAuto": "Outo",
+    "advancedEndpoint": "Eindpunt",
+    "advancedEndpointResponses": "Antwoorde API",
+    "advancedEndpointChat": "Klets Voltooiings",
+    "advancedReasoningEffort": "Redenering inspanning",
+    "advancedReasoningSummary": "Redenering opsomming",
+    "advancedReasoningSummaryHint": "Slegs Antwoorde API.",
+    "advancedVerbosity": "Woordrykheid",
+    "advancedNone": "Geen",
+    "advancedMinimal": "Minimaal",
+    "advancedLow": "Laag",
+    "advancedMedium": "Medium",
+    "advancedHigh": "Hoog",
+    "advancedXhigh": "Ekstra hoog",
+    "advancedMax": "Maks",
+    "advancedConcise": "Bondig",
+    "advancedDetailed": "Gedetailleerd",
+    "advancedOff": "Af",
+    "advancedMaxOutputTokens": "Maksimum uitvoertokens",
+    "advancedMaxOutputTokensInvalid": "Voer 'n heelgetal in van 1 tot 1 000 000.",
+    "advancedTemperature": "Temperatuur",
+    "advancedTemperatureHint": "OpenAI-redeneringsmodelle aanvaar dit slegs met redeneringsinspanning Geen, dus word dit nie gestuur met enige ander inspanning nie.",
+    "advancedTemperatureInvalid": "Voer 'n getal in van 0 tot 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Onvoldoende bewyse om blootstelling te klassifiseer",
     "reason_critical-asset": "Bates gemerk as krities",
     "reason_manual": "Prioriteit deur 'n gebruiker gekies"
+  },
+  "companion": {
+    "toggle": "Assistent-paneel"
   }
 }

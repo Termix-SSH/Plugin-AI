@@ -51,11 +51,28 @@ export interface AiProvider {
   defaultModel: string | null;
   /** Per model id, a context window that replaces the provider's. */
   modelOverrides: ModelOverrides;
+  /** Request settings for OpenAI-style providers, empty when none are set. */
+  advanced: ProviderAdvanced;
   enabled: boolean;
   createdAt: string;
 }
 
 export type ModelOverrides = Record<string, { contextWindow?: number }>;
+
+export type ReasoningEffort =
+  "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+
+/** Absent fields keep the model's defaults and are not sent. */
+export interface ProviderAdvanced {
+  endpoint?: "auto" | "responses" | "chat";
+  reasoningEffort?: ReasoningEffort;
+  reasoningSummary?: "auto" | "concise" | "detailed" | "off";
+  verbosity?: "low" | "medium" | "high";
+  /** A whole number, 1 to 1,000,000. */
+  maxOutputTokens?: number;
+  /** 0 to 2. */
+  temperature?: number;
+}
 
 /** Where a context window came from, best first. */
 export type ContextSource = "override" | "provider" | "guess" | "default";
@@ -139,6 +156,7 @@ export async function createAiProvider(input: {
   baseUrl?: string | null;
   apiKey?: string | null;
   defaultModel?: string | null;
+  advanced?: ProviderAdvanced | null;
 }): Promise<AiProvider> {
   try {
     const provider = (await api().post("/providers", input)).data.provider;
@@ -157,6 +175,8 @@ export async function updateAiProvider(
     apiKey: string | null;
     defaultModel: string | null;
     modelOverrides: ModelOverrides;
+    /** Replaces the whole object; null clears it. */
+    advanced: ProviderAdvanced | null;
     enabled: boolean;
   }>,
 ): Promise<AiProvider> {

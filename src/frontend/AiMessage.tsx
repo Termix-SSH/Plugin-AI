@@ -1,5 +1,4 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { SafeMarkdown } from "./markdown";
 
 interface AiMessageProps {
   role: "user" | "assistant";
@@ -17,7 +16,7 @@ export function AiMessage({ role, content }: AiMessageProps) {
 
   return (
     <div className="text-sm leading-relaxed [&_a]:underline [&_code]:font-mono [&_code]:text-xs [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-none [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <SafeMarkdown>{content}</SafeMarkdown>
     </div>
   );
 }

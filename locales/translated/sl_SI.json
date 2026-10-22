@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Vklopi AI pomočnika",
         "description": "Dovoli AI pomočniku, da pomaga v terminalu tega gostitelja. Privzeto izklopljeno, poleg tega mora biti AI omogočen za vaš račun."
+      },
+      "showPanel": {
+        "label": "Plošča ob terminalu",
+        "description": "Omogoči pomožno ploščo ob SSH terminalu tega gostitelja."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Nastavitve samodejnih operacij"
+      },
+      "companionAutoOpen": {
+        "label": "Odpri pomožno ploščo s terminalom",
+        "description": "Prikaži pomožno ploščo, ko se terminal odpre na gostitelju, ki jo podpira."
+      },
+      "companionSide": {
+        "label": "Stran pomožne plošče",
+        "description": "Kje se plošča nahaja ob terminalu.",
+        "right": "Desno",
+        "left": "Levo",
+        "bottom": "Spodaj"
+      },
+      "companionSize": {
+        "label": "Velikost pomožne plošče",
+        "description": "Širina ali višina na dnu v slikovnih točkah."
+      },
+      "companionEdgeButton": {
+        "label": "Gumb na robu za pomožni panel",
+        "description": "Prikaži majhen gumb na robu terminala za odpiranje panela."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "privzeto za neznane modele",
     "contextLoadFailed": "Ni bilo mogoče prebrati oken konteksta",
     "contextRefresh": "Osveži",
-    "contextWindowInvalid": "Vnesite okno konteksta kot celo število žetonov, vsaj 1024."
+    "contextWindowInvalid": "Vnesite okno konteksta kot celo število žetonov, vsaj 1024.",
+    "advanced": "Napredno",
+    "advancedHint": "Pustite nastavitev na privzeto vrednost, da uporabite lastnosti modela.",
+    "advancedDefault": "Privzeto",
+    "advancedDefaultAuto": "Privzeto (samodejno)",
+    "advancedAuto": "Samodejno",
+    "advancedEndpoint": "Končna točka",
+    "advancedEndpointResponses": "API za odzive",
+    "advancedEndpointChat": "Dopolnilo klepeta",
+    "advancedReasoningEffort": "Napor pri sklepanju",
+    "advancedReasoningSummary": "Povzetek sklepanja",
+    "advancedReasoningSummaryHint": "Samo za API odzivov.",
+    "advancedVerbosity": "Podrobnost",
+    "advancedNone": "Brez",
+    "advancedMinimal": "Minimalno",
+    "advancedLow": "Nizko",
+    "advancedMedium": "Srednje",
+    "advancedHigh": "Visoko",
+    "advancedXhigh": "Izjemno visoko",
+    "advancedMax": "Maks.",
+    "advancedConcise": "Kratko",
+    "advancedDetailed": "Podrobno",
+    "advancedOff": "Izklopljeno",
+    "advancedMaxOutputTokens": "Maks. število izhodnih žetonov",
+    "advancedMaxOutputTokensInvalid": "Vnesite celo število od 1 do 1.000.000.",
+    "advancedTemperature": "Temperatura",
+    "advancedTemperatureHint": "Modeli za sklepanje OpenAI sprejmejo to le, ko je trud pri sklepanju nastavljen na Nič, sicer se ne pošlje.",
+    "advancedTemperatureInvalid": "Vnesite število od 0 do 2."
   },
   "nav": {
     "ai": "AI asistent"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Za razvrščanje izpostavljenosti ni dovolj dokazov",
     "reason_critical-asset": "Sredstvo označeno kot kritično",
     "reason_manual": "Prioriteto je izbral uporabnik"
+  },
+  "companion": {
+    "toggle": "Plošča pomočnika"
   }
 }

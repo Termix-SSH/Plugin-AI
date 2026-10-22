@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Povoliť AI asistenta",
         "description": "Umožniť AI asistentovi pomáhať v termináli tohto hosta. Predvolene vypnuté, a stále vyžaduje povolenie AI pre váš účet."
+      },
+      "showPanel": {
+        "label": "Panel vedľa terminálu",
+        "description": "Umožňuje panel asistenta vedľa SSH terminálu tohto hostiteľa."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Predvoľby automatických operácií"
+      },
+      "companionAutoOpen": {
+        "label": "Otvoriť panel asistenta s terminálom",
+        "description": "Zobraziť panel asistenta pri otvorení terminálu na hostiteľovi, ktorý ho má."
+      },
+      "companionSide": {
+        "label": "Poloha panela asistenta",
+        "description": "Kde sa panel nachádza vedľa terminálu.",
+        "right": "Vpravo",
+        "left": "Vľavo",
+        "bottom": "Dole"
+      },
+      "companionSize": {
+        "label": "Veľkosť panela asistenta",
+        "description": "Šírka, alebo výška pri umiestnení dole, v pixeloch."
+      },
+      "companionEdgeButton": {
+        "label": "Tlačidlo na okraji panela asistenta",
+        "description": "Zobraziť malé tlačidlo na okraji terminálu na otvorenie panela."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "predvolené pre neznáme modely",
     "contextLoadFailed": "Nepodarilo sa načítať kontextové okná",
     "contextRefresh": "Obnoviť",
-    "contextWindowInvalid": "Zadajte kontextové okno ako celé číslo tokenov, aspoň 1024."
+    "contextWindowInvalid": "Zadajte kontextové okno ako celé číslo tokenov, aspoň 1024.",
+    "advanced": "Rozšírené",
+    "advancedHint": "Nechajte nastavenie na Predvolené, aby sa použilo nastavenie modelu.",
+    "advancedDefault": "Predvolené",
+    "advancedDefaultAuto": "Predvolené (auto)",
+    "advancedAuto": "Automaticky",
+    "advancedEndpoint": "Koncový bod",
+    "advancedEndpointResponses": "API odpovedí",
+    "advancedEndpointChat": "Doplnenie chatu",
+    "advancedReasoningEffort": "Úsilie o uvažovanie",
+    "advancedReasoningSummary": "Zhrnutie uvažovania",
+    "advancedReasoningSummaryHint": "Len API odpovedí.",
+    "advancedVerbosity": "Podrobnosť",
+    "advancedNone": "Žiadna",
+    "advancedMinimal": "Minimálna",
+    "advancedLow": "Nízka",
+    "advancedMedium": "Stredná",
+    "advancedHigh": "Vysoká",
+    "advancedXhigh": "Veľmi vysoká",
+    "advancedMax": "Maximálna",
+    "advancedConcise": "Stručné",
+    "advancedDetailed": "Podrobné",
+    "advancedOff": "Vypnuté",
+    "advancedMaxOutputTokens": "Max. počet výstupných tokenov",
+    "advancedMaxOutputTokensInvalid": "Zadajte celé číslo od 1 do 1 000 000.",
+    "advancedTemperature": "Teplota",
+    "advancedTemperatureHint": "Modely OpenAI s uvažovaním akceptujú toto len pri úsilí o uvažovanie Nastavené na Žiadna, takže pri inom úsilí sa neposielajú.",
+    "advancedTemperatureInvalid": "Zadajte číslo od 0 do 2."
   },
   "nav": {
     "ai": "AI asistent"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Nedostatočné dôkazy na klasifikáciu expozície",
     "reason_critical-asset": "Aktívum označené ako kritické",
     "reason_manual": "Priorita vybraná používateľom"
+  },
+  "companion": {
+    "toggle": "Panel asistenta"
   }
 }

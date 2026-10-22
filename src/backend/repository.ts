@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import type { ModelOverrides } from "./context-window.js";
+import type { ProviderAdvanced } from "./providers/types.js";
 import {
   cliRuns as cliRunsDef,
   conversations as conversationsDef,
@@ -27,6 +28,7 @@ export interface AiProviderRecord {
   defaultModel: string | null;
   /** The user's per-model settings, such as a context window override. */
   modelOverrides: ModelOverrides;
+  advanced: ProviderAdvanced;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -127,6 +129,7 @@ export interface AiProviderInput {
   apiKey?: string | null;
   defaultModel?: string | null;
   modelOverrides?: ModelOverrides;
+  advanced?: ProviderAdvanced;
   enabled?: boolean;
 }
 
@@ -161,12 +164,28 @@ function parseOverrides(raw: unknown): ModelOverrides {
 const storedOverrides = (overrides: ModelOverrides) =>
   Object.keys(overrides).length ? JSON.stringify(overrides) : null;
 
+/** The column's JSON as settings; anything unreadable is model defaults. */
+function parseAdvanced(raw: unknown): ProviderAdvanced {
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+const storedAdvanced = (advanced: ProviderAdvanced) =>
+  Object.keys(advanced).length ? JSON.stringify(advanced) : null;
+
 /** A provider row as callers see it, without the retired window column. */
 function toProvider(row: Record<string, unknown>): AiProviderRecord {
-  const { contextWindow: _retired, modelOverrides, ...rest } = row;
+  const { contextWindow: _retired, modelOverrides, advanced, ...rest } = row;
   return {
-    ...(rest as Omit<AiProviderRecord, "modelOverrides">),
+    ...(rest as Omit<AiProviderRecord, "modelOverrides" | "advanced">),
     modelOverrides: parseOverrides(modelOverrides),
+    advanced: parseAdvanced(advanced),
   };
 }
 
@@ -283,6 +302,7 @@ export async function createAiRepository(
         apiKeyPrefix: apiKeyPrefix(input.apiKey),
         defaultModel: input.defaultModel ?? null,
         modelOverrides: storedOverrides(input.modelOverrides ?? {}),
+        advanced: storedAdvanced(input.advanced ?? {}),
         enabled: input.enabled ?? true,
         createdAt: stamp,
         updatedAt: stamp,
@@ -313,6 +333,8 @@ export async function createAiRepository(
         updates.defaultModel = input.defaultModel;
       if (input.modelOverrides !== undefined)
         updates.modelOverrides = storedOverrides(input.modelOverrides);
+      if (input.advanced !== undefined)
+        updates.advanced = storedAdvanced(input.advanced);
       if (input.enabled !== undefined) updates.enabled = input.enabled;
 
       // An empty string clears the key; undefined leaves it untouched.

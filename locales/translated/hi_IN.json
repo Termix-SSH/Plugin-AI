@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "AI सहायक सक्षम करें",
         "description": "इस होस्ट के टर्मिनल में AI सहायक की मदद लेने की अनुमति दें। डिफ़ॉल्ट रूप से बंद, और आपके खाते के लिए AI सक्षम होने की आवश्यकता होती है।"
+      },
+      "showPanel": {
+        "label": "टर्मिनल के बगल में पैनल",
+        "description": "इस होस्ट के SSH टर्मिनल के बगल में सहायक पैनल प्रदान करें।"
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "ऑटो-ऑप्स प्राथमिकताएं"
+      },
+      "companionAutoOpen": {
+        "label": "टर्मिनल के साथ सहायक पैनल खोलें",
+        "description": "जब किसी ऐसे होस्ट पर टर्मिनल खुले जिसमें यह सुविधा उपलब्ध हो, तो सहायक पैनल दिखाएं।"
+      },
+      "companionSide": {
+        "label": "सहायक पैनल की स्थिति",
+        "description": "पैनल टर्मिनल के बगल में कहाँ स्थित होगा।",
+        "right": "दायाँ",
+        "left": "बायाँ",
+        "bottom": "नीचे"
+      },
+      "companionSize": {
+        "label": "सहायक पैनल का आकार",
+        "description": "चौड़ाई, या नीचे की ओर ऊंचाई, पिक्सेल में।"
+      },
+      "companionEdgeButton": {
+        "label": "सहायक पैनल किनारे का बटन",
+        "description": "पैनल खोलने के लिए टर्मिनल के किनारे पर एक छोटा बटन दिखाएं।"
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "अज्ञात मॉडल के लिए डिफ़ॉल्ट",
     "contextLoadFailed": "संदर्भ विंडो पढ़ी नहीं जा सकी",
     "contextRefresh": "रिफ़्रेश करें",
-    "contextWindowInvalid": "कॉन्टेक्स्ट विंडो को टोकन का एक पूर्ण संख्या के रूप में दर्ज करें, कम से कम 1024।"
+    "contextWindowInvalid": "कॉन्टेक्स्ट विंडो को टोकन का एक पूर्ण संख्या के रूप में दर्ज करें, कम से कम 1024।",
+    "advanced": "उन्नत",
+    "advancedHint": "मॉडल की अपनी सेटिंग का उपयोग करने के लिए किसी सेटिंग को डिफ़ॉल्ट पर छोड़ दें।",
+    "advancedDefault": "डिफ़ॉल्ट",
+    "advancedDefaultAuto": "डिफ़ॉल्ट (स्वचालित)",
+    "advancedAuto": "स्वचालित",
+    "advancedEndpoint": "एंडपॉइंट",
+    "advancedEndpointResponses": "प्रतिक्रियाएँ API",
+    "advancedEndpointChat": "चैट पूर्णता",
+    "advancedReasoningEffort": "तर्क प्रयास",
+    "advancedReasoningSummary": "तर्क सारांश",
+    "advancedReasoningSummaryHint": "केवल रिस्पॉन्स API।",
+    "advancedVerbosity": "विस्तार",
+    "advancedNone": "कोई नहीं",
+    "advancedMinimal": "न्यूनतम",
+    "advancedLow": "कम",
+    "advancedMedium": "मध्यम",
+    "advancedHigh": "उच्च",
+    "advancedXhigh": "अति उच्च",
+    "advancedMax": "अधिकतम",
+    "advancedConcise": "संक्षिप्त",
+    "advancedDetailed": "विस्तृत",
+    "advancedOff": "बंद",
+    "advancedMaxOutputTokens": "अधिकतम आउटपुट टोकन",
+    "advancedMaxOutputTokensInvalid": "1 से 1,000,000 तक एक पूर्णांक दर्ज करें।",
+    "advancedTemperature": "तापमान",
+    "advancedTemperatureHint": "OpenAI तर्क मॉडल यह केवल तभी स्वीकार करते हैं जब तर्क प्रयास 'None' हो, इसलिए किसी अन्य प्रयास के साथ यह भेजा नहीं जाता है।",
+    "advancedTemperatureInvalid": "0 से 2 तक एक संख्या दर्ज करें।"
   },
   "nav": {
     "ai": "AI सहायक"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "एक्सपोजर वर्गीकृत करने के लिए अपर्याप्त प्रमाण",
     "reason_critical-asset": "संपत्ति को महत्वपूर्ण चिह्नित किया गया",
     "reason_manual": "उपयोगकर्ता द्वारा प्राथमिकता चुनी गई"
+  },
+  "companion": {
+    "toggle": "सहायक पैनल"
   }
 }

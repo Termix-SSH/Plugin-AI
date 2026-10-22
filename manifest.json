@@ -1,7 +1,7 @@
 {
   "id": "ai",
   "name": "AI Assistant",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "An AI assistant that reads your setup and proposes changes for you to approve.",
   "author": {
     "name": "Termix"
@@ -23,7 +23,8 @@
     "With the ai.ops.use permission, it also runs shell commands across the hosts, folders, tags or fleets you select",
     "Auto-ops: automations start the assistant to investigate and report, or propose a plan you approve, with ready-made presets",
     "Asset inventory: a read-only collector maps hosts, Proxmox guests, containers, listening ports and connections into zones, daily and on host changes",
-    "Asset graph: a model annotates each asset's role, importance and business system, with your edits locked, and a graph view shows what fails when an asset does"
+    "Asset graph: a model annotates each asset's role, importance and business system, with your edits locked, and a graph view shows what fails when an asset does",
+    "The assistant in the panel bar beside any SSH terminal"
   ],
   "engine": {
     "termix": ">=26.10.0",
@@ -390,6 +391,50 @@
           "labelKey": "settings.user.autoOpsPreferences.label",
           "default": {},
           "hidden": true
+        },
+        {
+          "key": "companionAutoOpen",
+          "type": "boolean",
+          "labelKey": "settings.user.companionAutoOpen.label",
+          "descriptionKey": "settings.user.companionAutoOpen.description",
+          "default": false
+        },
+        {
+          "key": "companionSide",
+          "type": "select",
+          "labelKey": "settings.user.companionSide.label",
+          "descriptionKey": "settings.user.companionSide.description",
+          "default": "right",
+          "options": [
+            {
+              "value": "right",
+              "labelKey": "settings.user.companionSide.right"
+            },
+            {
+              "value": "left",
+              "labelKey": "settings.user.companionSide.left"
+            },
+            {
+              "value": "bottom",
+              "labelKey": "settings.user.companionSide.bottom"
+            }
+          ]
+        },
+        {
+          "key": "companionSize",
+          "type": "number",
+          "labelKey": "settings.user.companionSize.label",
+          "descriptionKey": "settings.user.companionSize.description",
+          "min": 240,
+          "max": 900,
+          "default": 400
+        },
+        {
+          "key": "companionEdgeButton",
+          "type": "boolean",
+          "labelKey": "settings.user.companionEdgeButton.label",
+          "descriptionKey": "settings.user.companionEdgeButton.description",
+          "default": true
         }
       ],
       "host": {
@@ -402,6 +447,14 @@
             "labelKey": "settings.host.enableAiAssistant.label",
             "descriptionKey": "settings.host.enableAiAssistant.description",
             "default": false
+          },
+          {
+            "key": "showPanel",
+            "type": "boolean",
+            "labelKey": "settings.host.showPanel.label",
+            "descriptionKey": "settings.host.showPanel.description",
+            "default": true,
+            "requires": "enableAiAssistant"
           }
         ]
       }

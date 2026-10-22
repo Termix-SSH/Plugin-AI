@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Aktivér AI-assistent",
         "description": "Tillad AI-assistenten at hjælpe i denne værts terminal. Slået fra som standard, og kræver stadig, at AI er aktiveret for din konto."
+      },
+      "showPanel": {
+        "label": "Panel ved siden af terminalen",
+        "description": "Vis et assistentpanel ved siden af SSH-terminalen for denne vært."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Autoops-præferencer"
+      },
+      "companionAutoOpen": {
+        "label": "Åbn assistentpanelet sammen med en terminal",
+        "description": "Vis assistentpanelet, når en terminal åbnes på en vært, der har det."
+      },
+      "companionSide": {
+        "label": "Placering af assistentpanelet",
+        "description": "Hvor panelet vises i forhold til terminalen.",
+        "right": "Højre",
+        "left": "Venstre",
+        "bottom": "Nederst"
+      },
+      "companionSize": {
+        "label": "Størrelse på assistentpanelet",
+        "description": "Bredde, eller højde hvis det er nederst, i pixels."
+      },
+      "companionEdgeButton": {
+        "label": "Knap på kanten for assistentpanelet",
+        "description": "Vis en lille knap på terminalens kant for at åbne panelet."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "standard for ukendte modeller",
     "contextLoadFailed": "Kunne ikke læse kontekstvinduerne",
     "contextRefresh": "Opdater",
-    "contextWindowInvalid": "Indtast kontekstvinduet som et helt antal tokens, på mindst 1024."
+    "contextWindowInvalid": "Indtast kontekstvinduet som et helt antal tokens, på mindst 1024.",
+    "advanced": "Avanceret",
+    "advancedHint": "Lad en indstilling stå på Standard for at bruge modellens egen.",
+    "advancedDefault": "Standard",
+    "advancedDefaultAuto": "Standard (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Endpoint",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Resoneringseffort",
+    "advancedReasoningSummary": "Resoneringssammendrag",
+    "advancedReasoningSummaryHint": "Kun Responses API.",
+    "advancedVerbosity": "Udførlighed",
+    "advancedNone": "Ingen",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Lav",
+    "advancedMedium": "Mellem",
+    "advancedHigh": "Høj",
+    "advancedXhigh": "Ekstra høj",
+    "advancedMax": "Maks",
+    "advancedConcise": "Kort",
+    "advancedDetailed": "Detaljeret",
+    "advancedOff": "Fra",
+    "advancedMaxOutputTokens": "Maks. output-tokens",
+    "advancedMaxOutputTokensInvalid": "Indtast et heltal fra 1 til 1.000.000.",
+    "advancedTemperature": "Temperatur",
+    "advancedTemperatureHint": "OpenAI-resoneringsmodeller accepterer dette kun, når resoneringseffort er sat til Ingen, så det sendes ikke med andre indstillinger.",
+    "advancedTemperatureInvalid": "Indtast et tal fra 0 til 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Utilstrækkeligt bevis til at klassificere eksponering",
     "reason_critical-asset": "Aktivum markeret som kritisk",
     "reason_manual": "Prioritet valgt af en bruger"
+  },
+  "companion": {
+    "toggle": "Assistentpanel"
   }
 }

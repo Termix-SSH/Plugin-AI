@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Włącz asystenta AI",
         "description": "Pozwól asystentowi AI pomagać w terminalu tego hosta. Domyślnie wyłączone; wymaga również włączenia AI dla Twojego konta."
+      },
+      "showPanel": {
+        "label": "Panel obok terminala",
+        "description": "Zapewnij panel asystenta obok terminala SSH tego hosta."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Preferencje automatycznych operacji"
+      },
+      "companionAutoOpen": {
+        "label": "Otwieraj panel asystenta razem z terminalem",
+        "description": "Wyświetlaj panel asystenta, gdy terminal otwiera się na hoście, który go obsługuje."
+      },
+      "companionSide": {
+        "label": "Położenie panelu asystenta",
+        "description": "Gdzie panel znajduje się względem terminala.",
+        "right": "Prawa strona",
+        "left": "Lewa strona",
+        "bottom": "Dolna strona"
+      },
+      "companionSize": {
+        "label": "Rozmiar panelu asystenta",
+        "description": "Szerokość lub wysokość na dole, w pikselach."
+      },
+      "companionEdgeButton": {
+        "label": "Przycisk krawędzi panelu asystenta",
+        "description": "Wyświetl mały przycisk na krawędzi terminala, aby otworzyć panel."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "domyślne dla nieznanych modeli",
     "contextLoadFailed": "Nie udało się odczytać okien kontekstu",
     "contextRefresh": "Odśwież",
-    "contextWindowInvalid": "Wpisz okno kontekstu jako liczbę całkowitą tokenów, co najmniej 1024."
+    "contextWindowInvalid": "Wpisz okno kontekstu jako liczbę całkowitą tokenów, co najmniej 1024.",
+    "advanced": "Zaawansowane",
+    "advancedHint": "Zostaw ustawienie na Domyślne, aby użyć wartości domyślnej modelu.",
+    "advancedDefault": "Domyślne",
+    "advancedDefaultAuto": "Domyślne (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Punkt końcowy",
+    "advancedEndpointResponses": "API odpowiedzi",
+    "advancedEndpointChat": "Uzupełnienia czatu",
+    "advancedReasoningEffort": "Poziom wnioskowania",
+    "advancedReasoningSummary": "Podsumowanie wnioskowania",
+    "advancedReasoningSummaryHint": "Tylko API odpowiedzi.",
+    "advancedVerbosity": "Szczegółowość",
+    "advancedNone": "Brak",
+    "advancedMinimal": "Minimalna",
+    "advancedLow": "Niska",
+    "advancedMedium": "Średnia",
+    "advancedHigh": "Wysoka",
+    "advancedXhigh": "Bardzo wysoki",
+    "advancedMax": "Maksymalny",
+    "advancedConcise": "Zwięzły",
+    "advancedDetailed": "Szczegółowy",
+    "advancedOff": "Wyłączony",
+    "advancedMaxOutputTokens": "Maks. liczba tokenów wyjściowych",
+    "advancedMaxOutputTokensInvalid": "Wpisz liczbę całkowitą od 1 do 1 000 000.",
+    "advancedTemperature": "Temperatura",
+    "advancedTemperatureHint": "Modele rozumowania OpenAI akceptują tę opcję tylko przy wysiłku rozumowania ustawionym na „Brak”, więc przy dowolnym innym wysiłku nie jest ona wysyłana.",
+    "advancedTemperatureInvalid": "Wpisz liczbę od 0 do 2."
   },
   "nav": {
     "ai": "Asystent AI"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Niewystarczające dowody do klasyfikacji ekspozycji",
     "reason_critical-asset": "Aktywo oznaczone jako krytyczne",
     "reason_manual": "Priorytet wybrany przez użytkownika"
+  },
+  "companion": {
+    "toggle": "Panel asystenta"
   }
 }

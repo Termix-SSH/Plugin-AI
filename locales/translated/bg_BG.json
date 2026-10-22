@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Включване на асистента с изкуствен интелект",
         "description": "Позволете на асистента с изкуствен интелект да помага в терминала на този хост. Изключено по подразбиране и все още изисква изкуствен интелект да е включен за вашия акаунт."
+      },
+      "showPanel": {
+        "label": "Панел до терминала",
+        "description": "Предлага асистентски панел до SSH терминала на този хост."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Предпочитания за автоматични операции"
+      },
+      "companionAutoOpen": {
+        "label": "Отваряне на асистентския панел с терминал",
+        "description": "Показване на асистентския панел, когато се отвори терминал на хост, който го поддържа."
+      },
+      "companionSide": {
+        "label": "Позиция на асистентския панел",
+        "description": "Къде се намира панелът спрямо терминала.",
+        "right": "Дясно",
+        "left": "Ляво",
+        "bottom": "Долу"
+      },
+      "companionSize": {
+        "label": "Размер на асистентския панел",
+        "description": "Ширина, или височина при долна позиция, в пиксели."
+      },
+      "companionEdgeButton": {
+        "label": "Бутон за асистентския панел на ръба",
+        "description": "Показване на малък бутон на ръба на терминала за отваряне на панела."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "по подразбиране за неизвестни модели",
     "contextLoadFailed": "Не можа да се прочетат контекстните прозорци",
     "contextRefresh": "Обнови",
-    "contextWindowInvalid": "Въведете контекстния прозорец като цяло число от токени, поне 1024."
+    "contextWindowInvalid": "Въведете контекстния прозорец като цяло число от токени, поне 1024.",
+    "advanced": "Разширени",
+    "advancedHint": "Оставете настройката на По подразбиране, за да използвате собствената на модела.",
+    "advancedDefault": "По подразбиране",
+    "advancedDefaultAuto": "По подразбиране (автоматично)",
+    "advancedAuto": "Автоматично",
+    "advancedEndpoint": "Крайна точка",
+    "advancedEndpointResponses": "Responses API",
+    "advancedEndpointChat": "Chat Completions",
+    "advancedReasoningEffort": "Усилие за разсъждение",
+    "advancedReasoningSummary": "Обобщение на разсъждението",
+    "advancedReasoningSummaryHint": "Само за Responses API.",
+    "advancedVerbosity": "Подробност",
+    "advancedNone": "Няма",
+    "advancedMinimal": "Минимална",
+    "advancedLow": "Ниска",
+    "advancedMedium": "Средна",
+    "advancedHigh": "Висока",
+    "advancedXhigh": "Много висока",
+    "advancedMax": "Максимална",
+    "advancedConcise": "Кратко",
+    "advancedDetailed": "Подробно",
+    "advancedOff": "Изключено",
+    "advancedMaxOutputTokens": "Макс. изходни токени",
+    "advancedMaxOutputTokensInvalid": "Въведете цяло число от 1 до 1 000 000.",
+    "advancedTemperature": "Температура",
+    "advancedTemperatureHint": "Моделите за разсъждение на OpenAI приемат това само при усилие за разсъждение Няма, така че при всяко друго усилие не се изпраща.",
+    "advancedTemperatureInvalid": "Въведете число от 0 до 2."
   },
   "nav": {
     "ai": "AI асистент"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Недостатъчни доказателства за класифициране на излагането",
     "reason_critical-asset": "Активът е маркиран като критичен",
     "reason_manual": "Приоритетът е избран от потребител"
+  },
+  "companion": {
+    "toggle": "Асистентски панел"
   }
 }

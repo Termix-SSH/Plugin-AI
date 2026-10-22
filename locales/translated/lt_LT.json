@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Įjungti dirbtinio intelekto asistentą",
         "description": "Leisti dirbtinio intelekto asistentui padėti šio serverio terminale. Numatyta išjungta, vis tiek reikia įjungti dirbtinį intelektą jūsų paskyroje."
+      },
+      "showPanel": {
+        "label": "Panelis šalia terminalo",
+        "description": "Rodyti pagalbininko panelę šalia šio serverio SSH terminalo."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Automatinio valdymo nuostatos"
+      },
+      "companionAutoOpen": {
+        "label": "Atidaryti pagalbininko panelę kartu su terminalu",
+        "description": "Rodyti pagalbininko panelę, kai atidaromas terminalas serveryje, kuriame ji įgalinta."
+      },
+      "companionSide": {
+        "label": "Pagalbininko panelės padėtis",
+        "description": "Kur panelė rodoma šalia terminalo.",
+        "right": "Dešinėje",
+        "left": "Kairėje",
+        "bottom": "Apačioje"
+      },
+      "companionSize": {
+        "label": "Pagalbininko panelės dydis",
+        "description": "Plotis arba apačioje – aukštis, pikseliais."
+      },
+      "companionEdgeButton": {
+        "label": "Asistento skydelio mygtukas krašte",
+        "description": "Rodyti mažą mygtuką terminalo krašte, skirtą skydeliui atidaryti."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "numatyta nežinomiems modeliams",
     "contextLoadFailed": "Nepavyko perskaityti konteksto langų",
     "contextRefresh": "Atnaujinti",
-    "contextWindowInvalid": "Įveskite konteksto langą kaip sveiką žetonų skaičių, bent 1024."
+    "contextWindowInvalid": "Įveskite konteksto langą kaip sveiką žetonų skaičių, bent 1024.",
+    "advanced": "Išplėstiniai",
+    "advancedHint": "Palikite nustatymą „Numatytasis“, kad būtų naudojama modelio reikšmė.",
+    "advancedDefault": "Numatytasis",
+    "advancedDefaultAuto": "Numatytasis (automatinis)",
+    "advancedAuto": "Automatinis",
+    "advancedEndpoint": "Galūninis taškas",
+    "advancedEndpointResponses": "Atsakymų API",
+    "advancedEndpointChat": "Pokalbių užbaigimai",
+    "advancedReasoningEffort": "Mąstymo pastangos",
+    "advancedReasoningSummary": "Mąstymo santrauka",
+    "advancedReasoningSummaryHint": "Tikrai „Responses“ API.",
+    "advancedVerbosity": "Išsamumas",
+    "advancedNone": "Nėra",
+    "advancedMinimal": "Minimalus",
+    "advancedLow": "Žemas",
+    "advancedMedium": "Vidutinis",
+    "advancedHigh": "Aukštas",
+    "advancedXhigh": "Labai aukštas",
+    "advancedMax": "Maks.",
+    "advancedConcise": "Trumpas",
+    "advancedDetailed": "Išsamus",
+    "advancedOff": "Išjungta",
+    "advancedMaxOutputTokens": "Maks. išvesties žetonai",
+    "advancedMaxOutputTokensInvalid": "Įveskite sveikąjį skaičių nuo 1 iki 1 000 000.",
+    "advancedTemperature": "Temperatūra",
+    "advancedTemperatureHint": "OpenAI samprotavimo modeliai tai priima tik su samprotavimo pastangų lygiu „Nėra“, todėl su bet kuriuo kitu lygiu ši reikšmė nėra siunčiama.",
+    "advancedTemperatureInvalid": "Įveskite skaičių nuo 0 iki 2."
   },
   "nav": {
     "ai": "MI asistentas"
@@ -812,5 +862,8 @@
     "reason_exposure-unknown": "Nepakanka įrodymų atviro būsenai klasifikuoti",
     "reason_critical-asset": "Turtas pažymėtas kaip kritinis",
     "reason_manual": "Prioritetą pasirinko vartotojas"
+  },
+  "companion": {
+    "toggle": "Asistento skydelis"
   }
 }

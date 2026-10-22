@@ -75,7 +75,11 @@ describe("ai adoption migration", () => {
       .prepare("SELECT * FROM p_ai_providers WHERE id = 3")
       .get() as Record<string, unknown>;
     // The key stays until core's boot migration moves it into ctx.secrets.
-    expect(provider).toMatchObject({ label: "Local", api_key: "enc-key" });
+    expect(provider).toMatchObject({
+      label: "Local",
+      api_key: "enc-key",
+      advanced: null,
+    });
 
     expect(indexes(db.sqlite, "p_ai_providers")).toEqual([
       "idx_ai_providers_user_label",
@@ -149,6 +153,38 @@ describe("ai adoption migration", () => {
         }
       ).n,
     ).toBe(0);
+  });
+});
+
+describe("provider advanced migration", () => {
+  it("adds a nullable advanced column", async () => {
+    db = await createTestDb(pluginDir);
+    const columns = db.sqlite
+      .prepare("PRAGMA table_info(p_ai_providers)")
+      .all();
+    expect(columns).toContainEqual(
+      expect.objectContaining({ name: "advanced", type: "TEXT", notnull: 0 }),
+    );
+  });
+
+  it("writes only the plugin's own tables and uses longtext on mysql", () => {
+    for (const dialect of ["sqlite", "postgres", "mysql"]) {
+      const sql = fs.readFileSync(
+        path.join(
+          pluginDir,
+          "migrations",
+          dialect,
+          "0013_provider_advanced.sql",
+        ),
+        "utf8",
+      );
+      expect(findUnownedTableWrites("ai", sql)).toEqual([]);
+      if (dialect === "mysql") {
+        expect(sql).toContain(
+          "ALTER TABLE `p_ai_providers` ADD COLUMN `advanced` longtext;",
+        );
+      }
+    }
   });
 });
 

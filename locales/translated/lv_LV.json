@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Ieslēgt MI asistentu",
         "description": "Ļaut MI asistentam palīdzēt šī mezgla terminālī. Noklusējuma stāvoklī ir izslēgts, un joprojām ir nepieciešams, lai MI būtu iespējots jūsu kontam."
+      },
+      "showPanel": {
+        "label": "Panelis blakus terminālim",
+        "description": "Piedāvāt asistenta paneli blakus šī mezgla SSH terminālim."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Automātisko darbību preferences"
+      },
+      "companionAutoOpen": {
+        "label": "Atvērt asistenta paneli kopā ar termināli",
+        "description": "Rādīt asistenta paneli, kad terminālis tiek atvērts uz mezgla, kuram tāds ir."
+      },
+      "companionSide": {
+        "label": "Asistenta paneļa puse",
+        "description": "Kur atrodas panelis blakus terminālim.",
+        "right": "Labajā pusē",
+        "left": "Kreisajā pusē",
+        "bottom": "Apakšā"
+      },
+      "companionSize": {
+        "label": "Asistenta paneļa izmērs",
+        "description": "Platums vai augstums apakšā pikseļos."
+      },
+      "companionEdgeButton": {
+        "label": "Asistenta panela malas poga",
+        "description": "Rāda mazu pogu termināļa malā, lai atvērtu paneli."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "noklusējums nezināmiem modeļiem",
     "contextLoadFailed": "Neizdevās izlasīt konteksta logus",
     "contextRefresh": "Atsvaidzināt",
-    "contextWindowInvalid": "Ievadiet konteksta logu kā veselu žetonu skaitu, vismaz 1024."
+    "contextWindowInvalid": "Ievadiet konteksta logu kā veselu žetonu skaitu, vismaz 1024.",
+    "advanced": "Papildu",
+    "advancedHint": "Atstājiet iestatījumu kā Noklusējums, lai izmantotu modeļa pašus.",
+    "advancedDefault": "Noklusējums",
+    "advancedDefaultAuto": "Noklusējums (automātiski)",
+    "advancedAuto": "Automātiski",
+    "advancedEndpoint": "Bezpunkts",
+    "advancedEndpointResponses": "Atbilžu API",
+    "advancedEndpointChat": "Sarunu pabeigšana",
+    "advancedReasoningEffort": "Sapratnes pūles",
+    "advancedReasoningSummary": "Sapratnes kopsavilkums",
+    "advancedReasoningSummaryHint": "Tikai Responses API.",
+    "advancedVerbosity": "Detalizētība",
+    "advancedNone": "Nav",
+    "advancedMinimal": "Minimāla",
+    "advancedLow": "Zema",
+    "advancedMedium": "Vidēja",
+    "advancedHigh": "Augsta",
+    "advancedXhigh": "Īpaši augsts",
+    "advancedMax": "Maks.",
+    "advancedConcise": "Lakonisks",
+    "advancedDetailed": "Detalizēts",
+    "advancedOff": "Izslēgts",
+    "advancedMaxOutputTokens": "Maks. izlaides žetoni",
+    "advancedMaxOutputTokensInvalid": "Ievadiet veselu skaitli no 1 līdz 1 000 000.",
+    "advancedTemperature": "Temperatūra",
+    "advancedTemperatureHint": "OpenAI rīcības modeļi to pieņem tikai ar rīcības pūliņiem „Nav”, tāpēc ar jebkuriem citiem pūliņiem tas netiek nosūtīts.",
+    "advancedTemperatureInvalid": "Ievadiet skaitli no 0 līdz 2."
   },
   "nav": {
     "ai": "MI palīgs"
@@ -808,5 +858,8 @@
     "reason_exposure-unknown": "Nepietiekami pierādījumi izpausmes klasificēšanai",
     "reason_critical-asset": "Aktīvs atzīmēts kā kritisks",
     "reason_manual": "Prioritāti izvēlējās lietotājs"
+  },
+  "companion": {
+    "toggle": "Asistenta panelis"
   }
 }

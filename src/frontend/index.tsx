@@ -7,6 +7,11 @@ import type {
 } from "./terminal/terminal-slot-types";
 import { AgentPanel } from "./agents/AgentPanel";
 import { TerminalAiPanel } from "./terminal/TerminalAiPanel";
+import {
+  AiCompanion,
+  setPendingContext,
+  useAiCompanionDefaults,
+} from "./terminal/AiCompanion";
 import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
 import { UsageSetting } from "./settings/UsageSetting";
@@ -24,8 +29,10 @@ import { performClientAction } from "./assistant/shell";
 import { assistant } from "./assistant/store";
 
 const ASSISTANT_ACTION = "ai.openWithContext";
+const PANEL_TOGGLE_ACTION = "ai.togglePanel";
 const SIDE_PANEL_ID = "ai.assistant";
 const USAGE_CARD_ID = "ai-usage";
+const COMPANION_ID = "assistant";
 
 /** The assistant beside a terminal, in its "terminal.sidePanel" slot. */
 function TerminalSidePanel({
@@ -92,6 +99,8 @@ function registerAssistant(app: TermixApp): (() => void)[] {
 
 export function activate(app: TermixApp): void {
   setAiApp(app);
+  // Cores before 26.10.3 have no panels beside tabs.
+  const companions = typeof app.registerCompanion === "function";
   assistant.onClientAction((action) => performClientAction(app, action));
   app.onDispose(() => {
     assistant.reset();
@@ -212,18 +221,58 @@ export function activate(app: TermixApp): void {
         when: offeredOnHost,
       }),
     );
-    surface.push(
-      app.registerSlotContribution("terminal.sidePanel", {
-        actionId: SIDE_PANEL_ID,
-        titleKey: "ai.assistant",
-        icon: Bot,
-        kind: "component",
-        component: TerminalSidePanel as unknown as ComponentType<
-          Record<string, unknown>
-        >,
-        when: offeredOnHost,
-      }),
-    );
+    if (companions) {
+      // Cores with panels beside tabs show the assistant there.
+      const panelOn = (host: unknown) =>
+        userEnabled &&
+        hostSwitchOn(host) &&
+        (host as { pluginSettings?: { ai?: { showPanel?: boolean } } })
+          ?.pluginSettings?.ai?.showPanel !== false;
+      surface.push(
+        app.registerCompanion(COMPANION_ID, AiCompanion, {
+          icon: Bot,
+          titleKey: "ai.assistant",
+          order: 90,
+          tabTypes: ["terminal"],
+          when: (_tab, host) => !!host?.enableSsh && panelOn(host),
+          useDefaults: useAiCompanionDefaults,
+        }),
+        app.registerAction(PANEL_TOGGLE_ACTION, ((
+          _handle: unknown,
+          tab: unknown,
+        ) => app.toggleCompanion(tab as never, COMPANION_ID)) as never),
+        app.registerSlotContribution("tab.menu", {
+          actionId: PANEL_TOGGLE_ACTION,
+          titleKey: "companion.toggle",
+          icon: Bot,
+          kind: "button",
+          order: 12,
+          when: (context) => {
+            const tab = context.tab as {
+              type?: string;
+              host?: unknown;
+              hostConfig?: unknown;
+            } | null;
+            return (
+              tab?.type === "terminal" && panelOn(tab.host ?? tab.hostConfig)
+            );
+          },
+        }),
+      );
+    } else {
+      surface.push(
+        app.registerSlotContribution("terminal.sidePanel", {
+          actionId: SIDE_PANEL_ID,
+          titleKey: "ai.assistant",
+          icon: Bot,
+          kind: "component",
+          component: TerminalSidePanel as unknown as ComponentType<
+            Record<string, unknown>
+          >,
+          when: offeredOnHost,
+        }),
+      );
+    }
     surface.push(
       app.registerOnboardingStep({
         id: "assistant",
@@ -260,10 +309,19 @@ export function activate(app: TermixApp): void {
   // with what is on screen.
   app.registerAction(
     ASSISTANT_ACTION,
-    (terminal: TerminalSlotApi) =>
-      terminal?.openSidePanel(SIDE_PANEL_ID, {
-        context: terminal.getBufferText(),
-      }),
+    (terminal: TerminalSlotApi) => {
+      const context = terminal?.getBufferText() ?? "";
+      const tabKey = terminal?.getShareTarget?.()?.tabInstanceId;
+      if (companions && tabKey) {
+        setPendingContext(tabKey, context);
+        app.toggleCompanion(
+          { id: tabKey, instanceId: tabKey, type: "terminal", label: "" },
+          COMPANION_ID,
+        );
+        return;
+      }
+      terminal?.openSidePanel(SIDE_PANEL_ID, { context });
+    },
     { permission: "services.use" },
   );
 

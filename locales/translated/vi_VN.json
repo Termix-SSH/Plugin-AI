@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Bật Trợ lý AI",
         "description": "Cho phép trợ lý AI hỗ trợ trong terminal của máy chủ này. Mặc định là tắt và vẫn cần bật AI cho tài khoản của bạn."
+      },
+      "showPanel": {
+        "label": "Bảng điều khiển bên cạnh terminal",
+        "description": "Hiển thị bảng trợ lý bên cạnh terminal SSH của host này."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Tùy chọn tự động hóa AI"
+      },
+      "companionAutoOpen": {
+        "label": "Mở bảng trợ lý cùng với terminal",
+        "description": "Hiển thị bảng trợ lý khi mở terminal trên một host có tính năng này."
+      },
+      "companionSide": {
+        "label": "Vị trí bảng trợ lý",
+        "description": "Vị trí của bảng so với terminal.",
+        "right": "Bên phải",
+        "left": "Bên trái",
+        "bottom": "Bên dưới"
+      },
+      "companionSize": {
+        "label": "Kích thước bảng trợ lý",
+        "description": "Chiều rộng, hoặc chiều cao ở phía dưới, tính bằng pixel."
+      },
+      "companionEdgeButton": {
+        "label": "Nút cạnh của bảng trợ lý",
+        "description": "Hiển thị một nút nhỏ trên cạnh của terminal để mở bảng."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "mặc định cho các mô hình không xác định",
     "contextLoadFailed": "Không thể đọc cửa sổ ngữ cảnh",
     "contextRefresh": "Làm mới",
-    "contextWindowInvalid": "Nhập cửa sổ ngữ cảnh là số nguyên token, tối thiểu 1024."
+    "contextWindowInvalid": "Nhập cửa sổ ngữ cảnh là số nguyên token, tối thiểu 1024.",
+    "advanced": "Nâng cao",
+    "advancedHint": "Để cài đặt ở chế độ Mặc định để sử dụng giá trị mặc định của mô hình.",
+    "advancedDefault": "Mặc định",
+    "advancedDefaultAuto": "Mặc định (tự động)",
+    "advancedAuto": "Tự động",
+    "advancedEndpoint": "Điểm cuối",
+    "advancedEndpointResponses": "API phản hồi",
+    "advancedEndpointChat": "Hoàn thành trò chuyện",
+    "advancedReasoningEffort": "Mức độ suy luận",
+    "advancedReasoningSummary": "Tóm tắt suy luận",
+    "advancedReasoningSummaryHint": "Chỉ dành cho API Responses.",
+    "advancedVerbosity": "Mức độ chi tiết",
+    "advancedNone": "Không",
+    "advancedMinimal": "Tối thiểu",
+    "advancedLow": "Thấp",
+    "advancedMedium": "Trung bình",
+    "advancedHigh": "Cao",
+    "advancedXhigh": "Rất cao",
+    "advancedMax": "Tối đa",
+    "advancedConcise": "Ngắn gọn",
+    "advancedDetailed": "Chi tiết",
+    "advancedOff": "Tắt",
+    "advancedMaxOutputTokens": "Số token đầu ra tối đa",
+    "advancedMaxOutputTokensInvalid": "Nhập một số nguyên từ 1 đến 1.000.000.",
+    "advancedTemperature": "Nhiệt độ",
+    "advancedTemperatureHint": "Các mô hình suy luận của OpenAI chỉ chấp nhận tham số này khi mức độ suy luận là None, do đó nó sẽ không được gửi đi với bất kỳ mức độ suy luận nào khác.",
+    "advancedTemperatureInvalid": "Nhập một số từ 0 đến 2."
   },
   "nav": {
     "ai": "Trợ lý AI"
@@ -800,5 +850,8 @@
     "reason_exposure-unknown": "Không đủ bằng chứng để phân loại mức độ phơi nhiễm",
     "reason_critical-asset": "Tài sản được đánh dấu là quan trọng",
     "reason_manual": "Ưu tiên do người dùng chọn"
+  },
+  "companion": {
+    "toggle": "Bảng điều khiển trợ lý"
   }
 }

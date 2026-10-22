@@ -125,11 +125,34 @@
       "enableAiAssistant": {
         "label": "Aktivera AI-assistent",
         "description": "Tillåt AI-assistenten att hjälpa till i denna värdens terminal. Inaktiverad som standard, och kräver fortfarande att AI är aktiverat för ditt konto."
+      },
+      "showPanel": {
+        "label": "Panel bredvid terminalen",
+        "description": "Erbjud en assistentpanel bredvid SSH-terminalen för denna värd."
       }
     },
     "user": {
       "autoOpsPreferences": {
         "label": "Inställningar för automatiska operationer"
+      },
+      "companionAutoOpen": {
+        "label": "Öppna assistentpanelen med en terminal",
+        "description": "Visa assistentpanelen när en terminal öppnas på en värd som har den."
+      },
+      "companionSide": {
+        "label": "Placering för assistentpanelen",
+        "description": "Var panelen visas i förhållande till terminalen.",
+        "right": "Höger",
+        "left": "Vänster",
+        "bottom": "Nere"
+      },
+      "companionSize": {
+        "label": "Storlek på assistentpanelen",
+        "description": "Bredd, eller höjd längst ner, i pixlar."
+      },
+      "companionEdgeButton": {
+        "label": "Knapp för assistentpanelen vid kanten",
+        "description": "Visa en liten knapp vid terminalens kant för att öppna panelen."
       }
     }
   },
@@ -199,7 +222,34 @@
     "contextSourceDefault": "standard för okända modeller",
     "contextLoadFailed": "Kunde inte läsa kontextfönstren",
     "contextRefresh": "Uppdatera",
-    "contextWindowInvalid": "Ange kontextfönstret som ett helt antal token, minst 1024."
+    "contextWindowInvalid": "Ange kontextfönstret som ett helt antal token, minst 1024.",
+    "advanced": "Avancerat",
+    "advancedHint": "Lämna ett inställningsvärde på Standard för att använda modellens egna.",
+    "advancedDefault": "Standard",
+    "advancedDefaultAuto": "Standard (auto)",
+    "advancedAuto": "Auto",
+    "advancedEndpoint": "Slutpunkt",
+    "advancedEndpointResponses": "Svars-API",
+    "advancedEndpointChat": "Chatkompletteringar",
+    "advancedReasoningEffort": "Resonemangsinsats",
+    "advancedReasoningSummary": "Resonemangssammanfattning",
+    "advancedReasoningSummaryHint": "Endast för Responses API.",
+    "advancedVerbosity": "Detaljnivå",
+    "advancedNone": "Ingen",
+    "advancedMinimal": "Minimal",
+    "advancedLow": "Låg",
+    "advancedMedium": "Medel",
+    "advancedHigh": "Hög",
+    "advancedXhigh": "Extra hög",
+    "advancedMax": "Max",
+    "advancedConcise": "Kortfattad",
+    "advancedDetailed": "Detaljerad",
+    "advancedOff": "Av",
+    "advancedMaxOutputTokens": "Max antal utdata-tokens",
+    "advancedMaxOutputTokensInvalid": "Ange ett heltal mellan 1 och 1 000 000.",
+    "advancedTemperature": "Temperatur",
+    "advancedTemperatureHint": "OpenAI:s resonemangsmodeller accepterar detta endast när ansträngning för resonemang är inställd på \"Ingen\". Vid andra inställningar skickas det inte.",
+    "advancedTemperatureInvalid": "Ange ett tal mellan 0 och 2."
   },
   "nav": {
     "ai": "AI-assistent"
@@ -804,5 +854,8 @@
     "reason_exposure-unknown": "Otillräckliga bevis för att klassificera exponering",
     "reason_critical-asset": "Tillgång markerad som kritisk",
     "reason_manual": "Prioritet vald av användare"
+  },
+  "companion": {
+    "toggle": "Assistentpanel"
   }
 }
