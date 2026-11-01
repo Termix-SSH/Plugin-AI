@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+### Fixed
+
+- The assistant no longer offers to open the SSH Tools panel, which Plugin SSH Terminal 1.3.0 removes
+
 ## 1.3.0
 
 ### Added

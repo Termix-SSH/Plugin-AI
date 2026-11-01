@@ -315,7 +315,7 @@ function uiTools(session: AssistantSession): AiTool[] {
     {
       name: "open_plugin_view",
       description:
-        "Open a sidebar view for the user: hosts, credentials, quick-connect, connections, or a plugin's: snippets, fleets, workspaces, history, macros, ssh-tools, port-forwarding.",
+        "Open a sidebar view for the user: hosts, credentials, quick-connect, connections, or a plugin's: snippets, fleets, workspaces, history, macros, port-forwarding.",
       category: "ops",
       parameters: objectSchema({ id: str("The view id") }, ["id"]),
       handler: async (args) => {
