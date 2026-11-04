@@ -6,7 +6,10 @@ type ToolCategory = "read" | "propose" | "ops";
 export type ToolDeps = Pick<
   PluginContext,
   "hosts" | "services" | "notify" | "rbac" | "ssh" | "audit"
->;
+> & {
+  /** Declared actions. Missing on cores before 26.11.1. */
+  operations?: PluginContext["operations"];
+};
 
 export interface ToolContext {
   /** Always the request's authenticated user, never from model input. */

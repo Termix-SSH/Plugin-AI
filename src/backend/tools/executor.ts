@@ -1,5 +1,6 @@
 import type { Client } from "ssh2";
 import type { PluginHostUpdateInput } from "@termix-ssh/plugin-sdk/backend";
+import { invoke, offered } from "./operation-tools.js";
 import { execCommand } from "@termix-ssh/plugin-sdk/host-commands";
 import { getTool } from "./catalog.js";
 import type { ToolDeps } from "./types.js";
@@ -220,6 +221,24 @@ export async function applyProposal(
         ok: true,
         summary: `Created automation ${created.name} (disabled until you enable it)`,
       };
+    }
+
+    case "propose_action": {
+      if (typeof deps.operations?.invoke !== "function") {
+        throw new Error("This Termix version has no actions");
+      }
+      const actionId = requireString(payload.actionId, "actionId");
+      if (!(await offered(deps)).some((action) => action.id === actionId)) {
+        throw new Error("That action is not available");
+      }
+      const outcome = await invoke({ deps }, payload, "approved");
+      if (outcome.status === "pending_approval") {
+        return { ok: true, summary: "Waiting for approval in Operations" };
+      }
+      if (outcome.status !== "success") {
+        throw new Error(outcome.error ?? outcome.status);
+      }
+      return { ok: true, summary: outcome.summary ?? "Done" };
     }
 
     case "propose_run_command": {

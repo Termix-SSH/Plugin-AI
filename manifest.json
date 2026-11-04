@@ -1,7 +1,7 @@
 {
   "id": "ai",
   "name": "AI Assistant",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "An AI assistant that reads your setup and proposes changes for you to approve.",
   "author": {
     "name": "Termix"
@@ -27,7 +27,7 @@
     "The assistant in the panel bar beside any SSH terminal"
   ],
   "engine": {
-    "termix": ">=26.10.0",
+    "termix": ">=26.11.1-0",
     "api": "^1.2"
   },
   "capabilities": [
@@ -44,7 +44,8 @@
     "users:impersonate",
     "users:read",
     "events:core",
-    "process:spawn"
+    "process:spawn",
+    "operations:invoke"
   ],
   "optionalDependencies": {
     "workspaces": "^1.0.0",
@@ -464,7 +465,10 @@
       "terminal.toolbar",
       "shell.overlay",
       "shell.rightEdge"
-    ]
+    ],
+    "operations": {
+      "invokes": ["*"]
+    }
   },
   "locales": "locales",
   "platforms": ["linux", "win32", "darwin"]

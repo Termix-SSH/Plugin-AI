@@ -1,5 +1,6 @@
 import { proposeTools } from "./propose-tools.js";
 import { readTools } from "./read-tools.js";
+import { operationTools, setForbiddenDomains } from "./operation-tools.js";
 import type { AiTool, ToolDefinitionShape } from "./types.js";
 
 /**
@@ -13,7 +14,11 @@ import type { AiTool, ToolDefinitionShape } from "./types.js";
  * Anything touching credentials, vaults, RBAC, users, identity, certificates,
  * SSO or instance settings is deliberately absent and must stay absent.
  */
-export const AI_TOOLS: AiTool[] = [...readTools, ...proposeTools];
+export const AI_TOOLS: AiTool[] = [
+  ...readTools,
+  ...proposeTools,
+  ...operationTools,
+];
 
 const BY_NAME = new Map(AI_TOOLS.map((tool) => [tool.name, tool]));
 
@@ -57,6 +62,7 @@ export const FORBIDDEN_DOMAINS = [
   "sync",
   "settings",
 ];
+setForbiddenDomains(FORBIDDEN_DOMAINS);
 
 /**
  * The tools offered right now. A tool whose service has no running provider
