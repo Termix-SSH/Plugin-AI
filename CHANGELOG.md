@@ -5,6 +5,7 @@
 ### Added
 
 - The assistant can find and run actions other plugins offer, such as restarting a container or service or waking a machine. Changes wait for your approval in Operations by default
+- Read only commands for drive and array health: smartctl, nvme, mdadm, btrfs, lvs, vgs and pvs
 
 ### Changed
 
