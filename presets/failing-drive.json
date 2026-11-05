@@ -1,0 +1,16 @@
+{
+  "id": "failing-drive",
+  "version": 1,
+  "autonomy": "report",
+  "trigger": {
+    "kind": "operation_event",
+    "event": "storage-health.degraded",
+    "cooldownMinutes": 60
+  },
+  "hostSelector": {
+    "kind": "trigger"
+  },
+  "concurrencyPolicy": "skip",
+  "maxRunSeconds": 900,
+  "runbook": "Storage problem response. Storage Health found a problem on the triggering host: a failing or worn drive, SMART warnings, heat, a degraded pool or array, or a thin pool filling up. The trigger gives the condition and what it is about (a drive like sdb, a pool, an array or a volume). Investigate read-only and report. Never change anything: replacing a drive or rebuilding an array is for a person to do.\n\nInvestigate the triggering host (read-only; anything else is refused):\n1. Overview: `lsblk -d -o NAME,SIZE,ROTA,TRAN,MODEL`, `cat /proc/mdstat` and `df -hP`.\n2. For a drive, read it: `smartctl -H /dev/<drive>`, then `smartctl -a /dev/<drive>` and `smartctl -l error /dev/<drive>`. For an NVMe drive also `nvme smart-log /dev/<nvme>`. Note the overall result, reallocated, pending and uncorrectable sectors, media errors, spare blocks, wear (percentage used), temperature and power on hours, and whether the numbers grew compared with what the trigger says. Check the last self test with `smartctl -l selftest /dev/<drive>`.\n3. For an mdadm array: `mdadm --detail /dev/<array>`. Note failed and missing members and any rebuild progress in /proc/mdstat.\n4. For a ZFS pool: `zpool status -v <pool>` and `zpool list`. Note the state, the failed devices, error counts, the last scrub and any damaged files.\n5. For btrfs: `btrfs device stats <mount>` and `btrfs scrub status <mount>`. For LVM: `lvs -o lv_name,vg_name,data_percent,metadata_percent` and `vgs`.\n6. Look for related kernel errors: `journalctl -k -p err --since -24h --no-pager -n 50`. I/O errors, ata resets and timeouts on the same drive confirm a hardware problem.\n\nDecide how urgent it is:\n- Critical: SMART overall result failed, an NVMe critical warning, a degraded array or pool with the redundancy gone, a thin pool above 95%, or pending sectors that keep growing.\n- Warning: a few reallocated sectors that are not growing, wear over 80%, heat, or a rebuild in progress.\n- Info: the problem is already gone.\n\nIn the report, name the host and the drive, pool or array, show the numbers that matter with the log lines that back them, say how urgent it is, and what a person should do next. Typical next steps: make sure there is a recent backup first, then replace the drive, add the new member to the array or pool, run a scrub when the rebuild ends, and improve the airflow for heat. If a rebuild is already running, say so and when it should end.\n\nCommands run without a terminal as the host's SSH user. If `id -u` is not 0, SMART and ZFS reads may be refused; say what you could not read instead of guessing."
+}

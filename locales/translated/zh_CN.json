@@ -591,6 +591,10 @@
       "cert-expiry-weekly": {
         "title": "每周证书到期",
         "description": "每周一 09:45 读取每台主机上 Let's Encrypt、Web 服务器和 Kubernetes 证书的到期时间，30 天内到期标为警告，7 天内为严重。"
+      },
+      "failing-drive": {
+        "title": "硬盘故障",
+        "description": "当 Storage Health 发现硬盘故障或磨损、存储池或阵列降级、精简池即将写满时，读取 SMART、阵列和存储池状态，并报告紧急程度和处理建议。不会更改任何内容。"
       }
     },
     "report": {

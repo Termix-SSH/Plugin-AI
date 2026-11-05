@@ -87,6 +87,11 @@ const TRIGGER_SHAPES: Record<string, Shape> = {
     intervalSeconds: optional((value) => number(value) && Number(value) >= 60),
     timezone: optional(text),
   },
+  operation_event: {
+    event: text,
+    hostSelector: optional(watched),
+    cooldownMinutes: number,
+  },
   docker_event: {
     hostSelector: watched,
     container: optional(text),
@@ -175,6 +180,7 @@ describe("shipped presets", () => {
       "resource-overload-memory",
       "security-updates-weekly",
       "cert-expiry-weekly",
+      "failing-drive",
     ]);
     for (const preset of PRESETS) {
       expect(preset.version).toBeGreaterThanOrEqual(1);
@@ -321,6 +327,35 @@ describe("shipped presets", () => {
     ).toMatchObject({
       config: { trigger: { kind: "docker_event", event: "unhealthy" } },
     });
+  });
+
+  it("reports failing drives from Storage Health events without changing anything", () => {
+    const drive = preset("failing-drive");
+    expect(drive).toMatchObject({
+      autonomy: "report",
+      trigger: { kind: "operation_event", event: "storage-health.degraded" },
+      hostSelector: { kind: "trigger" },
+    });
+    expect(drive.runbook).toMatch(/Never change anything/);
+    for (const command of [
+      "lsblk -d -o NAME,SIZE,ROTA,TRAN,MODEL",
+      "cat /proc/mdstat",
+      "smartctl -H /dev/sdb",
+      "smartctl -a /dev/sdb",
+      "smartctl -l error /dev/sdb",
+      "smartctl -l selftest /dev/sdb",
+      "nvme smart-log /dev/nvme0",
+      "mdadm --detail /dev/md0",
+      "zpool status -v tank",
+      "zpool list",
+      "btrfs device stats /mnt/data",
+      "btrfs scrub status /mnt/data",
+      "lvs -o lv_name,vg_name,data_percent,metadata_percent",
+      "vgs",
+      "journalctl -k -p err --since -24h --no-pager -n 50",
+    ]) {
+      expect(isReadOnlyCommand(command).allowed, command).toBe(true);
+    }
   });
 
   it("only name read-only commands for the newer investigations", () => {
