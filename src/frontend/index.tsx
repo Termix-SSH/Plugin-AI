@@ -16,6 +16,7 @@ import { AiAssistantStep } from "./AiAssistantStep";
 import { ProvidersSetting } from "./settings/ProvidersSetting";
 import { UsageSetting } from "./settings/UsageSetting";
 import { UsageCard } from "./usage/UsageCard";
+import { aiTasksWidget } from "./homepage/AiTasksWidget";
 import { AI_STATUS_CHANGED_EVENT, getAiStatus } from "./ai-api";
 import { setAiApp } from "./app-ref";
 import {
@@ -181,6 +182,7 @@ export function activate(app: TermixApp): void {
           defaultPanel: "side",
           component: UsageCard,
         }),
+        app.registerExtension("homepage.widgets", aiTasksWidget),
       );
     }
 

@@ -461,6 +461,7 @@
       }
     },
     "uses": [
+      "homepage.widgets",
       "terminal.sidePanel",
       "terminal.toolbar",
       "shell.overlay",

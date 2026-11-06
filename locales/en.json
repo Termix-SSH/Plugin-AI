@@ -857,5 +857,12 @@
   },
   "companion": {
     "toggle": "Assistant panel"
+  },
+  "widget": {
+    "loading": "Loading...",
+    "empty": "No tasks yet",
+    "pending_one": "{{count}} plan waiting for approval",
+    "pending_other": "{{count}} plans waiting for approval",
+    "maxItems": "Tasks to show"
   }
 }
