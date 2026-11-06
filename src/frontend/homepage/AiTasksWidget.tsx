@@ -7,6 +7,7 @@ import {
   ListRow,
   PanelList,
   WidgetTitle,
+  LoadingState,
 } from "@termix-ssh/plugin-sdk/ui";
 import { listTasks, type TaskItem } from "../autoops/api";
 import {
@@ -52,9 +53,7 @@ function AiTasksWidget({
     <div className="flex h-full w-full flex-col overflow-hidden">
       <WidgetTitle title={widget.title} icon={<Sparkles size={11} />} />
       {!data ? (
-        <p className="p-3 text-xs text-muted-foreground">
-          {t("widget.loading")}
-        </p>
+        <LoadingState compact label={t("widget.loading")} />
       ) : (
         <>
           <p className="px-3 pb-1 text-xs text-muted-foreground">

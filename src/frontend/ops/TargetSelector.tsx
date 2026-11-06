@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
-import { Checkbox, PanelSearch } from "@termix-ssh/plugin-sdk/ui";
+import { Checkbox, PanelSearch, TOOLBAR_FIT } from "@termix-ssh/plugin-sdk/ui";
 import {
   folderGroups,
   groupState,
@@ -90,7 +90,9 @@ export function TargetSelector({
 
   return (
     <aside className={`flex min-h-0 flex-col border-border ${className}`}>
-      <div className="shrink-0 border-b border-border px-3 py-2">
+      <div
+        className={`shrink-0 border-b border-border px-3 py-2 ${TOOLBAR_FIT}`}
+      >
         <PanelSearch
           fill
           value={search}

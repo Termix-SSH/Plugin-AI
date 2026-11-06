@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  ToolbarBand,
 } from "@termix-ssh/plugin-sdk/ui";
 import {
   ChartColumn,
@@ -478,7 +479,7 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-1.5">
+      <ToolbarBand>
         {state.providers.length > 0 ? (
           <Select
             value={state.providerId ? String(state.providerId) : undefined}
@@ -585,7 +586,7 @@ export function AssistantChat({ actions }: { actions?: ReactNode }) {
           <Plus size={14} />
         </Button>
         {actions}
-      </div>
+      </ToolbarBand>
       {pane === "history" ? (
         <Conversations onPicked={() => setPane("chat")} />
       ) : pane === "usage" ? (

@@ -12,6 +12,7 @@
 ### Changed
 
 - Needs Termix 26.11.1 or newer
+- Toolbars, loading screens, back buttons and Save bars match the rest of Termix
 
 ## 1.3.1
 
