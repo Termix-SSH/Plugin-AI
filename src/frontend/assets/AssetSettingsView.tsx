@@ -85,7 +85,6 @@ function ScheduleSection() {
           className="w-32"
         />
         <Button
-          size="sm"
           variant="outline"
           disabled={time === settings.dailyTime}
           onClick={() => void save({ dailyTime: time })}
@@ -140,7 +139,6 @@ function ScheduleSection() {
           className="flex-1"
         />
         <Button
-          size="sm"
           variant="outline"
           disabled={model === (settings.annotateModel ?? "")}
           onClick={() => void save({ annotateModel: model.trim() || null })}

@@ -199,7 +199,7 @@ export function ExposureView({
             label: t(`exposure.${value}`),
           }))}
         />
-        <Button size="sm" variant="outline" onClick={() => void load()}>
+        <Button variant="outline" onClick={() => void load()}>
           {t("exposure.refresh")}
         </Button>
       </div>

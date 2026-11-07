@@ -14,6 +14,10 @@
 - Needs Termix 26.11.1 or newer
 - Toolbars, loading screens, back buttons and Save bars match the rest of Termix
 
+### Fixed
+
+- Buttons next to fields in the assets and exposure settings are as tall as the fields
+
 ## 1.3.1
 
 ### Fixed
