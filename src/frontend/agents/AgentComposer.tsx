@@ -230,7 +230,7 @@ export function AgentComposer({
           }}
         >
           <div
-            className="flex flex-col border border-input transition-colors focus-within:border-ring dark:bg-input/30"
+            className="flex flex-col border border-border transition-colors focus-within:border-ring dark:bg-input/30"
             onPaste={(e) => {
               const image = Array.from(e.clipboardData.items)
                 .find((i) => i.type.startsWith("image/"))
