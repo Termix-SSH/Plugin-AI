@@ -591,6 +591,10 @@
       "cert-expiry-weekly": {
         "title": "Kedaluwarsa sertifikat mingguan",
         "description": "Setiap Senin pukul 09:45, membaca kedaluwarsa sertifikat Let's Encrypt, server web, dan Kubernetes di setiap host dan menandai yang kurang dari 30 hari, kritis kurang dari 7 hari."
+      },
+      "failing-drive": {
+        "title": "Drive rusak",
+        "description": "Ketika Storage Health mendeteksi drive yang rusak atau aus, pool atau array yang terdegradasi, atau thin pool yang hampir penuh, sistem akan membaca status SMART, array, dan pool, lalu melaporkan tingkat urgensi serta langkah yang harus diambil. Tidak ada perubahan yang dilakukan secara otomatis."
       }
     },
     "report": {
@@ -853,5 +857,11 @@
   },
   "companion": {
     "toggle": "Panel asisten"
+  },
+  "widget": {
+    "loading": "Memuat...",
+    "empty": "Belum ada tugas",
+    "pending_other": "{{count}} rencana menunggu persetujuan",
+    "maxItems": "Tugas yang ditampilkan"
   }
 }

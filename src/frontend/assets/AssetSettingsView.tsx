@@ -61,6 +61,13 @@ function ScheduleSection() {
   };
 
   if (!settings) return null;
+  const commitTime = () => {
+    if (time !== settings.dailyTime) void save({ dailyTime: time });
+  };
+  const commitModel = () => {
+    if (model !== (settings.annotateModel ?? ""))
+      void save({ annotateModel: model.trim() || null });
+  };
   const collector = settings.collectorIsMe
     ? t("assets.collectorMe")
     : settings.collectorSet
@@ -75,7 +82,10 @@ function ScheduleSection() {
         checked={settings.dailyEnabled}
         onChange={(dailyEnabled) => void save({ dailyEnabled })}
       />
-      <div className="flex items-end gap-2">
+      <div
+        onBlur={commitTime}
+        onKeyDown={(e) => e.key === "Enter" && commitTime()}
+      >
         <TextField
           label={t("assets.time")}
           value={time}
@@ -84,14 +94,6 @@ function ScheduleSection() {
           mono
           className="w-32"
         />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={time === settings.dailyTime}
-          onClick={() => void save({ dailyTime: time })}
-        >
-          {t("assets.save")}
-        </Button>
       </div>
       <div className="flex items-center gap-2 text-xs">
         <span>{t("assets.collector", { collector })}</span>
@@ -126,7 +128,10 @@ function ScheduleSection() {
           })),
         ]}
       />
-      <div className="flex items-end gap-2">
+      <div
+        onBlur={commitModel}
+        onKeyDown={(e) => e.key === "Enter" && commitModel()}
+      >
         <TextField
           label={t("assets.annotateModel")}
           value={model}
@@ -137,16 +142,7 @@ function ScheduleSection() {
             )?.defaultModel ?? t("assets.annotateModelDefault")
           }
           mono
-          className="flex-1"
         />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={model === (settings.annotateModel ?? "")}
-          onClick={() => void save({ annotateModel: model.trim() || null })}
-        >
-          {t("assets.save")}
-        </Button>
       </div>
       <p className="text-xs text-muted-foreground">
         {t("assets.annotationHint")}

@@ -120,6 +120,7 @@ export function registerOpsRoutes(
     rbac: ctx.rbac,
     ssh: ctx.ssh,
     audit: ctx.audit,
+    operations: ctx.operations,
   };
 
   // Facts are cheap to probe again, so they live only as long as the process,

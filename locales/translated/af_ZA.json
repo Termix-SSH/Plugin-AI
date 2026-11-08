@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Weeklikse sertifikaatverval",
         "description": "Elke Maandag om 09:45, lees die verval van Let's Encrypt, webbediener en Kubernetes-sertifikate op elke host en merk dié onder 30 dae, kritiek onder 7."
+      },
+      "failing-drive": {
+        "title": "Storingsgevoelige skyf",
+        "description": "Wanneer Storage Health 'n storingsgevoelige of verslete skyf, 'n verswakte pool of reeks, of 'n dun pool wat vol raak, vind, lees dit SMART-, reeks- en poolstatus, en rapporteer hoe dringend die situasie is en wat gedoen moet word. Daar word niks verander nie."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistent-paneel"
+  },
+  "widget": {
+    "loading": "Laai tans...",
+    "empty": "Nog geen take nie",
+    "pending_one": "{{count}} plan wag op goedkeuring",
+    "pending_other": "{{count}} planne wag op goedkeuring",
+    "maxItems": "Take om te wys"
   }
 }

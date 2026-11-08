@@ -597,6 +597,10 @@
       "cert-expiry-weekly": {
         "title": "Tygodniowa ważność certyfikatów",
         "description": "Co poniedziałek o 09:45 odczytuje daty wygaśnięcia certyfikatów Let's Encrypt, serwerów WWW i Kubernetes na każdym hoście i oznacza te z ważnością poniżej 30 dni, a krytyczne poniżej 7 dni."
+      },
+      "failing-drive": {
+        "title": "Uszkodzony dysk",
+        "description": "Gdy funkcja Stan magazynu wykryje uszkodzony lub zużyty dysk, zdegradowany pulę lub tablicę lub wypełniającą się cienką pulę, odczytuje stan SMART, tablicy i puli oraz raportuje pilność problemu i zalecane działania. Nie wprowadza żadnych zmian."
       }
     },
     "report": {
@@ -865,5 +869,14 @@
   },
   "companion": {
     "toggle": "Panel asystenta"
+  },
+  "widget": {
+    "loading": "Ładowanie...",
+    "empty": "Brak zadań",
+    "pending_one": "{{count}} plan oczekuje na zatwierdzenie",
+    "pending_few": "{{count}} plany oczekują na zatwierdzenie",
+    "pending_many": "{{count}} planów oczekuje na zatwierdzenie",
+    "pending_other": "{{count}} planów oczekuje na zatwierdzenie",
+    "maxItems": "Liczba wyświetlanych zadań"
   }
 }

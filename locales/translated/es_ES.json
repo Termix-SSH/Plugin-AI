@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Caducidad de certificados semanal",
         "description": "Cada lunes a las 09:45, lee la caducidad de los certificados de Let's Encrypt, del servidor web y de Kubernetes en cada host y marca los que caduquen en menos de 30 días, y los críticos en menos de 7."
+      },
+      "failing-drive": {
+        "title": "Disco con fallos",
+        "description": "Cuando el estado del almacenamiento detecta un disco con fallos o desgastado, un grupo o matriz degradado, o un pool delgado que se está llenando, lee el estado SMART, de la matriz y del pool, e informa sobre la urgencia y las acciones a tomar. No se realizan cambios."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Panel del asistente"
+  },
+  "widget": {
+    "loading": "Cargando...",
+    "empty": "Aún no hay tareas",
+    "pending_one": "{{count}} plan esperando aprobación",
+    "pending_many": "{{count}} planes esperando aprobación",
+    "pending_other": "{{count}} planes esperando aprobación",
+    "maxItems": "Tareas a mostrar"
   }
 }

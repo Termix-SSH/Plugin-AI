@@ -289,3 +289,24 @@ it("shows annotation columns with their source, and annotates on request", async
   fireEvent.click(screen.getByText("assets.settingsTitle"));
   expect(await screen.findByText("assets.annotationTitle")).toBeTruthy();
 });
+
+it("saves the daily time when its field loses focus", async () => {
+  mocks.saveSettings.mockResolvedValue({
+    dailyEnabled: true,
+    dailyTime: "04:30",
+    collectorSet: true,
+    collectorIsMe: false,
+    annotateAfterCollect: true,
+    annotateProviderId: null,
+    annotateModel: null,
+    annotateProviders: [],
+  });
+  render(<AssetsView />);
+  fireEvent.click(await screen.findByText("assets.settingsTitle"));
+  const input = await screen.findByPlaceholderText("03:00");
+  fireEvent.change(input, { target: { value: "04:30" } });
+  fireEvent.blur(input);
+  await waitFor(() =>
+    expect(mocks.saveSettings).toHaveBeenCalledWith({ dailyTime: "04:30" }),
+  );
+});

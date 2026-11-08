@@ -27,6 +27,9 @@ const TOOL_LABELS: Record<string, string> = {
   propose_create_automation: "Create automation",
   propose_create_fleet: "Create fleet",
   propose_run_command: "Run command",
+  search_actions: "Finding actions",
+  run_read_action: "Reading through an action",
+  propose_action: "Run action",
   list_targets: "Reading targets",
   run_command: "Running command",
   get_host_facts: "Reading host facts",
@@ -41,6 +44,8 @@ const TOOL_LABELS: Record<string, string> = {
 /** Readable names for the payload keys the propose tools emit. */
 const FIELD_LABELS: Record<string, string> = {
   hostId: "Host",
+  actionId: "Action",
+  resourceKey: "Target",
   hostIds: "Hosts",
   snippetId: "Snippet",
   automationId: "Automation",

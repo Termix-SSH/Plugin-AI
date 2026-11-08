@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@termix-ssh/plugin-sdk/frontend";
-import { Button, SelectField, PanelSearch } from "@termix-ssh/plugin-sdk/ui";
+import {
+  Button,
+  SelectField,
+  PanelSearch,
+  LoadingState,
+} from "@termix-ssh/plugin-sdk/ui";
 import { aiApp } from "../app-ref";
 import { SOURCES, type Entry } from "../../backend/exposure/types";
 import type { Change } from "../../backend/exposure/repository";
@@ -194,7 +199,7 @@ export function ExposureView({
             label: t(`exposure.${value}`),
           }))}
         />
-        <Button size="sm" variant="outline" onClick={() => void load()}>
+        <Button variant="outline" onClick={() => void load()}>
           {t("exposure.refresh")}
         </Button>
       </div>
@@ -203,7 +208,7 @@ export function ExposureView({
           {error}
         </p>
       )}
-      {!data && !error && <p>{t("exposure.loading")}</p>}
+      {!data && !error && <LoadingState label={t("exposure.loading")} />}
       {data && (
         <>
           {!rows.length && (

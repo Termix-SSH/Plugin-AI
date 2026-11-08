@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Tjedni istek certifikata",
         "description": "Svaki ponedjeljak u 09:45, provjerava istek Let's Encrypt, web poslužiteljskih i Kubernetes certifikata na svakom hostu i označava one koji istječu u roku od 30 dana, a kritične one koji istječu u roku od 7 dana."
+      },
+      "failing-drive": {
+        "title": "Neispravan disk",
+        "description": "Kada Storage Health otkrije neispravan ili istrošen disk, degradirani pool ili niz, ili tanki pool koji se puni, čita SMART, stanje niza i poola te izvještava o hitnosti i preporukama za postupanje. Ništa se ne mijenja."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Panel asistenta"
+  },
+  "widget": {
+    "loading": "Učitavanje...",
+    "empty": "Još nema zadataka",
+    "pending_one": "{{count}} plan čeka odobrenje",
+    "pending_few": "{{count}} plana čekaju odobrenje",
+    "pending_other": "{{count}} planova čeka odobrenje",
+    "maxItems": "Broj prikazanih zadataka"
   }
 }

@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Veckovis certifikatutgång",
         "description": "Varje måndag klockan 09:45 läser den utgångstiden för Let's Encrypt-, webbserver- och Kubernetes-certifikat på varje värd och markerar de som är under 30 dagar, kritiska under 7."
+      },
+      "failing-drive": {
+        "title": "Felaktigt enhet",
+        "description": "När Storage Health upptäcker en enhet som håller på att gå sönder eller är slitet, en nedgraderad pool eller array, eller en tunn pool som fylls på, läser den SMART, array- och poolstatus och rapporterar hur akut det är och vad som bör göras. Inga ändringar görs."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistentpanel"
+  },
+  "widget": {
+    "loading": "Laddar...",
+    "empty": "Inga uppgifter ännu",
+    "pending_one": "{{count}} plan väntar på godkännande",
+    "pending_other": "{{count}} planer väntar på godkännande",
+    "maxItems": "Uppgifter att visa"
   }
 }

@@ -589,6 +589,10 @@
       "cert-expiry-weekly": {
         "title": "Weekly certificate expiry",
         "description": "Every Monday at 09:45, reads the expiry of Let's Encrypt, web server and Kubernetes certificates on every host and flags those under 30 days, critical under 7."
+      },
+      "failing-drive": {
+        "title": "Failing drive",
+        "description": "When Storage Health finds a failing or worn drive, a degraded pool or array, or a thin pool filling up, reads SMART, array and pool state, and reports how urgent it is and what to do. Nothing is changed."
       }
     },
     "report": {
@@ -853,5 +857,12 @@
   },
   "companion": {
     "toggle": "Assistant panel"
+  },
+  "widget": {
+    "loading": "Loading...",
+    "empty": "No tasks yet",
+    "pending_one": "{{count}} plan waiting for approval",
+    "pending_other": "{{count}} plans waiting for approval",
+    "maxItems": "Tasks to show"
   }
 }

@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Scadenza certificati settimanale",
         "description": "Ogni lunedì alle 09:45, legge la scadenza dei certificati Let's Encrypt, del web server e di Kubernetes su ogni host e segnala quelli con meno di 30 giorni, critici se inferiori a 7."
+      },
+      "failing-drive": {
+        "title": "Disco in avaria",
+        "description": "Quando Storage Health rileva un disco in avaria o usurato, un pool o array degradato, o un pool sottile che si sta riempiendo, legge lo stato SMART, dell'array e del pool, e segnala l'urgenza e le azioni da intraprendere. Non vengono apportate modifiche."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Pannello assistente"
+  },
+  "widget": {
+    "loading": "Caricamento...",
+    "empty": "Nessun compito ancora",
+    "pending_one": "{{count}} piano in attesa di approvazione",
+    "pending_many": "{{count}} piani in attesa di approvazione",
+    "pending_other": "{{count}} piani in attesa di approvazione",
+    "maxItems": "Compiti da mostrare"
   }
 }

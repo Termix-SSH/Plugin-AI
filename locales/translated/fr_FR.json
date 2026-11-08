@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Expiration des certificats hebdomadaire",
         "description": "Chaque lundi à 09h45, vérifie la date d'expiration des certificats Let's Encrypt, des serveurs web et de Kubernetes sur chaque hôte, et signale ceux qui expirent dans moins de 30 jours, ainsi que les cas critiques (moins de 7 jours)."
+      },
+      "failing-drive": {
+        "title": "Disque défaillant",
+        "description": "Lorsque la santé du stockage détecte un disque défaillant ou usé, un pool ou un tableau dégradé, ou un pool fin qui se remplit, elle lit les informations SMART, l'état du tableau et du pool, et indique l'urgence ainsi que les actions à entreprendre. Aucune modification n'est effectuée."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Panneau d'assistant"
+  },
+  "widget": {
+    "loading": "Chargement...",
+    "empty": "Aucune tâche pour le moment",
+    "pending_one": "{{count}} plan en attente d'approbation",
+    "pending_many": "{{count}} plans en attente d'approbation",
+    "pending_other": "{{count}} plans en attente d'approbation",
+    "maxItems": "Tâches à afficher"
   }
 }

@@ -597,6 +597,10 @@
       "cert-expiry-weekly": {
         "title": "Tedenska poteka certifikatov",
         "description": "Vsak ponedeljek ob 09:45 prebere potek certifikatov Let's Encrypt, spletnih strežnikov in Kubernetes na vsakem gostitelju in označi tiste pod 30 dni, kritične pod 7."
+      },
+      "failing-drive": {
+        "title": "Okvarjen disk",
+        "description": "Ko Storitev zdravja shrambe zazna okvarjen ali obrabljen disk, degradirano skupino ali polje ali pa se tanko polje polni, prebere stanje SMART, polja in skupine ter poroča o nujnosti in ukrepih. Ničesar ne spremeni."
       }
     },
     "report": {
@@ -865,5 +869,14 @@
   },
   "companion": {
     "toggle": "Plošča pomočnika"
+  },
+  "widget": {
+    "loading": "Nalaganje...",
+    "empty": "Še ni opravil",
+    "pending_one": "{{count}} načrt čaka na odobritev",
+    "pending_two": "{{count}} načrta čakata na odobritev",
+    "pending_few": "{{count}} načrti čakajo na odobritev",
+    "pending_other": "{{count}} načrtov čaka na odobritev",
+    "maxItems": "Število prikazanih opravil"
   }
 }

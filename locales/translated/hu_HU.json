@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Heti tanúsítvány-lejárati értesítés",
         "description": "Minden hétfőn 09:45-kor ellenőrzi a Let's Encrypt, a webszerverek és a Kubernetes tanúsítványainak lejárati dátumát minden hoston, és jelzi azokat, amelyek 30 napon belül, illetve 7 napon belül járnak le."
+      },
+      "failing-drive": {
+        "title": "Hibás meghajtó",
+        "description": "Amikor a Tárhelyegészség hibás vagy kopott meghajtót, degradált poolt vagy tömböt, vagy feltöltődő vékony poolt észlel, elolvassa a SMART, tömb és pool állapotát, és jelzi az ügyességet és a teendőket. Semmit nem módosít."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Asszisztens panel"
+  },
+  "widget": {
+    "loading": "Betöltés...",
+    "empty": "Még nincsenek feladatok",
+    "pending_one": "{{count}} jóváhagyásra váró terv",
+    "pending_other": "{{count}} jóváhagyásra váró terv",
+    "maxItems": "Megjelenítendő feladatok"
   }
 }

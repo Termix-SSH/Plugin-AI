@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Wekelijkse certificaatverval",
         "description": "Elke maandag om 09:45 worden de vervaldatums van Let's Encrypt-, webserver- en Kubernetes-certificaten op elke host gelezen. Certificaten met minder dan 30 dagen worden gemarkeerd, en kritiek als er minder dan 7 dagen over zijn."
+      },
+      "failing-drive": {
+        "title": "Defecte schijf",
+        "description": "Wanneer Storage Health een defecte of versleten schijf, een gedegradeerde pool of array, of een opvullende thin pool detecteert, leest het de SMART-, array- en poolstatus uit en rapporteert hoe urgent de situatie is en wat er moet worden gedaan. Er wordt niets gewijzigd."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistent-paneel"
+  },
+  "widget": {
+    "loading": "Laden...",
+    "empty": "Nog geen taken",
+    "pending_one": "{{count}} plan wacht op goedkeuring",
+    "pending_other": "{{count}} plannen wachten op goedkeuring",
+    "maxItems": "Aantal te tonen taken"
   }
 }

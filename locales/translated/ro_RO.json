@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Expirare certificat săptămânală",
         "description": "În fiecare luni la 09:45, citește expirarea certificatelor Let's Encrypt, ale serverului web și Kubernetes de pe fiecare gazdă și marchează pe cele sub 30 de zile, critice sub 7."
+      },
+      "failing-drive": {
+        "title": "Disc defectuos",
+        "description": "Când Storage Health detectează un disc defect sau uzat, un pool sau array degradat, sau un pool subțire care se umple, citește starea SMART, a array-ului și a pool-ului, și raportează cât de urgentă este situația și ce trebuie făcut. Nimic nu este modificat."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Panou asistent"
+  },
+  "widget": {
+    "loading": "Se încarcă...",
+    "empty": "Încă nu există sarcini",
+    "pending_one": "{{count}} plan în așteptarea aprobării",
+    "pending_few": "{{count}} planuri în așteptarea aprobării",
+    "pending_other": "{{count}} planuri în așteptarea aprobării",
+    "maxItems": "Sarcini de afișat"
   }
 }

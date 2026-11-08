@@ -111,7 +111,7 @@ function PermissionEvent({
                       "border px-2.5 py-1 text-xs transition-colors",
                       value === c
                         ? "border-accent-brand/40 bg-accent-brand/10 text-accent-brand"
-                        : "border-border text-muted-foreground hover:text-foreground",
+                        : "border-border bg-popover text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {c}

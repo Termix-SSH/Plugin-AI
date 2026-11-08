@@ -18,11 +18,11 @@ export function UsageCard() {
       <div className="grid grid-cols-2 gap-2">
         <MiniStat
           caption={t("usage.today")}
-          value={usage ? formatTokens(usage.today.totalTokens) : "–"}
+          value={usage ? formatTokens(usage.today.totalTokens) : "-"}
         />
         <MiniStat
           caption={t("usage.month")}
-          value={usage ? formatTokens(usage.month.totalTokens) : "–"}
+          value={usage ? formatTokens(usage.month.totalTokens) : "-"}
         />
       </div>
       <p className="text-[11px] text-muted-foreground">

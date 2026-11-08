@@ -113,6 +113,28 @@ export function registerInstallRoute(
   isRunning: (hostId: number) => boolean,
 ) {
   const active = new Set<number>();
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/install:
+   *   post:
+   *     summary: Install a coding agent on a host
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: OK
+   */
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/forwarding:
+   *   post:
+   *     summary: Set up port forwarding for a host's coding agent
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   for (const operation of ["install", "forwarding"] as const)
     router.post(`/agents/${operation}`, async (req, res) => {
       const { hostId, agent } = req.body ?? {};

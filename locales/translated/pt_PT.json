@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Expiração de certificados semanal",
         "description": "Toda a segunda-feira às 09:45, lê a expiração dos certificados Let's Encrypt, do servidor web e do Kubernetes em cada host e sinaliza os que estão abaixo de 30 dias, críticos abaixo de 7."
+      },
+      "failing-drive": {
+        "title": "Unidade com falha",
+        "description": "Quando o Estado do Armazenamento deteta uma unidade com falha ou desgastada, um pool ou array degradado, ou um pool fino a encher-se, lê o estado SMART, do array e do pool, e informa a urgência e as ações a tomar. Nada é alterado."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Painel do assistente"
+  },
+  "widget": {
+    "loading": "A carregar...",
+    "empty": "Ainda não há tarefas",
+    "pending_one": "{{count}} plano à espera de aprovação",
+    "pending_many": "{{count}} planos à espera de aprovação",
+    "pending_other": "{{count}} planos à espera de aprovação",
+    "maxItems": "Tarefas a mostrar"
   }
 }

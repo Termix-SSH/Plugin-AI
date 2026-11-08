@@ -376,7 +376,7 @@ export function TerminalAiPanel({
           }}
           placeholder={t("ai.terminalPanelPlaceholder")}
           rows={3}
-          className="min-h-20 resize-none border border-input bg-background px-2 py-1.5 text-xs text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-h-20 resize-none border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           disabled={state.streaming || providers.length === 0}
         />
         <Button

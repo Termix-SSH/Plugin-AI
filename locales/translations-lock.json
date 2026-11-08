@@ -446,6 +446,8 @@
   "autoOps.presets.security-updates-weekly.description": "538340b6acff",
   "autoOps.presets.cert-expiry-weekly.title": "0f35f3eac660",
   "autoOps.presets.cert-expiry-weekly.description": "76c91d70a2e4",
+  "autoOps.presets.failing-drive.title": "acda6b691110",
+  "autoOps.presets.failing-drive.description": "b8f03a197d11",
   "autoOps.report.verdict": "7f6e5a6efab1",
   "autoOps.report.evidence": "7ea014de7bfb",
   "autoOps.report.actionsTaken": "d6f8fc72623f",
@@ -687,5 +689,9 @@
   "exposure.reason_exposure-unknown": "d262c3049f40",
   "exposure.reason_critical-asset": "b88e13edfae2",
   "exposure.reason_manual": "3b600b2492aa",
-  "companion.toggle": "25bee6f5dcc7"
+  "companion.toggle": "25bee6f5dcc7",
+  "widget.loading": "b04ba49f8486",
+  "widget.empty": "1562a21cadb0",
+  "widget.pending": "ab09fe886441",
+  "widget.maxItems": "a32f59220c2b"
 }

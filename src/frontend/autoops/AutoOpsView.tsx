@@ -10,6 +10,7 @@ import {
   Segmented,
   SelectField,
   TextField,
+  ToolbarBand,
 } from "@termix-ssh/plugin-sdk/ui";
 import { ShieldCheck, Trash2 } from "lucide-react";
 import { aiApp } from "../app-ref";
@@ -293,7 +294,7 @@ export function AutoOpsView({
         {t("autoOps.intro")}
       </p>
       <PreferencesRow />
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+      <ToolbarBand>
         <Segmented
           value={section}
           onChange={(next) => setSection(next as Section)}
@@ -307,7 +308,7 @@ export function AutoOpsView({
             { value: "presets", label: t("autoOps.sections.presets") },
           ]}
         />
-      </div>
+      </ToolbarBand>
       {error && (
         <p role="alert" className="px-3 py-2 text-xs text-destructive">
           {error}
@@ -315,7 +316,7 @@ export function AutoOpsView({
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {section === "tasks" && (
-          <div className="flex items-center gap-3 border-b border-border px-3 py-2">
+          <ToolbarBand className="gap-3">
             <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
               {t("autoOps.tasksHint")}
             </p>
@@ -330,7 +331,7 @@ export function AutoOpsView({
                 {t("autoOps.openAutomations")}
               </Button>
             )}
-          </div>
+          </ToolbarBand>
         )}
         {section === "tasks" && (
           <PanelList

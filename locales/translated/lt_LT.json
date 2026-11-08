@@ -597,6 +597,10 @@
       "cert-expiry-weekly": {
         "title": "Kas savaitę sertifikato galiojimo pabaiga",
         "description": "Kas pirmadienį 09:45 val. tikrinami Let's Encrypt, web serverių ir Kubernetes sertifikatų galiojimo pabaigos visiems serveriams ir pažymimi tie, kurių liko mažiau nei 30 dienų, o kritiniai – mažiau nei 7."
+      },
+      "failing-drive": {
+        "title": "Nesėkmingas diskas",
+        "description": "Kai „Storage Health“ aptinka nesėkmingą ar nusidėvėjusį diską, degraduotą talpyklą ar masyvą, arba pilną ploną talpyklą, jis perskaitys SMART, masyvo ir talpyklos būseną bei praneš, koks skubus yra atvejis ir ką daryti. Nieko nekeičiama."
       }
     },
     "report": {
@@ -865,5 +869,14 @@
   },
   "companion": {
     "toggle": "Asistento skydelis"
+  },
+  "widget": {
+    "loading": "Įkeliama...",
+    "empty": "Dar nėra užduočių",
+    "pending_one": "{{count}} planas laukia patvirtinimo",
+    "pending_few": "{{count}} planai laukia patvirtinimo",
+    "pending_many": "{{count}} planų laukia patvirtinimo",
+    "pending_other": "{{count}} planų laukia patvirtinimo",
+    "maxItems": "Rodomos užduotys"
   }
 }

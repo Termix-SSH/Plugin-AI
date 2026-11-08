@@ -37,7 +37,7 @@ describe("splitSession", () => {
   });
 });
 
-describe("quickScript", () => {
+describe.skipIf(process.platform === "win32")("quickScript", () => {
   // Only sh (and timeout where given) on the PATH: every probed tool and
   // python3 are missing.
   const bin = mkdtempSync(path.join(os.tmpdir(), "exposure-session-"));
@@ -49,7 +49,7 @@ describe("quickScript", () => {
     for (const tool of extra) {
       const found = spawnSync("/bin/sh", ["-c", `command -v ${tool}`], {
         encoding: "utf8",
-      }).stdout.trim();
+      }).stdout?.trim();
       if (found) symlinkSync(found, path.join(dir, tool));
     }
     try {
@@ -82,7 +82,7 @@ describe("quickScript", () => {
 
   const zsh = spawnSync("/bin/sh", ["-c", "command -v zsh"], {
     encoding: "utf8",
-  }).stdout.trim();
+  }).stdout?.trim();
   it.skipIf(!zsh)("runs the bounded sections under zsh too", () => {
     // zsh does not split "$T": "timeout 5" ran as one command name, 127.
     const sections = splitSession(run(zsh, ["timeout"], true).stdout);

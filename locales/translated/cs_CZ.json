@@ -597,6 +597,10 @@
       "cert-expiry-weekly": {
         "title": "Týdenní vypršení platnosti certifikátů",
         "description": "Každý pondělí v 09:45 zkontroluje datum vypršení platnosti certifikátů Let's Encrypt, webových serverů a Kubernetes na všech hostech a upozorní na ty, jejichž platnost končí do 30 dnů, případně kriticky do 7 dnů."
+      },
+      "failing-drive": {
+        "title": "Selhávající disk",
+        "description": "Když Kontrola úložiště zjistí selhávající nebo opotřebovaný disk, degradovaný pool nebo pole, nebo plnící se tenký pool, přečte SMART, stav pole a poolu a nahlásí, jak naléhavé to je a co dělat. Nic se nemění."
       }
     },
     "report": {
@@ -865,5 +869,14 @@
   },
   "companion": {
     "toggle": "Asistentský panel"
+  },
+  "widget": {
+    "loading": "Načítání...",
+    "empty": "Zatím žádné úlohy",
+    "pending_one": "{{count}} plán čeká na schválení",
+    "pending_few": "{{count}} plány čekají na schválení",
+    "pending_many": "{{count}} plánů čeká na schválení",
+    "pending_other": "{{count}} plánů čeká na schválení",
+    "maxItems": "Počet zobrazených úloh"
   }
 }

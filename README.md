@@ -34,6 +34,9 @@ Read the [docs](https://docs.termix.site/plugins/ai) to set it up and use it.
 - Run Pi, OpenCode, Claude Code or Codex as a coding agent on an SSH host, using your own provider
 - One AI assistant, floating on every page (Ctrl+J) or full screen in the AI tab, that manages Termix as you through the bundled Termix CLI and opens views for you
 - With the `ai.ops.use` permission, it also runs shell commands across the hosts, folders, tags or fleets you select
+- Find and run actions other plugins offer, like restarting a container or waking a machine, with changes waiting for your approval
+- A Failing drive task that reads SMART and array state when Storage Health finds a problem
+- A homepage widget with recent tasks and plans waiting for approval
 
 <br />
 

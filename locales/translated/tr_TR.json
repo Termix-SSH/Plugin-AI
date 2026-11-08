@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Haftalık sertifika süresi",
         "description": "Her Pazartesi 09:45'te, tüm sunuculardaki Let's Encrypt, web sunucusu ve Kubernetes sertifikalarının son kullanma tarihlerini okur ve 30 günden az kalanları, 7 günden az kalanları kritik olarak işaretler."
+      },
+      "failing-drive": {
+        "title": "Bozuk sürücü",
+        "description": "Depolama Sağlığı, bozuk veya aşınmış bir sürücü, bozulmuş bir havuz veya dizi veya dolmaya başlayan ince bir havuz tespit ettiğinde, SMART, dizi ve havuz durumunu okur ve aciliyet derecesini ve yapılması gerekenleri bildirir. Hiçbir değişiklik yapılmaz."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Asistan paneli"
+  },
+  "widget": {
+    "loading": "Yükleniyor...",
+    "empty": "Henüz görev yok",
+    "pending_one": "{{count}} plan onay bekliyor",
+    "pending_other": "{{count}} plan onay bekliyor",
+    "maxItems": "Gösterilecek görevler"
   }
 }

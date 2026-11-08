@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Ukentlig sertifikatutløp",
         "description": "Hver mandag kl. 09:45 leser den utløpet for Let's Encrypt-, webserver- og Kubernetes-sertifikater på hver vert og markerer de som er under 30 dager, kritisk under 7."
+      },
+      "failing-drive": {
+        "title": "Feilaktig disk",
+        "description": "Når Lagringshelse oppdager en feilaktig eller slitt disk, en nedgradert pool eller array, eller en tynn pool som fyller seg, leser den SMART-, array- og poolstatus, og rapporterer hvor akutt situasjonen er og hva som bør gjøres. Det blir ikke gjort noen endringer."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistentpanel"
+  },
+  "widget": {
+    "loading": "Laster inn...",
+    "empty": "Ingen oppgaver ennå",
+    "pending_one": "{{count}} plan venter på godkjenning",
+    "pending_other": "{{count}} planer venter på godkjenning",
+    "maxItems": "Oppgaver som skal vises"
   }
 }

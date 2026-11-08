@@ -591,6 +591,10 @@
       "cert-expiry-weekly": {
         "title": "Tempoh tamat sijil mingguan",
         "description": "Setiap Isnin pada 09:45, membaca tempoh tamat sijil Let's Encrypt, pelayan web dan Kubernetes pada setiap hos dan menandakan yang bawah 30 hari, kritikal bawah 7."
+      },
+      "failing-drive": {
+        "title": "Pemacu rosak",
+        "description": "Apabila Kesihatan Storaj menemui pemacu yang rosak atau haus, kolam atau susunan yang terjejas, atau kolam nipis yang hampir penuh, ia akan membaca SMART, keadaan susunan dan kolam, serta melaporkan tahap kecemasan dan tindakan yang perlu diambil. Tiada perubahan dibuat."
       }
     },
     "report": {
@@ -853,5 +857,11 @@
   },
   "companion": {
     "toggle": "Panel pembantu"
+  },
+  "widget": {
+    "loading": "Memuatkan...",
+    "empty": "Tiada tugas lagi",
+    "pending_other": "{{count}} pelan menunggu kelulusan",
+    "maxItems": "Tugas untuk dipaparkan"
   }
 }

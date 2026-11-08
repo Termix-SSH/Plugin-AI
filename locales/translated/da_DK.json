@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Ugentlig udløb af certifikater",
         "description": "Hver mandag kl. 09:45 læses udløbsdatoen for Let's Encrypt-, webserver- og Kubernetes-certifikater på hver vært, og de med mindre end 30 dage tilbage markeres, mens de med mindre end 7 dage betragtes som kritiske."
+      },
+      "failing-drive": {
+        "title": "Fejlende drev",
+        "description": "Når Storage Health finder et fejlende eller slidt drev, en degraderet pool eller array, eller en thin pool, der fyldes op, læses SMART-, array- og poolstatus, og der rapporteres om, hvor presserende det er, og hvad der skal gøres. Der ændres ikke noget."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistentpanel"
+  },
+  "widget": {
+    "loading": "Indlæser...",
+    "empty": "Ingen opgaver endnu",
+    "pending_one": "{{count}} plan venter på godkendelse",
+    "pending_other": "{{count}} planer venter på godkendelse",
+    "maxItems": "Opgaver, der skal vises"
   }
 }

@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Nedēļas sertifikātu derīguma termiņš",
         "description": "Katru pirmdienu plkst. 09:45 izlasa Let's Encrypt, tīmekļa servera un Kubernetes sertifikātu derīguma termiņu katrā māziņā un atzīmē tos, kas ir mazāk nekā 30 dienas, kritiskos mazāk nekā 7 dienas."
+      },
+      "failing-drive": {
+        "title": "Bojāties disks",
+        "description": "Kad Storage Health konstatē bojātu vai nodilušu disku, degradētu krātuves grupu vai masīvu, vai arī tievu krātuves grupu, kas piepildās, tas izlasa SMART, masīva un krātuves grupas stāvokli un ziņo par steidzamības pakāpi un turpmākajiem soļiem. Nekas netiek mainīts."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Asistenta panelis"
+  },
+  "widget": {
+    "loading": "Ielādē...",
+    "empty": "Vēl nav uzdevumu",
+    "pending_zero": "0 plāni gaida apstiprinājumu",
+    "pending_one": "{{count}} plāns gaida apstiprinājumu",
+    "pending_other": "{{count}} plāni gaida apstiprinājumu",
+    "maxItems": "Rādāmo uzdevumu skaits"
   }
 }

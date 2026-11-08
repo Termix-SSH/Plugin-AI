@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Nädalane sertifikaatide aegumine",
         "description": "Iga esmaspäev kell 09:45 loeb Let's Encrypti, veebiserverite ja Kubernetesi sertifikaatide aegumistähtaegu igal hostil ja märgistab need, mille aegumiseni on vähem kui 30 päeva, kriitilised on need, mille aegumiseni on vähem kui 7 päeva."
+      },
+      "failing-drive": {
+        "title": "Rikiline ketas",
+        "description": "Kui Salvestise tervis tuvastab rikilise või kulunud ketas, halvenenud salvestisepooli või massiivi või täituvat õhukest pooli, loeb see SMART-andmed, massiivi ja pooli oleku ning teatab, kui kiiresti tegutseda tuleb ja mida teha. Midagi ei muudeta."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Abistaja paneel"
+  },
+  "widget": {
+    "loading": "Laadimine...",
+    "empty": "Ülesandeid pole veel",
+    "pending_one": "{{count}} plaan ootab heakskiitu",
+    "pending_other": "{{count}} plaani ootavad heakskiitu",
+    "maxItems": "Kuvamiseks mõeldud ülesanded"
   }
 }

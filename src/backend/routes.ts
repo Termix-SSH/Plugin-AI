@@ -175,6 +175,7 @@ export function registerAiRoutes(
     rbac: ctx.rbac,
     ssh: ctx.ssh,
     audit: ctx.audit,
+    operations: ctx.operations,
   };
 
   const logError = (message: string, error: unknown) =>

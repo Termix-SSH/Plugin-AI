@@ -53,6 +53,7 @@ export async function activate(ctx: PluginContext) {
     rbac: ctx.rbac,
     ssh: ctx.ssh,
     audit: ctx.audit,
+    operations: ctx.operations,
   };
   const taskService = createTaskService({
     ctx,

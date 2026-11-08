@@ -522,6 +522,17 @@ export function registerAgentRoutes(
   registerInstallRoute(router, ctx, (hostId) =>
     [...live.values()].some((entry) => entry.session.hostId === hostId),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents:
+   *   get:
+   *     summary: List your agent sessions
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.get(
     "/agents",
     route(async (_req, res) => {
@@ -540,6 +551,17 @@ export function registerAgentRoutes(
       });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents:
+   *   post:
+   *     summary: Start an agent session on a host
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents",
     route(async (req, res) => {
@@ -565,6 +587,23 @@ export function registerAgentRoutes(
       res.status(201).json({ id: s.id });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/workspace:
+   *   post:
+   *     summary: Change the folder an agent session works in
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents/:id/workspace",
     route(async (req, res) => {
@@ -593,6 +632,23 @@ export function registerAgentRoutes(
       res.json(result);
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}:
+   *   patch:
+   *     summary: Rename, archive or restore an agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.patch(
     "/agents/:id",
     route(async (req, res) => {
@@ -607,6 +663,23 @@ export function registerAgentRoutes(
       res.json(s);
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/queue:
+   *   post:
+   *     summary: Change the queued messages of an agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents/:id/queue",
     route(async (req, res) => {
@@ -618,6 +691,23 @@ export function registerAgentRoutes(
       res.json({ queue: s.queue ?? [], queuePaused: !!s.queuePaused });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}:
+   *   get:
+   *     summary: Get one agent session with its events
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.get(
     "/agents/:id",
     route(async (req, res) => {
@@ -625,6 +715,23 @@ export function registerAgentRoutes(
       res.json(live.has(s.id) ? s : { ...s, events: await store.events(s.id) });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/events:
+   *   get:
+   *     summary: Stream an agent session's events (server sent events)
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.get(
     "/agents/:id/events",
     route(async (req, res) => {
@@ -659,6 +766,23 @@ export function registerAgentRoutes(
       });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/resume:
+   *   post:
+   *     summary: Resume a stopped agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents/:id/resume",
     route(async (req, res) => {
@@ -668,6 +792,23 @@ export function registerAgentRoutes(
       res.json({ id: s.id });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/input:
+   *   post:
+   *     summary: Send a message to a running agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents/:id/input",
     route(async (req, res) => {
@@ -705,6 +846,23 @@ export function registerAgentRoutes(
       res.json({ ok: true });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}/stop:
+   *   post:
+   *     summary: Stop a running agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/agents/:id/stop",
     route(async (req, res) => {
@@ -714,6 +872,23 @@ export function registerAgentRoutes(
       res.json({ ok: true });
     }),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/agents/{id}:
+   *   delete:
+   *     summary: Delete an agent session
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.delete(
     "/agents/:id",
     route(async (req, res) => {

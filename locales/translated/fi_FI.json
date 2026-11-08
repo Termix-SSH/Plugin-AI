@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Viikoittainen sertifikaattien vanheneminen",
         "description": "Joka maanantai klo 09:45 tarkistaa Let's Encryptin, web-palvelimien ja Kubernetesin sertifikaattien vanhenemispäivän kaikilla isäntäpalvelimilla ja merkitsee ne, jotka vanhenevat alle 30 päivän kuluessa, sekä kriittiset, jotka vanhenevat alle 7 päivän kuluessa."
+      },
+      "failing-drive": {
+        "title": "Vikaantunut levy",
+        "description": "Kun Storage Health havaitsee vikaantuvan tai kuluneen levyn, heikentyneen poolin tai arrayn tai täyttyvän thin poolin, se lukee SMART-tiedot, arrayn ja poolin tilan sekä ilmoittaa kiireellisyyden ja suositellut toimenpiteet. Mitään muutoksia ei tehdä."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Avustajan paneeli"
+  },
+  "widget": {
+    "loading": "Ladataan...",
+    "empty": "Ei tehtäviä vielä",
+    "pending_one": "{{count}} suunnitelma odottaa hyväksyntää",
+    "pending_other": "{{count}} suunnitelmaa odottaa hyväksyntää",
+    "maxItems": "Näytettävät tehtävät"
   }
 }

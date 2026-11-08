@@ -10,6 +10,7 @@ import {
   Segmented,
   SelectField,
   type DataColumn,
+  ToolbarBand,
 } from "@termix-ssh/plugin-sdk/ui";
 import { Network, RefreshCw, Settings2, Sparkles } from "lucide-react";
 import { aiApp } from "../app-ref";
@@ -328,7 +329,7 @@ export function AssetsView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-end gap-2 border-b border-border px-3 py-2">
+      <ToolbarBand className="items-end">
         <Segmented<"table" | "graph" | "exposure">
           value={mode}
           onChange={setMode}
@@ -391,7 +392,7 @@ export function AssetsView() {
             </Button>
           </>
         )}
-      </div>
+      </ToolbarBand>
       <div className="flex flex-wrap gap-x-4 border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
         <RunStatus run={runs[0]} running={running} />
         <AnnotationStatus run={annotationRuns[0]} running={annotating} />

@@ -1,6 +1,7 @@
 import certExpiryWeekly from "../../../presets/cert-expiry-weekly.json";
 import containerAnomaly from "../../../presets/container-anomaly.json";
 import dailyPatrol from "../../../presets/daily-patrol.json";
+import failingDrive from "../../../presets/failing-drive.json";
 import diskCleanup from "../../../presets/disk-cleanup.json";
 import hostDownTriage from "../../../presets/host-down-triage.json";
 import resourceOverloadCpu from "../../../presets/resource-overload-cpu.json";
@@ -41,6 +42,7 @@ export const PRESETS = [
   resourceOverloadMemory,
   securityUpdatesWeekly,
   certExpiryWeekly,
+  failingDrive,
 ] as PresetDefinition[];
 
 export function findPreset(id: string): PresetDefinition | undefined {
@@ -54,6 +56,7 @@ const HOST_TRIGGERS = [
   "host_status",
   "health_check",
   "docker_event",
+  "operation_event",
 ];
 const MAX_RUNBOOK = 20_000;
 const MAX_RUN_SECONDS = 3600;

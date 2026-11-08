@@ -10,6 +10,7 @@ import {
   PanelShell,
   Segmented,
   useIsMobile,
+  ToolbarBand,
 } from "@termix-ssh/plugin-sdk/ui";
 import {
   AlertCircle,
@@ -198,7 +199,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
           <aside
             className={`flex shrink-0 flex-col border-border ${isMobile ? "max-h-56 border-b" : "w-64 border-r"}`}
           >
-            <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+            <ToolbarBand>
               <PanelSearch
                 fill
                 value={search}
@@ -210,10 +211,9 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                 label={t("agents.new")}
                 onClick={() => startNew()}
               />
-            </div>
+            </ToolbarBand>
             <div className="shrink-0 border-b border-border px-3 py-2">
               <Segmented
-                className="w-full [&>button]:flex-1"
                 value={view}
                 onChange={(next) => setView(next as "active" | "archived")}
                 options={[
@@ -308,7 +308,7 @@ export function AgentPanel({ host, sshHost }: TabProps) {
               />
             ) : (
               <>
-                <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+                <ToolbarBand>
                   <SessionTitle
                     key={`title-${active.id}`}
                     session={active}
@@ -374,8 +374,8 @@ export function AgentPanel({ host, sshHost }: TabProps) {
                       </Button>
                     )}
                   </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
+                </ToolbarBand>
+                <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
                   <span>{agentNames[active.agent]}</span>
                   <span aria-hidden className="h-3 w-px bg-border" />
                   <span className="truncate">{active.model}</span>

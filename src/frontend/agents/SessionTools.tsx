@@ -218,7 +218,6 @@ export function ReviewPane({
               onChange={(e) => setFile(e.target.value)}
             />
             <Button
-              size="sm"
               variant="outline"
               className="h-8"
               disabled={busy || !file}
@@ -250,7 +249,6 @@ export function ReviewPane({
               onChange={(e) => setBranch(e.target.value)}
             />
             <Button
-              size="sm"
               variant="outline"
               className="h-8"
               disabled={busy || !branch}

@@ -595,6 +595,10 @@
       "cert-expiry-weekly": {
         "title": "Caducitat de certificats setmanal",
         "description": "Cada dilluns a les 09:45, comprova la caducitat dels certificats de Let's Encrypt, del servidor web i de Kubernetes en cada amfitrió i marca els que caduquen en menys de 30 dies, i els crítics en menys de 7."
+      },
+      "failing-drive": {
+        "title": "Disc fallant",
+        "description": "Quan l'Estat de l'emmagatzematge detecta un disc fallant o desgastat, un grup o matriu degradats, o un grup prim que s'està omplint, llegeix l'estat SMART, de la matriu i del grup, i informa de la urgència i què cal fer. No es realitza cap canvi."
       }
     },
     "report": {
@@ -861,5 +865,13 @@
   },
   "companion": {
     "toggle": "Panell d'assistent"
+  },
+  "widget": {
+    "loading": "S'està carregant...",
+    "empty": "Encara no hi ha tasques",
+    "pending_one": "{{count}} pla pendent d'aprovació",
+    "pending_many": "{{count}} plans pendents d'aprovació",
+    "pending_other": "{{count}} plans pendents d'aprovació",
+    "maxItems": "Tasques a mostrar"
   }
 }

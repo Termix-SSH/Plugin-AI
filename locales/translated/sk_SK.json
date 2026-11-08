@@ -597,6 +597,10 @@
       "cert-expiry-weekly": {
         "title": "Týždenná expirácia certifikátov",
         "description": "Každý pondelok o 09:45 prečíta expiráciu certifikátov Let's Encrypt, webových serverov a Kubernetes na všetkých hostoch a označí tie s expiráciou pod 30 dní, kritické pod 7 dní."
+      },
+      "failing-drive": {
+        "title": "Zlyhávajúci disk",
+        "description": "Keď Storage Health zistí zlyhávajúci alebo opotrebovaný disk, degradovaný pool alebo pole, alebo sa plniaci tenký pool, prečíta SMART, stav poľa a poolu a nahlási, aká je situácia urgentná a čo treba urobiť. Nič sa nemení."
       }
     },
     "report": {
@@ -865,5 +869,14 @@
   },
   "companion": {
     "toggle": "Panel asistenta"
+  },
+  "widget": {
+    "loading": "Načítava sa...",
+    "empty": "Zatiaľ žiadne úlohy",
+    "pending_one": "{{count}} plán čaká na schválenie",
+    "pending_few": "{{count}} plány čakajú na schválenie",
+    "pending_many": "{{count}} plánov čaká na schválenie",
+    "pending_other": "{{count}} plánov čaká na schválenie",
+    "maxItems": "Počet zobrazených úloh"
   }
 }

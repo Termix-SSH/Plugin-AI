@@ -14,131 +14,134 @@ import {
 } from "../../../src/backend/exposure/derive.js";
 import { host, derived, listener, observation } from "./fixtures.js";
 
-describe("portable host metadata collection", () => {
-  it("collects OpenWrt without Python and discards non-routing UCI fields on host", () => {
-    const dir = mkdtempSync(join(tmpdir(), "termix-uci-"));
-    try {
-      symlinkSync(
-        execFileSync("which", ["awk"], { encoding: "utf8" }).trim(),
-        join(dir, "awk"),
-      );
-      writeFileSync(
-        join(dir, "uci"),
-        `#!/bin/sh\nprintf '%s\\n' 'firewall.web=redirect' "firewall.web.src_dport='443'" "firewall.web.dest_ip='10.0.0.2'" "firewall.web.dest_port='8443'" "firewall.web.proto='tcp'" "firewall.web.name='secret-token'"\n`,
-        { mode: 0o700 },
-      );
-      const unavailable = JSON.parse(
-        execFileSync("/bin/sh", ["-c", exposureScript()], {
+describe.skipIf(process.platform === "win32")(
+  "portable host metadata collection",
+  () => {
+    it("collects OpenWrt without Python and discards non-routing UCI fields on host", () => {
+      const dir = mkdtempSync(join(tmpdir(), "termix-uci-"));
+      try {
+        symlinkSync(
+          execFileSync("which", ["awk"], { encoding: "utf8" }).trim(),
+          join(dir, "awk"),
+        );
+        writeFileSync(
+          join(dir, "uci"),
+          `#!/bin/sh\nprintf '%s\\n' 'firewall.web=redirect' "firewall.web.src_dport='443'" "firewall.web.dest_ip='10.0.0.2'" "firewall.web.dest_port='8443'" "firewall.web.proto='tcp'" "firewall.web.name='secret-token'"\n`,
+          { mode: 0o700 },
+        );
+        const unavailable = JSON.parse(
+          execFileSync("/bin/sh", ["-c", exposureScript()], {
+            env: { PATH: dir },
+            encoding: "utf8",
+          }),
+        );
+        expect(
+          unavailable.every(
+            (s: { status: string }) => s.status === "unsupported",
+          ),
+        ).toBe(true);
+        const raw = execFileSync("/bin/sh", ["-c", portableScript("uci")], {
           env: { PATH: dir },
           encoding: "utf8",
+        });
+        expect(raw).not.toContain("secret-token");
+        const parsed = parsePortable("uci", raw);
+        expect(parsed.complete).toBe(true);
+        expect(parsed.records[0].backend?.port).toBe(8443);
+        writeFileSync(join(dir, "uci"), "#!/bin/sh\nexit 1\n", { mode: 0o700 });
+        const failure = execFileSync("/bin/sh", ["-c", portableScript("uci")], {
+          env: { PATH: dir },
+          encoding: "utf8",
+        });
+        expect(parsePortable("uci", failure).status).toBe("failed");
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+    it("represents Docker interface negation as a constraint, with unknown rules isolated", () => {
+      const source =
+        "-A DOCKER ! -i docker0 -p tcp -m tcp --dport 8080 -j DNAT --to-destination 172.17.0.2:80";
+      const good = parsePortable("iptables", source);
+      expect(good.complete).toBe(true);
+      expect(good.records[0].constraints).toContain("not-interface:docker0");
+      const mixed = parsePortable(
+        "iptables",
+        source +
+          "\n-A TEST -p tcp --dport 1000:2000 -j DNAT --to-destination 10.0.0.2",
+      );
+      expect(mixed.records).toHaveLength(1);
+      expect(mixed.issues).toHaveLength(1);
+      const rows = deriveEntries(mixed, {
+        host: host(),
+        assets: [host()],
+        ownerId: "owner",
+        observationId: "snapshot",
+        at: new Date().toISOString(),
+      });
+      expect(rows[0].staleAt).toBeNull();
+      expect(mixed.complete).toBe(false);
+    });
+    it("does not export nft comments or script-like UCI values", () => {
+      const parsed = parsePortable(
+        "nft",
+        JSON.stringify({
+          nftables: [
+            {
+              rule: {
+                comment: "credential=secret-value",
+                expr: [
+                  {
+                    match: {
+                      op: "==",
+                      left: { payload: { protocol: "tcp", field: "dport" } },
+                      right: 443,
+                    },
+                  },
+                  { dnat: { addr: "10.0.0.2", port: 80 } },
+                ],
+              },
+            },
+          ],
         }),
       );
-      expect(
-        unavailable.every(
-          (s: { status: string }) => s.status === "unsupported",
-        ),
-      ).toBe(true);
-      const raw = execFileSync("/bin/sh", ["-c", portableScript("uci")], {
-        env: { PATH: dir },
-        encoding: "utf8",
-      });
-      expect(raw).not.toContain("secret-token");
-      const parsed = parsePortable("uci", raw);
-      expect(parsed.complete).toBe(true);
-      expect(parsed.records[0].backend?.port).toBe(8443);
-      writeFileSync(join(dir, "uci"), "#!/bin/sh\nexit 1\n", { mode: 0o700 });
-      const failure = execFileSync("/bin/sh", ["-c", portableScript("uci")], {
-        env: { PATH: dir },
-        encoding: "utf8",
-      });
-      expect(parsePortable("uci", failure).status).toBe("failed");
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-  it("represents Docker interface negation as a constraint, with unknown rules isolated", () => {
-    const source =
-      "-A DOCKER ! -i docker0 -p tcp -m tcp --dport 8080 -j DNAT --to-destination 172.17.0.2:80";
-    const good = parsePortable("iptables", source);
-    expect(good.complete).toBe(true);
-    expect(good.records[0].constraints).toContain("not-interface:docker0");
-    const mixed = parsePortable(
-      "iptables",
-      source +
-        "\n-A TEST -p tcp --dport 1000:2000 -j DNAT --to-destination 10.0.0.2",
-    );
-    expect(mixed.records).toHaveLength(1);
-    expect(mixed.issues).toHaveLength(1);
-    const rows = deriveEntries(mixed, {
-      host: host(),
-      assets: [host()],
-      ownerId: "owner",
-      observationId: "snapshot",
-      at: new Date().toISOString(),
+      expect(JSON.stringify(parsed)).not.toContain("secret-value");
+      const uci = parsePortable(
+        "uci",
+        "firewall.web=redirect\nfirewall.web.src_dport='$(touch /tmp/unsafe)'\nfirewall.web.dest_ip='10.0.0.2'\n__TERMIX_UCI_STATUS_0\n",
+      );
+      expect(uci.records).toEqual([]);
+      expect(JSON.stringify(uci)).not.toContain("touch");
     });
-    expect(rows[0].staleAt).toBeNull();
-    expect(mixed.complete).toBe(false);
-  });
-  it("does not export nft comments or script-like UCI values", () => {
-    const parsed = parsePortable(
-      "nft",
-      JSON.stringify({
-        nftables: [
+    it("does not confuse container loopback with the host namespace", () => {
+      const front = derived(
+        observation([
           {
-            rule: {
-              comment: "credential=secret-value",
-              expr: [
-                {
-                  match: {
-                    op: "==",
-                    left: { payload: { protocol: "tcp", field: "dport" } },
-                    right: 443,
-                  },
-                },
-                { dnat: { addr: "10.0.0.2", port: 80 } },
-              ],
-            },
+            ...listener(443),
+            backend: { address: "127.0.0.1", port: 80, protocol: "tcp" },
+            constraints: ["container-backend-namespace-unresolved"],
           },
-        ],
-      }),
-    );
-    expect(JSON.stringify(parsed)).not.toContain("secret-value");
-    const uci = parsePortable(
-      "uci",
-      "firewall.web=redirect\nfirewall.web.src_dport='$(touch /tmp/unsafe)'\nfirewall.web.dest_ip='10.0.0.2'\n__TERMIX_UCI_STATUS_0\n",
-    );
-    expect(uci.records).toEqual([]);
-    expect(JSON.stringify(uci)).not.toContain("touch");
-  });
-  it("does not confuse container loopback with the host namespace", () => {
-    const front = derived(
-      observation([
-        {
-          ...listener(443),
-          backend: { address: "127.0.0.1", port: 80, protocol: "tcp" },
-          constraints: ["container-backend-namespace-unresolved"],
-        },
-      ]),
-    )[0];
-    const back = derived(
-      observation([
-        {
-          ...listener(80),
-          endpoint: { address: "127.0.0.1", port: 80, protocol: "tcp" },
-        },
-      ]),
-    )[0];
-    expect(linkPaths([front, back])[0].hops).toHaveLength(1);
-  });
-  it("does not guess the wildcard family and accepts scoped loopback", () => {
-    const parsed = parsePortable(
-      "listen",
-      "tcp LISTEN 0 10 *:22 *:*\nudp UNCONN 0 10 127.0.0.53%lo:53 *:*",
-    );
-    expect(parsed.complete).toBe(true);
-    expect(parsed.records[0].constraints).toContain("address-family-unknown");
-  });
-});
+        ]),
+      )[0];
+      const back = derived(
+        observation([
+          {
+            ...listener(80),
+            endpoint: { address: "127.0.0.1", port: 80, protocol: "tcp" },
+          },
+        ]),
+      )[0];
+      expect(linkPaths([front, back])[0].hops).toHaveLength(1);
+    });
+    it("does not guess the wildcard family and accepts scoped loopback", () => {
+      const parsed = parsePortable(
+        "listen",
+        "tcp LISTEN 0 10 *:22 *:*\nudp UNCONN 0 10 127.0.0.53%lo:53 *:*",
+      );
+      expect(parsed.complete).toBe(true);
+      expect(parsed.records[0].constraints).toContain("address-family-unknown");
+    });
+  },
+);
 
 import samples from "./listener-samples.json";
 describe("anonymized listener records reconstructed from seven audit snapshots", () => {

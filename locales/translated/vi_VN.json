@@ -591,6 +591,10 @@
       "cert-expiry-weekly": {
         "title": "Hết hạn chứng chỉ hàng tuần",
         "description": "Mỗi thứ Hai lúc 09:45, đọc thời hạn của chứng chỉ Let's Encrypt, máy chủ web và Kubernetes trên mọi máy chủ và đánh dấu những chứng chỉ còn dưới 30 ngày, nghiêm trọng nếu dưới 7 ngày."
+      },
+      "failing-drive": {
+        "title": "Đĩa đang gặp lỗi",
+        "description": "Khi Storage Health phát hiện một đĩa đang gặp lỗi hoặc bị hao mòn, một pool hoặc mảng bị suy giảm hiệu suất, hoặc một thin pool đang đầy, nó sẽ đọc trạng thái SMART, mảng và pool, sau đó báo cáo mức độ khẩn cấp và các bước cần thực hiện. Không có thay đổi nào được thực hiện."
       }
     },
     "report": {
@@ -853,5 +857,11 @@
   },
   "companion": {
     "toggle": "Bảng điều khiển trợ lý"
+  },
+  "widget": {
+    "loading": "Đang tải...",
+    "empty": "Chưa có tác vụ nào",
+    "pending_other": "{{count}} kế hoạch đang chờ phê duyệt",
+    "maxItems": "Số tác vụ hiển thị"
   }
 }

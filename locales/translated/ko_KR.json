@@ -591,6 +591,10 @@
       "cert-expiry-weekly": {
         "title": "주간 인증서 만료",
         "description": "매주 월요일 오전 09:45에 모든 호스트의 Let's Encrypt, 웹 서버 및 Kubernetes 인증서 만료일을 확인하고 30일 미만은 경고, 7일 미만은 중요으로 표시합니다."
+      },
+      "failing-drive": {
+        "title": "고장 난 드라이브",
+        "description": "Storage Health가 고장 나거나 마모된 드라이브, 성능이 저하된 풀 또는 배열, 또는 가득 차는 thin pool을 감지하면 SMART, 배열 및 풀 상태를 읽고 긴급도와 조치 방법을 보고합니다. 변경 사항은 없습니다."
       }
     },
     "report": {
@@ -853,5 +857,11 @@
   },
   "companion": {
     "toggle": "도움말 패널"
+  },
+  "widget": {
+    "loading": "로딩 중...",
+    "empty": "작업이 없습니다",
+    "pending_other": "{{count}}개의 계획이 승인 대기 중입니다",
+    "maxItems": "표시할 작업 수"
   }
 }

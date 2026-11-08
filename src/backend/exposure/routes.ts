@@ -29,6 +29,17 @@ export function registerExposureRoutes(
     ctx.rbac.require("assets.view") as never,
     createAiGate(ctx.settings, () => ctx.currentActor()),
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/assets/exposure:
+   *   get:
+   *     summary: List what each host exposes to the network
+   *     tags:
+   *       - AI
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.get("/assets/exposure", async (req: Request, res: Response) => {
     const hosts = await visibleHosts(ctx);
     const linked = await currentEntries();
@@ -140,6 +151,23 @@ export function registerExposureRoutes(
       changes,
     });
   });
+  /**
+   * @openapi
+   * /plugin-api/ai/assets/exposure/{key}/explain:
+   *   post:
+   *     summary: Ask the assistant to explain one exposure
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: key
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.post(
     "/assets/exposure/:key/explain",
     ctx.rbac.require("assets.manage") as never,
@@ -203,6 +231,23 @@ export function registerExposureRoutes(
       }
     },
   );
+  /**
+   * @openapi
+   * /plugin-api/ai/assets/exposure/{key}/priority:
+   *   put:
+   *     summary: Set the priority of one exposure
+   *     tags:
+   *       - AI
+   *     parameters:
+   *       - in: path
+   *         name: key
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   */
   router.put(
     "/assets/exposure/:key/priority",
     ctx.rbac.require("assets.manage") as never,

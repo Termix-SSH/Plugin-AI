@@ -53,6 +53,13 @@ const READ_ONLY_COMMANDS = new Set([
   "nvidia-smi",
   "zpool",
   "zfs",
+  "smartctl",
+  "nvme",
+  "mdadm",
+  "btrfs",
+  "lvs",
+  "vgs",
+  "pvs",
   "pvesm",
   "pvecm",
   "pveversion",
@@ -86,6 +93,7 @@ const SUBCOMMAND_ALLOWLIST: Record<string, Set<string>> = {
     "system",
   ]),
   ip: new Set(["a", "addr", "link", "route", "neigh"]),
+  nvme: new Set(["list", "smart-log", "id-ctrl", "error-log", "self-test-log"]),
   qm: new Set(["status", "list"]),
   pct: new Set(["status", "list"]),
 };
@@ -313,6 +321,13 @@ const ARGUMENT_CHECKS: Record<string, (args: string[]) => string | undefined> =
     },
     crictl: (args) => crictl(args),
     "nvidia-smi": (args) => nvidiaSmi(args),
+    smartctl: (args) => smartctl(args),
+    nvme: (args) => nvme(args),
+    mdadm: (args) => mdadm(args),
+    btrfs: (args) => btrfs(args),
+    lvs: (args) => lvm("lvs", args),
+    vgs: (args) => lvm("vgs", args),
+    pvs: (args) => lvm("pvs", args),
     zpool: (args) => zpool(args),
     zfs: (args) => zfs(args),
     pvesm: (args) => pvesm(args),
@@ -893,6 +908,227 @@ function nvidiaSmi(raw: string[]): string | undefined {
   }
 }
 
+/** A whole disk or partition device path, no globs. */
+const BLOCK_DEVICE = /^\/dev\/[a-z][a-z0-9]*$/;
+const NVME_DEVICE = /^\/dev\/nvme\d+(n\d+)?$/;
+const MD_DEVICE = /^\/dev\/md[\w/]*$/;
+
+const SMARTCTL_FLAGS: Record<string, boolean> = {
+  "-H": false,
+  "--health": false,
+  "-i": false,
+  "--info": false,
+  "-A": false,
+  "--attributes": false,
+  "-c": false,
+  "--capabilities": false,
+  "-a": false,
+  "--all": false,
+  "-x": false,
+  "--xall": false,
+  "-j": false,
+  "-l": true,
+  "--log": true,
+  "-d": true,
+  "--device": true,
+  "-n": true,
+  "--nocheck": true,
+  "--scan": false,
+};
+
+const SMARTCTL_LOGS = [
+  "error",
+  "selftest",
+  "xerror",
+  "scttempsts",
+  "scttemphist",
+];
+
+/**
+ * smartctl reads only: health, info, attributes and logs. Anything that
+ * starts a test, switches SMART on or off or changes a setting is refused.
+ * --json takes an optional format, so it is checked on its own.
+ */
+function smartctl(raw: string[]): string | undefined {
+  const args = raw.filter((arg) => !/^--json(=[a-z]+)?$/.test(arg));
+  const flags = onlyFlags(args, SMARTCTL_FLAGS);
+  if ("error" in flags) return `smartctl ${flags.error}`;
+  const logs = flagValues(args, ["-l", "--log"]);
+  if (!logs.every((log) => SMARTCTL_LOGS.includes(log))) {
+    return "smartctl -l takes error, selftest, xerror, scttempsts or scttemphist";
+  }
+  const types = flagValues(args, ["-d", "--device"]);
+  if (!types.every((type) => /^[a-z0-9,+]+$/.test(type))) {
+    return "smartctl -d takes a device type";
+  }
+  const modes = flagValues(args, ["-n", "--nocheck"]);
+  if (
+    !modes.every((mode) => ["never", "sleep", "standby", "idle"].includes(mode))
+  ) {
+    return "smartctl -n takes never, sleep, standby or idle";
+  }
+  const taken = new Set([...logs, ...types, ...modes]);
+  const paths = flags.rest.filter(
+    (word) => word.startsWith("/") || !taken.has(word),
+  );
+  if (args.includes("--scan")) {
+    return paths.length ? "smartctl --scan takes no device" : undefined;
+  }
+  if (paths.length !== 1 || !BLOCK_DEVICE.test(paths[0])) {
+    return "smartctl takes one device like /dev/sda";
+  }
+}
+
+const NVME_FLAGS: Record<string, boolean> = {
+  "-o": true,
+  "--output-format": true,
+  "-H": false,
+  "--human-readable": false,
+};
+
+/** nvme list and the read-only logs of one device. */
+function nvme(raw: string[]): string | undefined {
+  const args = splitEquals(raw);
+  const flags = onlyFlags(args, NVME_FLAGS);
+  if ("error" in flags) return `nvme ${flags.error}`;
+  const formats = flagValues(args, ["-o", "--output-format"]);
+  if (!formats.every((format) => ["normal", "json"].includes(format))) {
+    return "nvme -o takes normal or json";
+  }
+  const words = flags.rest.filter(
+    (word) => word.startsWith("/") || !formats.includes(word),
+  );
+  const [subcommand, ...devices] = words;
+  if (subcommand === "list") {
+    return devices.length ? "nvme list takes no device" : undefined;
+  }
+  if (devices.length !== 1 || !NVME_DEVICE.test(devices[0])) {
+    return `nvme ${subcommand} takes one device like /dev/nvme0`;
+  }
+}
+
+const MDADM_FLAGS: Record<string, boolean> = {
+  "--detail": false,
+  "-D": false,
+  "--scan": false,
+  "-s": false,
+  "--brief": false,
+  "-b": false,
+  "--test": false,
+  "-t": false,
+};
+
+/** mdadm --detail of arrays, or --detail --scan for all of them. */
+function mdadm(raw: string[]): string | undefined {
+  const flags = onlyFlags(raw, MDADM_FLAGS);
+  if ("error" in flags) return `mdadm ${flags.error}`;
+  if (!raw.includes("--detail") && !raw.includes("-D")) {
+    return "Only mdadm --detail is allowed";
+  }
+  if (raw.includes("--scan") || raw.includes("-s")) {
+    return flags.rest.length ? "mdadm --scan takes no array" : undefined;
+  }
+  const arrays = flags.rest;
+  if (
+    !arrays.length ||
+    !arrays.every((dev) => MD_DEVICE.test(dev) && !dev.includes(".."))
+  ) {
+    return "mdadm --detail takes arrays like /dev/md0";
+  }
+}
+
+const BTRFS_FLAGS: Record<string, boolean> = {
+  "-b": false,
+  "-h": false,
+  "-H": false,
+  "-k": false,
+  "-m": false,
+  "-g": false,
+  "-t": false,
+  "-T": false,
+  "-d": false,
+  "-R": false,
+  "-c": false,
+  "--check": false,
+};
+
+const BTRFS_ACTIONS: Record<string, string[]> = {
+  device: ["stats"],
+  scrub: ["status"],
+  filesystem: ["show", "df", "usage"],
+};
+
+/** btrfs device stats, scrub status and filesystem show, df and usage. */
+function btrfs(raw: string[]): string | undefined {
+  const flags = onlyFlags(raw, BTRFS_FLAGS);
+  if ("error" in flags) return `btrfs ${flags.error}`;
+  const [group = "", action = "", ...targets] = flags.rest;
+  if (
+    !Object.hasOwn(BTRFS_ACTIONS, group) ||
+    !BTRFS_ACTIONS[group].includes(action)
+  ) {
+    return `${`btrfs ${group} ${action}`.trim()} is not on the read-only allowlist`;
+  }
+  if (targets.length > 1) return "btrfs takes one path or device";
+  if (targets.length && !plainPath(targets[0])) {
+    return "btrfs takes an absolute path or device";
+  }
+  if (!targets.length && action !== "show") {
+    return `btrfs ${group} ${action} needs a path`;
+  }
+}
+
+const LVM_FLAGS: Record<string, boolean> = {
+  "--reportformat": true,
+  "--units": true,
+  "--nosuffix": false,
+  "--noheadings": false,
+  "--all": false,
+  "-a": false,
+  "--segments": false,
+  "-o": true,
+  "--options": true,
+  "-O": true,
+  "--sort": true,
+  "-v": false,
+};
+
+const LVM_VALUED = [
+  "-o",
+  "--options",
+  "-O",
+  "--sort",
+  "--reportformat",
+  "--units",
+];
+
+/** lvs, vgs and pvs reports. Fields and units are plain names. */
+function lvm(name: string, raw: string[]): string | undefined {
+  const args = splitEquals(raw);
+  const flags = onlyFlags(args, LVM_FLAGS);
+  if ("error" in flags) return `${name} ${flags.error}`;
+  const fields = flagValues(args, ["-o", "--options", "-O", "--sort"]);
+  const fieldList = /^[+-]?[a-z][a-z0-9_]*(,[+-]?[a-z][a-z0-9_]*)*$/;
+  if (!fields.every((field) => fieldList.test(field))) {
+    return `${name} -o takes field names`;
+  }
+  const formats = flagValues(args, ["--reportformat"]);
+  if (!formats.every((format) => ["basic", "json"].includes(format))) {
+    return `${name} --reportformat takes basic or json`;
+  }
+  const units = flagValues(args, ["--units"]);
+  if (!units.every((unit) => /^[0-9]*[bBsSkKmMgGtTpPeEhHr]$/.test(unit))) {
+    return `${name} --units takes a unit`;
+  }
+  const taken = new Set(flagValues(args, LVM_VALUED));
+  const names = flags.rest.filter((word) => !taken.has(word));
+  if (
+    !names.every((word) => /^[\w.+/-]+$/.test(word) && !word.includes(".."))
+  ) {
+    return `${name} takes volume names`;
+  }
+}
+
 /** Pool names start with a letter, so a number after them is an interval. */
 const ZFS_POOL = /^[A-Za-z][\w.:-]*$/;
 const ZFS_DATASET = /^[A-Za-z][\w.:/@#-]*$/;
@@ -903,7 +1139,7 @@ const zfsFields = (value: string) =>
   !value.split(",").includes("all");
 
 const ZPOOL_FLAGS: Record<string, Record<string, boolean>> = {
-  status: { "-x": false, "-v": false },
+  status: { "-x": false, "-v": false, "-p": false },
   list: { "-H": false, "-p": false, "-v": false, "-o": true },
   iostat: { "-H": false, "-p": false, "-v": false, "-y": false },
 };

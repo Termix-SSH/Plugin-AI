@@ -593,6 +593,10 @@
       "cert-expiry-weekly": {
         "title": "Wöchentliche Zertifikatsabläufe",
         "description": "Jeden Montag um 09:45 Uhr werden die Ablaufdaten von Let's Encrypt-, Webserver- und Kubernetes-Zertifikaten auf jedem Host geprüft. Zertifikate mit weniger als 30 Tagen Restlaufzeit werden markiert, kritisch sind weniger als 7 Tage."
+      },
+      "failing-drive": {
+        "title": "Defektes Laufwerk",
+        "description": "Wenn Storage Health ein defektes oder verschlissenes Laufwerk, einen degradierten Pool oder Array oder einen sich füllenden Thin Pool erkennt, liest es SMART-, Array- und Poolstatus und meldet, wie dringend die Situation ist und was zu tun ist. Es werden keine Änderungen vorgenommen."
       }
     },
     "report": {
@@ -857,5 +861,12 @@
   },
   "companion": {
     "toggle": "Assistenten-Panel"
+  },
+  "widget": {
+    "loading": "Wird geladen...",
+    "empty": "Noch keine Aufgaben",
+    "pending_one": "{{count}} Plan wartet auf Genehmigung",
+    "pending_other": "{{count}} Pläne warten auf Genehmigung",
+    "maxItems": "Anzuzeigende Aufgaben"
   }
 }
