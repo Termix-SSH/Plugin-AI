@@ -8,7 +8,7 @@
 
 <!-- VIDEO:START -->
 
-<a href="https://www.youtube.com/watch?v=5usBJanMqiI"><img src="https://img.shields.io/badge/Watch_the_demo-f59145?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the demo on YouTube" /></a>
+<a href="https://www.youtube.com/watch?v=YgdIrZuDUO4"><img src="https://img.shields.io/badge/Watch_the_demo-f59145?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the demo on YouTube" /></a>
 
 <!-- VIDEO:END -->
 
@@ -76,6 +76,10 @@ For a paid sponsor spot, email [mail@termix.site](mailto:mail@termix.site).
 &nbsp;&nbsp;&nbsp;
 <a href="https://www.hetzner.com/?mtm_campaign=termix&mtm_medium=referral&mtm_content=sponsoring_link">
   <img src="https://termix.site/img/sponsors/hetzner.png" height="40" alt="Hetzner" />
+</a>
+&nbsp;&nbsp;&nbsp;
+<a href="https://emberswan.com/">
+  <img src="https://termix.site/img/sponsors/emberswan.png" height="40" alt="Ember Swan" />
 </a>
 
 </div>
