@@ -5,6 +5,7 @@
 ### Fixed
 
 - Save as preset button now matches the Save button size
+- Termix CLI tool calls now work in the desktop app, where they run in a worker thread
 
 ## 1.4.0
 
