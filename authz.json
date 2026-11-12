@@ -1,0 +1,700 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Termix-SSH/Termix/main/scripts/authz/authz.schema.json",
+  "seed": [
+    {
+      "as": "admin",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/admin",
+      "body": {
+        "globallyEnabled": true
+      }
+    },
+    {
+      "as": "owner",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "other",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "share-connect",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "share-view",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "share-edit",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "share-manage",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "admin",
+      "method": "PUT",
+      "path": "/plugins/ai/settings/user",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "as": "admin",
+      "method": "POST",
+      "path": "/plugin-api/ai/assets/zones",
+      "body": {
+        "name": "authz-own-zone",
+        "kind": "dmz",
+        "cidr": "10.0.0.0/8"
+      },
+      "capture": {
+        "ai.zones": "zone.id"
+      }
+    },
+    {
+      "as": "owner",
+      "method": "POST",
+      "path": "/plugin-api/ai/providers",
+      "body": {
+        "providerType": "openai",
+        "label": "authz-own-provider",
+        "apiKey": "authz-key"
+      },
+      "capture": {
+        "ai.providers": "provider.id"
+      }
+    }
+  ],
+  "routes": {
+    "GET /plugin-api/ai/agents": {
+      "access": "user",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      },
+      "permission": "ai.agents"
+    },
+    "POST /plugin-api/ai/agents": {
+      "access": "user",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      }
+    },
+    "DELETE /plugin-api/ai/agents/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/agents/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "PATCH /plugin-api/ai/agents/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/agents/:id/events": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/:id/input": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/:id/queue": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/:id/resume": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/:id/stop": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/:id/workspace": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.agents"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No agents in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/agents/forwarding": {
+      "access": "user"
+    },
+    "POST /plugin-api/ai/agents/install": {
+      "access": "user",
+      "destructive": true
+    },
+    "GET /plugin-api/ai/assets": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "GET /plugin-api/ai/assets/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.assets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No assets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "PUT /plugin-api/ai/assets/:id/annotation": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.assets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No assets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "DELETE /plugin-api/ai/assets/:id/annotation/:field": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.assets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No assets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/assets/:id/impact": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.assets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No assets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "PUT /plugin-api/ai/assets/:id/zone": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.assets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No assets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/assets/annotate": {
+      "access": "user",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      }
+    },
+    "GET /plugin-api/ai/assets/annotation-runs": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "POST /plugin-api/ai/assets/collect": {
+      "access": "user"
+    },
+    "GET /plugin-api/ai/assets/edges": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "GET /plugin-api/ai/assets/exposure": {
+      "access": "user",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      },
+      "permission": "ai.assets.view"
+    },
+    "POST /plugin-api/ai/assets/exposure/:key/explain": {
+      "access": "user",
+      "permission": "assets.manage",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.exposure"
+      },
+      "params": {
+        "key": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No exposure in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "PUT /plugin-api/ai/assets/exposure/:key/priority": {
+      "access": "user",
+      "permission": "assets.manage",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.exposure"
+      },
+      "params": {
+        "key": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No exposure in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/assets/graph": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "GET /plugin-api/ai/assets/runs": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "GET /plugin-api/ai/assets/settings": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "PUT /plugin-api/ai/assets/settings": {
+      "access": "user"
+    },
+    "GET /plugin-api/ai/assets/zones": {
+      "access": "user",
+      "permission": "ai.assets.view"
+    },
+    "POST /plugin-api/ai/assets/zones": {
+      "access": "user"
+    },
+    "DELETE /plugin-api/ai/assets/zones/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.zones"
+      },
+      "params": {
+        "id": "ai.zones"
+      },
+      "destructive": true
+    },
+    "PUT /plugin-api/ai/assets/zones/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.zones"
+      },
+      "params": {
+        "id": "ai.zones"
+      }
+    },
+    "POST /plugin-api/ai/chat/stream": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "GET /plugin-api/ai/conversations": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "DELETE /plugin-api/ai/conversations/:id": {
+      "access": "user",
+      "permission": "ai.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/conversations/:id": {
+      "access": "user",
+      "permission": "ai.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/ops/chat": {
+      "access": "user",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      },
+      "body": {
+        "message": "hi",
+        "providerId": "{{ai.providers}}"
+      }
+    },
+    "GET /plugin-api/ai/ops/conversations": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "DELETE /plugin-api/ai/ops/conversations/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/ops/conversations/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/ops/conversations/:id/compact": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/ops/conversations/:id/stop": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/ops/conversations/:id/stream": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.conversations"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No conversations in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/ops/fleets": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "PUT /plugin-api/ai/opt-in": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "POST /plugin-api/ai/probe-models": {
+      "access": "user",
+      "permission": "ai.manage_providers"
+    },
+    "POST /plugin-api/ai/proposals/:id/apply": {
+      "access": "user",
+      "permission": "ai.apply_proposals",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.proposals"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No proposals in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/proposals/:id/mark-run-in-terminal": {
+      "access": "user",
+      "permission": "ai.apply_proposals",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.proposals"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No proposals in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/proposals/:id/reject": {
+      "access": "user",
+      "permission": "ai.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.proposals"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No proposals in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/providers": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "POST /plugin-api/ai/providers": {
+      "access": "user",
+      "permission": "ai.manage_providers"
+    },
+    "DELETE /plugin-api/ai/providers/:id": {
+      "access": "user",
+      "permission": "ai.manage_providers",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.providers"
+      },
+      "params": {
+        "id": "ai.providers"
+      },
+      "destructive": true
+    },
+    "PATCH /plugin-api/ai/providers/:id": {
+      "access": "user",
+      "permission": "ai.manage_providers",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.providers"
+      },
+      "params": {
+        "id": "ai.providers"
+      }
+    },
+    "GET /plugin-api/ai/providers/:id/context": {
+      "access": "user",
+      "permission": "ai.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.providers"
+      },
+      "params": {
+        "id": "ai.providers"
+      }
+    },
+    "GET /plugin-api/ai/providers/:id/models": {
+      "access": "user",
+      "permission": "ai.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.providers"
+      },
+      "params": {
+        "id": "ai.providers"
+      }
+    },
+    "GET /plugin-api/ai/status": {
+      "access": "user"
+    },
+    "GET /plugin-api/ai/tasks": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "GET /plugin-api/ai/tasks/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.tasks"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No tasks in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/tasks/:id/approve": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.tasks"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No tasks in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/tasks/:id/reject": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.tasks"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No tasks in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/ai/tasks/custom-presets": {
+      "access": "user",
+      "destructive": true
+    },
+    "DELETE /plugin-api/ai/tasks/custom-presets/:id": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.custom-presets"
+      },
+      "params": {
+        "id": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No custom-presets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/tasks/preferences": {
+      "access": "user",
+      "permission": "ai.use"
+    },
+    "PUT /plugin-api/ai/tasks/preferences": {
+      "access": "user"
+    },
+    "GET /plugin-api/ai/tasks/presets": {
+      "access": "user",
+      "permission": ["ai.use", "ai.ops.use"]
+    },
+    "POST /plugin-api/ai/tasks/presets/:presetId/enable": {
+      "access": "user",
+      "resource": {
+        "kind": "own",
+        "fixture": "ai.presets"
+      },
+      "params": {
+        "presetId": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No presets in the test data (made by model runs or needs a real agent host); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/ai/usage": {
+      "access": "user",
+      "permission": "ai.use"
+    }
+  }
+}
