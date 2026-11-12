@@ -1,0 +1,7 @@
+# zod 3 comes in with the published Termix CLI, whose bundle this plugin ships
+# as is. The fix is zod 4, which the next CLI release has. Bump
+# @termix-ssh/cli to that release and drop this entry.
+[[IgnoredVulns]]
+id = "GHSA-mrhx-c7xc-m3w5"
+ignoreUntil = 2027-01-31
+reason = "zod 3 is inside the published Termix CLI bundle, fixed when the CLI ships zod 4"
