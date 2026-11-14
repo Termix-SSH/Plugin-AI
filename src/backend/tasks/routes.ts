@@ -223,7 +223,7 @@ export function registerTaskRoutes(
   router.get("/tasks/presets", opsOnly, async (_req, res: Response) => {
     const userId = actor();
     const automationsAvailable =
-      ctx.services.providers(SERVICE.automations).length > 0;
+      (await ctx.services.providers(SERVICE.automations)).length > 0;
     const enabled = new Map<
       string,
       Array<{ automationId: number; version: number; name: string }>
@@ -393,7 +393,7 @@ export function registerTaskRoutes(
           : automationName(title).slice(0, 120);
       let access;
       try {
-        access = requireService(ctx.services, SERVICE.automations);
+        access = await requireService(ctx.services, SERVICE.automations);
       } catch {
         return res
           .status(503)

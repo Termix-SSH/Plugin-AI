@@ -71,7 +71,7 @@ export async function activate(ctx: PluginContext) {
       void taskService
         .expireStale()
         .catch((error) => ctx.log.warn(`Expiring AI plans failed: ${error}`)),
-    { runNow: true },
+    { id: "plan-expiry", runNow: true },
   );
   // The kill switch also stops what is already running.
   ctx.settings.onChange("autoOpsPaused", (value) => {
@@ -109,24 +109,35 @@ export async function activate(ctx: PluginContext) {
     createExposureExplainer(ctx, repository),
     () => assetRepository.listAssets(),
   );
-  ctx.schedule.every(60_000, () =>
-    exposure
-      .notify()
-      .catch(() => ctx.log.warn("Exposure notification retry failed")),
+  ctx.schedule.every(
+    60_000,
+    () =>
+      exposure
+        .notify()
+        .catch(() => ctx.log.warn("Exposure notification retry failed")),
+    { id: "exposure-notify" },
   );
-  ctx.schedule.every(86400_000, async () => {
-    const days = Number(await ctx.settings.get("exposureRetentionDays")) || 90;
-    await exposureRepository
-      .prune(Date.now(), Math.min(365, Math.max(7, days)))
-      .catch(() => ctx.log.warn("Exposure retention failed"));
-  });
+  ctx.schedule.every(
+    86400_000,
+    async () => {
+      const days =
+        Number(await ctx.settings.get("exposureRetentionDays")) || 90;
+      await exposureRepository
+        .prune(Date.now(), Math.min(365, Math.max(7, days)))
+        .catch(() => ctx.log.warn("Exposure retention failed"));
+    },
+    { id: "exposure-prune" },
+  );
   ctx.disposables.add(() => exposure.close());
   registerAssetRoutes(router, ctx, assetRepository, assets, annotation);
   subscribeHostEvents(ctx, assets);
-  ctx.schedule.every(60_000, () =>
-    assets
-      .tick()
-      .catch((error) => ctx.log.warn(`Asset schedule failed: ${error}`)),
+  ctx.schedule.every(
+    60_000,
+    () =>
+      assets
+        .tick()
+        .catch((error) => ctx.log.warn(`Asset schedule failed: ${error}`)),
+    { id: "asset-tick" },
   );
   ctx.disposables.add(() => assets.close());
   ctx.disposables.add(() => annotation.close());

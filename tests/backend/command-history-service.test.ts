@@ -51,9 +51,9 @@ describe("optional services", () => {
     ).toBeNull();
   });
 
-  it("says which plugin is missing when a write needs it", () => {
-    expect(serviceAvailable(services({}), SERVICE.fleets)).toBe(false);
-    expect(() => requireService(services({}), SERVICE.fleets)).toThrow(
+  it("says which plugin is missing when a write needs it", async () => {
+    expect(await serviceAvailable(services({}), SERVICE.fleets)).toBe(false);
+    await expect(requireService(services({}), SERVICE.fleets)).rejects.toThrow(
       "The fleets plugin is not available",
     );
   });

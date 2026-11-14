@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -287,6 +287,11 @@ export interface CliTarget {
   token: () => Promise<string>;
   /** Run in a worker thread instead of a process. Defaults to inside Electron. */
   inWorker?: boolean;
+  /**
+   * Where each run's temp home goes. A plugin process may only write its own
+   * data folder, so callers pass that; the system temp folder otherwise.
+   */
+  tempRoot?: () => Promise<string>;
 }
 
 /**
@@ -304,7 +309,9 @@ export async function runCli(
     return { exitCode: null, output: "", durationMs: 0, aborted: true };
   }
 
-  const home = await mkdtemp(path.join(os.tmpdir(), "termix-ai-cli-"));
+  const root = target.tempRoot ? await target.tempRoot() : os.tmpdir();
+  await mkdir(root, { recursive: true });
+  const home = await mkdtemp(path.join(root, "termix-ai-cli-"));
   try {
     const token = await target.token();
     const env = {

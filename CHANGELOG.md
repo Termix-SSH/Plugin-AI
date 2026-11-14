@@ -2,6 +2,10 @@
 
 ## 1.4.1
 
+### Changed
+
+- Runs in its own process with only the access it needs (plugin API 2, needs Termix 26.11.2)
+
 ### Fixed
 
 - Save as preset button now matches the Save button size

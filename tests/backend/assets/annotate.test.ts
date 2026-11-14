@@ -104,6 +104,8 @@ async function setup(
     .prepare("INSERT INTO users (id, username) VALUES ('user-1', 'u')")
     .run();
   const mock = createMockCtx({
+    // The SDK 2.2.1 mock refuses fetch signals, batch queries and live asUser
+    // results; turn sandbox on once the lock moves to 2.3.0.
     pluginId: manifest.id,
     manifest,
     capabilities: manifest.capabilities,

@@ -27,8 +27,8 @@
     "The assistant in the panel bar beside any SSH terminal"
   ],
   "engine": {
-    "termix": ">=26.11.1-0",
-    "api": "^1.2"
+    "termix": ">=26.11.2-0",
+    "api": "^2.0.0"
   },
   "capabilities": [
     "hosts:read",
@@ -45,8 +45,32 @@
     "users:read",
     "events:core",
     "process:spawn",
-    "operations:invoke"
+    "operations:invoke",
+    "network:sockets",
+    "files:own"
   ],
+  "sandbox": {
+    "schedules": [
+      {
+        "id": "plan-expiry",
+        "every": 300000
+      },
+      {
+        "id": "exposure-notify",
+        "every": 60000
+      },
+      {
+        "id": "exposure-prune",
+        "every": 86400000
+      },
+      {
+        "id": "asset-tick",
+        "every": 60000
+      }
+    ],
+    "events": ["user.deleted", "host.created", "host.updated", "host.deleted"],
+    "registry": ["ai.hostImportNormalizer"]
+  },
   "optionalDependencies": {
     "workspaces": "^1.0.0",
     "network-topology": "^1.0.0",

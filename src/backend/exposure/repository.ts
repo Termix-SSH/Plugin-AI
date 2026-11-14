@@ -46,16 +46,10 @@ export async function createExposureRepository(ctx: Pick<PluginContext, "db">) {
     );
     return work;
   }
+  // All or nothing: core runs a batch in one transaction.
   async function transaction(ops: Array<(tx: Client) => any>) {
     const client = await db.client<Client>();
-    if (db.dialect === "sqlite")
-      client.transaction((tx: Client) => {
-        for (const op of ops) op(tx).run();
-      });
-    else
-      await client.transaction(async (tx: Client) => {
-        for (const op of ops) await op(tx);
-      });
+    await db.batch(ops.map((op) => op(client)));
     await db.persist();
   }
   async function listEntries(): Promise<Entry[]> {

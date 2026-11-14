@@ -5,7 +5,8 @@ import type { PluginProcessHandle } from "@termix-ssh/plugin-sdk/backend";
  * In the desktop app the backend runs inside Electron, whose binary can't
  * start as plain Node, so the CLI runs in a worker thread instead of a child
  * process. The worker gets its own env (token, temp config dirs) and argv;
- * nothing of the server's env reaches it.
+ * nothing of the server's env reaches it. Only used in the desktop app, where
+ * plugin processes are not fenced, so the manifest asks for no workers.
  */
 export function runCliInWorker(
   file: string,

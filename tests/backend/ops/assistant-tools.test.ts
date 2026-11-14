@@ -31,6 +31,7 @@ const HOSTS = [
 
 function setup(cli: CliTarget | null = null, hostShell = true) {
   const mock = createMockCtx({
+    sandbox: true,
     capabilities: ["hosts:read"],
     hosts: HOSTS,
     services: {

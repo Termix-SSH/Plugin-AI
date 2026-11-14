@@ -25,6 +25,7 @@ describe("ai activate", () => {
     async (capability) => {
       db = await createTestDb(pluginDir);
       const mock = createMockCtx({
+        sandbox: true,
         pluginId: manifest.id,
         manifest,
         capabilities: manifest.capabilities.filter((c) => c !== capability),
@@ -40,6 +41,7 @@ describe("ai activate", () => {
   it("cannot store a provider key without secrets:own", async () => {
     db = await createTestDb(pluginDir);
     const mock = createMockCtx({
+      sandbox: true,
       pluginId: manifest.id,
       manifest,
       capabilities: manifest.capabilities.filter((c) => c !== "secrets:own"),
@@ -59,7 +61,7 @@ describe("ai activate", () => {
       body: { providerType: "openai", label: "Work", apiKey: "sk-shared" },
     });
 
-    const normalizer = server.mock.ctx.registry.consume<
+    const normalizer = await server.mock.ctx.registry.consume<
       (raw: Record<string, unknown>) => Record<string, unknown> | null
     >("ai.hostImportNormalizer");
     expect(normalizer?.({ enableAiAssistant: true })).toEqual({

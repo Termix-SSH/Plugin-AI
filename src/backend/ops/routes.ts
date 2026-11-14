@@ -1,3 +1,4 @@
+import path from "node:path";
 import { existsSync } from "node:fs";
 import type { Request, Response, Router } from "express";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
@@ -736,6 +737,8 @@ export function registerOpsRoutes(
         cli:
           token && existsSync(cliPath)
             ? {
+                tempRoot: async () =>
+                  path.join(await ctx.files.dataDir(), "cli-runs"),
                 run: ctx.process.run,
                 cliPath,
                 url: CORE_URL,
