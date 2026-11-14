@@ -5,6 +5,7 @@
 ### Changed
 
 - Runs in its own process with only the access it needs (plugin API 2, needs Termix 26.11.2)
+- The assistant beside a terminal fills the box the terminal gives it, so it shows in the right place when it draws in its own frame (needs Termix 26.11.2)
 
 ### Fixed
 
