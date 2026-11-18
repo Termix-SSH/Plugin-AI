@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.2
+
+### Fixed
+
+- The bundled Termix CLI is 1.3.1, which drops an old zod with a known security problem
+
 ## 1.4.1
 
 ### Changed
