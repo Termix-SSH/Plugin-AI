@@ -126,9 +126,8 @@ export async function applyProposal(
     }
 
     case "propose_create_snippet": {
-      const created = await requireService(
-        deps.services,
-        SERVICE.snippets,
+      const created = await (
+        await requireService(deps.services, SERVICE.snippets)
       ).create({
         name: requireString(payload.name, "name"),
         content: requireString(payload.content, "content"),
@@ -145,7 +144,7 @@ export async function applyProposal(
       const snippetId = requireNumber(payload.snippetId, "snippetId");
       const changes = (payload.changes ?? {}) as Record<string, unknown>;
 
-      const snippets = requireService(deps.services, SERVICE.snippets);
+      const snippets = await requireService(deps.services, SERVICE.snippets);
       const existing = await snippets.get(snippetId);
       if (!existing) throw new Error("Snippet not found");
 
@@ -169,16 +168,15 @@ export async function applyProposal(
 
     case "propose_delete_snippet": {
       const snippetId = requireNumber(payload.snippetId, "snippetId");
-      const deleted = await requireService(
-        deps.services,
-        SERVICE.snippets,
+      const deleted = await (
+        await requireService(deps.services, SERVICE.snippets)
       ).remove(snippetId);
       if (!deleted) throw new Error("Snippet not found");
       return { ok: true, summary: `Deleted snippet ${snippetId}` };
     }
 
     case "propose_create_fleet": {
-      const fleets = requireService(deps.services, SERVICE.fleets);
+      const fleets = await requireService(deps.services, SERVICE.fleets);
       const fleet = await fleets.create({
         name: requireString(payload.name, "name"),
         description: optionalString(payload.description),
@@ -205,9 +203,8 @@ export async function applyProposal(
     case "propose_create_automation": {
       // The automations plugin runs the same validator its own route does,
       // so an LLM-authored definition is held to exactly the human standard.
-      const created = await requireService(
-        deps.services,
-        SERVICE.automations,
+      const created = await (
+        await requireService(deps.services, SERVICE.automations)
       ).create({
         name: requireString(payload.name, "name"),
         description: optionalString(payload.description),

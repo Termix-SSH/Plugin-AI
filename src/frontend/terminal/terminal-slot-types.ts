@@ -28,6 +28,8 @@ export interface TerminalSidePanelProps {
   hostId: number | undefined;
   hostLabel: string;
   panelProps: Record<string, unknown>;
+  /** The terminal gives the panel its box; fill it instead of floating. */
+  placed?: boolean;
   onClose: () => void;
   onRunInTerminal: (command: string) => void;
 }

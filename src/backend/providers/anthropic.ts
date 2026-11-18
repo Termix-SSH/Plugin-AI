@@ -41,8 +41,11 @@ function createClient(config: ProviderConfig): Anthropic {
   });
 }
 
-function toAnthropicMessages(request: ChatRequest): Anthropic.MessageParam[] {
-  const messages: Anthropic.MessageParam[] = [];
+// The system prompt goes in its own field, so history holds only these two.
+type ChatMessage = Anthropic.UserMessageParam | Anthropic.AssistantMessageParam;
+
+function toAnthropicMessages(request: ChatRequest): ChatMessage[] {
+  const messages: ChatMessage[] = [];
 
   for (const message of request.messages) {
     if (message.role === "tool") {
@@ -90,9 +93,7 @@ function toAnthropicMessages(request: ChatRequest): Anthropic.MessageParam[] {
  * The newest message gets a cache breakpoint: the history only grows, so
  * everything up to it is the next call's prefix.
  */
-function withCacheBreakpoint(
-  messages: Anthropic.MessageParam[],
-): Anthropic.MessageParam[] {
+function withCacheBreakpoint(messages: ChatMessage[]): ChatMessage[] {
   const last = messages.at(-1);
   if (!last) return messages;
   const blocks: Anthropic.ContentBlockParam[] =

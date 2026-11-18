@@ -1,9 +1,10 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PluginProcess } from "@termix-ssh/plugin-sdk/backend";
 import { getErrorMessage } from "../errors.js";
+import { insideElectron, runCliInWorker } from "./cli-worker.js";
 import { redact, redactString, REDACTED } from "../redaction.js";
 import { createCapture, truncateMiddle, type ExecOutcome } from "./exec.js";
 
@@ -284,6 +285,13 @@ export interface CliTarget {
    * mint a short-lived one each time. Only ever passed in the CLI's env.
    */
   token: () => Promise<string>;
+  /** Run in a worker thread instead of a process. Defaults to inside Electron. */
+  inWorker?: boolean;
+  /**
+   * Where each run's temp home goes. A plugin process may only write its own
+   * data folder, so callers pass that; the system temp folder otherwise.
+   */
+  tempRoot?: () => Promise<string>;
 }
 
 /**
@@ -301,27 +309,30 @@ export async function runCli(
     return { exitCode: null, output: "", durationMs: 0, aborted: true };
   }
 
-  const home = await mkdtemp(path.join(os.tmpdir(), "termix-ai-cli-"));
+  const root = target.tempRoot ? await target.tempRoot() : os.tmpdir();
+  await mkdir(root, { recursive: true });
+  const home = await mkdtemp(path.join(root, "termix-ai-cli-"));
   try {
     const token = await target.token();
-    const child = await target.run(
-      process.execPath,
-      [target.cliPath, "--json", "--no-color", ...args],
-      {
-        cwd: home,
-        env: {
-          TERMIX_URL: target.url,
-          TERMIX_TOKEN: token,
-          NO_COLOR: "1",
-          TERM: "dumb",
-          HOME: home,
-          USERPROFILE: home,
-          XDG_CONFIG_HOME: home,
-          APPDATA: home,
-          LOCALAPPDATA: home,
-        },
-      },
-    );
+    const env = {
+      TERMIX_URL: target.url,
+      TERMIX_TOKEN: token,
+      NO_COLOR: "1",
+      TERM: "dumb",
+      HOME: home,
+      USERPROFILE: home,
+      XDG_CONFIG_HOME: home,
+      APPDATA: home,
+      LOCALAPPDATA: home,
+    };
+    const cliArgs = ["--json", "--no-color", ...args];
+    const child =
+      (target.inWorker ?? insideElectron())
+        ? runCliInWorker(target.cliPath, cliArgs, { env })
+        : await target.run(process.execPath, [target.cliPath, ...cliArgs], {
+            cwd: home,
+            env,
+          });
 
     const stdout = collectStdout(limits.outputLimit);
     const stderr = createCapture(limits.outputLimit);

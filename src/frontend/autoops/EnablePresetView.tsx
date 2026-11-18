@@ -199,11 +199,7 @@ export function EnablePresetView({
             error ? <span className="text-destructive">{error}</span> : null
           }
           extra={
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void saveAsPreset()}
-            >
+            <Button variant="ghost" onClick={() => void saveAsPreset()}>
               {saved
                 ? t("autoOps.enable.savedPreset")
                 : t("autoOps.enable.saveAsPreset")}

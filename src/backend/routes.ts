@@ -29,7 +29,7 @@ import type {
 } from "./providers/types.js";
 import { isAiProviderType } from "./providers/types.js";
 import type { AiRepository } from "./repository.js";
-import { serviceAvailable } from "./services.js";
+import { availableServices } from "./services.js";
 import { openEventStream } from "./sse.js";
 import { availableTools } from "./tools/catalog.js";
 import { applyProposal } from "./tools/executor.js";
@@ -1076,10 +1076,10 @@ export function registerAiRoutes(
           config,
           chosenModel,
         );
-        const tools = availableTools(
-          (service) => serviceAvailable(ctx.services, service),
-          { allowReadOnlyCommands: access.allowReadOnlyCommands },
-        );
+        const running = await availableServices(ctx.services);
+        const tools = availableTools((service) => running.has(service), {
+          allowReadOnlyCommands: access.allowReadOnlyCommands,
+        });
 
         const { send, signal, stopHeartbeat } = openEventStream(res);
 

@@ -104,6 +104,7 @@ async function setup(
     .prepare("INSERT INTO users (id, username) VALUES ('user-1', 'u')")
     .run();
   const mock = createMockCtx({
+    sandbox: true,
     pluginId: manifest.id,
     manifest,
     capabilities: manifest.capabilities,

@@ -1,3 +1,4 @@
+import path from "node:path";
 import { existsSync } from "node:fs";
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
 import { userTokenIssuer } from "../core-api.js";
@@ -193,6 +194,7 @@ export function ownerCli(
     run: ctx.process.run,
     cliPath,
     url: CORE_URL,
+    tempRoot: async () => path.join(await ctx.files.dataDir(), "cli-runs"),
     token: async () =>
       (
         await issue(userId, {

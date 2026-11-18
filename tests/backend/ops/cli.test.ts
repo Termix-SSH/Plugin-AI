@@ -334,3 +334,52 @@ describe("runCli", () => {
     });
   });
 });
+
+// The desktop app's binary can't start as node, so there the CLI runs in a
+// worker thread with its own env.
+describe("runCli in a worker thread", () => {
+  const inWorker = (run: CliTarget["run"] = spawnRun): CliTarget => ({
+    ...target(run),
+    inWorker: true,
+  });
+
+  it("never starts a process and keeps the server's env out", async () => {
+    process.env.FAKE_SERVER_SECRET = "server-only";
+    const run = vi.fn(spawnRun);
+    const result = await runCli(inWorker(run), ["hosts", "list"], limits());
+    expect(run).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(0);
+    const seen = JSON.parse(result.output);
+    expect(seen.argv.slice(2)).toEqual([
+      "--json",
+      "--no-color",
+      "hosts",
+      "list",
+    ]);
+    expect(seen.env).toMatchObject({
+      TERMIX_TOKEN: "jwt-1",
+      NO_COLOR: "1",
+      SECRET: null,
+    });
+    expect(seen.env.XDG_CONFIG_HOME).toBe(seen.env.HOME);
+    expect(seen.env.HOME).not.toBe(process.env.HOME);
+    // The server's own env is untouched by the run.
+    expect(process.env.TERMIX_TOKEN).toBeUndefined();
+  });
+
+  it("returns the exit code and stderr of a failed call", async () => {
+    const result = await runCli(inWorker(), ["fail"], limits());
+    expect(result.exitCode).toBe(3);
+    expect(result.output).toContain("boom");
+  });
+
+  it("stops the CLI when it runs past the timeout", async () => {
+    const result = await runCli(
+      inWorker(),
+      ["sleep"],
+      limits({ timeoutMs: 300 }),
+    );
+    expect(result).toMatchObject({ exitCode: null, timedOut: true });
+    expect(result.output).toContain("started");
+  });
+});

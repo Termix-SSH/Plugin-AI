@@ -19,15 +19,26 @@ export const SERVICE = {
 export type ServiceName = (typeof SERVICE)[keyof typeof SERVICE];
 
 /** Whether a compatible provider is running right now. */
-export function serviceAvailable(
+export async function serviceAvailable(
   services: Pick<PluginServices, "providers">,
   service: string,
-): boolean {
+): Promise<boolean> {
   try {
-    return services.providers(service).length > 0;
+    return (await services.providers(service)).length > 0;
   } catch {
     return false;
   }
+}
+
+/** The services that are running right now, asked once per use. */
+export async function availableServices(
+  services: Pick<PluginServices, "providers">,
+): Promise<Set<string>> {
+  const names = Object.values(SERVICE) as string[];
+  const answers = await Promise.all(
+    names.map((name) => serviceAvailable(services, name)),
+  );
+  return new Set(names.filter((_name, index) => answers[index]));
 }
 
 interface SnippetSummary {
@@ -146,11 +157,11 @@ interface ServiceTypes {
  * The service handle. Throws when the provider is missing or the user may
  * not use it; a proposal apply wants that error, a read tool catches it.
  */
-export function requireService<S extends ServiceName>(
+export async function requireService<S extends ServiceName>(
   services: Pick<PluginServices, "get" | "providers">,
   service: S,
-): ServiceTypes[S] {
-  if (!serviceAvailable(services, service)) {
+): Promise<ServiceTypes[S]> {
+  if (!(await serviceAvailable(services, service))) {
     throw new Error(`The ${service.split(".")[0]} plugin is not available`);
   }
   return services.get<ServiceTypes[S]>(service);
@@ -163,7 +174,7 @@ export async function readService<S extends ServiceName, T>(
   read: (handle: ServiceTypes[S]) => Promise<T>,
 ): Promise<T | null> {
   try {
-    return await read(requireService(services, service));
+    return await read(await requireService(services, service));
   } catch {
     return null;
   }

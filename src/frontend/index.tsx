@@ -43,10 +43,12 @@ function TerminalSidePanel({
   panelProps,
   onClose,
   onRunInTerminal,
+  placed,
 }: TerminalSidePanelProps) {
   if (!hostId) return null;
   return (
     <TerminalAiPanel
+      embedded={placed === true}
       hostLabel={hostLabel}
       hostId={hostId}
       activeTab={`terminal:${host?.name || host?.ip || ""}`}
