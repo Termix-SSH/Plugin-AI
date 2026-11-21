@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.3
+
+### Fixed
+
+- With the assistant on, the tabs and other plugins no longer disappear on Termix 26.11.2. The docked assistant now sits over the page instead of pushing it over
+- The AI tab no longer closes right after it opens, such as from the mobile app, before the AI settings have loaded
+
 ## 1.4.2
 
 ### Fixed

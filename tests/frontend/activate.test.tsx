@@ -11,6 +11,7 @@ import {
 } from "@termix-ssh/plugin-sdk/testing";
 import type { PluginManifest } from "@termix-ssh/plugin-sdk/manifest";
 import * as plugin from "../../src/frontend/index";
+import { getAiStatus } from "../../src/frontend/ai-api";
 import { assistant } from "../../src/frontend/assistant/store";
 import manifestJson from "../../manifest.json";
 import locales from "../../locales/en.json";
@@ -65,6 +66,31 @@ describe(`${manifest.id} activate`, () => {
       "providers",
       "usage",
     ]);
+  });
+
+  it("leaves an open AI tab alone while the status is still loading", async () => {
+    vi.mocked(getAiStatus).mockImplementationOnce(() => new Promise(() => {}));
+    rendered = await renderWithApp(plugin, { manifest, locales });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(
+      rendered.shellCalls.filter((call) => call.method === "closeTab"),
+    ).toEqual([]);
+  });
+
+  it("closes the AI tab once the status says AI is off", async () => {
+    vi.mocked(getAiStatus).mockResolvedValueOnce({
+      globallyEnabled: false,
+      enabled: false,
+    } as never);
+    rendered = await renderWithApp(plugin, { manifest, locales });
+    await waitFor(() =>
+      expect(rendered!.shellCalls).toContainEqual({
+        method: "closeTab",
+        args: ["ai"],
+      }),
+    );
   });
 
   it("adds the assistant tab once AI is on for the user", async () => {
@@ -211,26 +237,17 @@ describe(`${manifest.id} activate`, () => {
     assistant.setOpen(false);
   });
 
-  it("holds the docked panel's width at the right edge", async () => {
+  it("puts nothing at the right edge, which would squeeze the page", async () => {
     rendered = await renderWithApp(plugin, {
       manifest,
       locales,
       permissions: ["ai.use"],
     });
     await waitFor(() =>
-      expect(rendered!.registered.slot("shell.rightEdge")).toEqual([
+      expect(rendered!.registered.slot("shell.overlay")).toEqual([
         "ai.toggleAssistant",
       ]),
     );
-    const edge = rendered.renderSlot("shell.rightEdge");
-    const spacer = () => edge.querySelector<HTMLElement>("[aria-hidden]");
-
-    act(() => assistant.setOpen(true));
-    expect(spacer()).toBeNull();
-    act(() => assistant.setDrawer(true));
-    expect(spacer()?.style.width).toBe("440px");
-    act(() => assistant.setOpen(false));
-    expect(spacer()).toBeNull();
-    act(() => assistant.setDrawer(false));
+    expect(rendered.registered.slot("shell.rightEdge")).toEqual([]);
   });
 });

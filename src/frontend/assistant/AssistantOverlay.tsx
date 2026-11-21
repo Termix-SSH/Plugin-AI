@@ -255,19 +255,6 @@ function Panel({ userKey }: { userKey: string }) {
   );
 }
 
-/**
- * Holds the docked drawer's width in the shell's "shell.rightEdge" slot, so
- * the page moves over instead of sitting under the drawer.
- */
-export function AssistantDockSpacer() {
-  const isMobile = useIsMobile();
-  const { open, drawer } = useAssistant();
-  if (!open || !drawer || isMobile) return null;
-  return (
-    <div aria-hidden className="shrink-0" style={{ width: DRAWER_WIDTH }} />
-  );
-}
-
 export function AssistantOverlay() {
   const user = useCurrentUser();
   const userKey = user?.userId ?? "anonymous";

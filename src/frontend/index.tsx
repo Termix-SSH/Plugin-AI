@@ -19,11 +19,7 @@ import { UsageCard } from "./usage/UsageCard";
 import { aiTasksWidget } from "./homepage/AiTasksWidget";
 import { AI_STATUS_CHANGED_EVENT, getAiStatus } from "./ai-api";
 import { setAiApp } from "./app-ref";
-import {
-  AI_TAB_ID,
-  AssistantDockSpacer,
-  AssistantOverlay,
-} from "./assistant/AssistantOverlay";
+import { AI_TAB_ID, AssistantOverlay } from "./assistant/AssistantOverlay";
 import { AssistantView } from "./assistant/AssistantView";
 import { defaultCombo, installHotkey, TOGGLE_ACTION } from "./assistant/hotkey";
 import { performClientAction } from "./assistant/shell";
@@ -79,12 +75,6 @@ function registerAssistant(app: TermixApp): (() => void)[] {
       kind: "component",
       component: AssistantOverlay as ComponentType<Record<string, unknown>>,
     }),
-    app.registerSlotContribution("shell.rightEdge", {
-      actionId: TOGGLE_ACTION,
-      titleKey: "assistant.title",
-      kind: "component",
-      component: AssistantDockSpacer as ComponentType<Record<string, unknown>>,
-    }),
     app.registerKeybindingAction({
       id: TOGGLE_ACTION,
       titleKey: "assistant.toggle",
@@ -111,6 +101,8 @@ export function activate(app: TermixApp): void {
   });
 
   let globallyEnabled = false;
+  // Until the status loads, an AI tab already open must not be closed.
+  let statusKnown = false;
   let userEnabled = false;
   let agentsAllowed = false;
   let assistantAllowed = false;
@@ -160,7 +152,7 @@ export function activate(app: TermixApp): void {
     );
 
     if (!globallyEnabled) {
-      app.tabs.closeTab(AI_TAB_ID);
+      if (statusKnown) app.tabs.closeTab(AI_TAB_ID);
       return;
     }
 
@@ -293,6 +285,7 @@ export function activate(app: TermixApp): void {
       .then((status) => {
         globallyEnabled = status.globallyEnabled;
         userEnabled = status.globallyEnabled && status.enabled;
+        statusKnown = true;
       })
       .catch(() => {
         globallyEnabled = false;
