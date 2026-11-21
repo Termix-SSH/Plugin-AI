@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.4
+
+### Fixed
+
+- The assistant's Termix CLI is 1.3.2, so running commands works on Windows hosts
+
 ## 1.4.3
 
 ### Fixed
