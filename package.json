@@ -13,9 +13,9 @@
     "prepare": "husky || true"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.6.0",
+    "@anthropic-ai/sdk": "^1.10.0",
     "d3-force": "^3.0.1",
-    "lucide-react": "^1.72.0",
+    "lucide-react": "^1.76.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
   },
@@ -34,10 +34,10 @@
     "husky": "^9.1.7",
     "i18next": "^26.7.2",
     "jsdom": "^31.0.0",
-    "lint-staged": "^17.2.0",
+    "lint-staged": "^17.6.1",
     "prettier": "3.10.1",
     "react-i18next": "^17.1.13",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "peerDependencies": {
     "@termix-ssh/plugin-sdk": "^2.3.0",
